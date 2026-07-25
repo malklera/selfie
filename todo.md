@@ -36,8 +36,8 @@ This document outlines the step-by-step order to implement the application based
 - [x] Implement `PreviewScreen.kt` (CameraX `PreviewView`, `TransparentOverlay`, `CountdownOverlay`, and auto-capture trigger on zero).
 
 ## Phase 7: Capture Result Screen
-- [ ] Implement `CaptureResultViewModel.kt` (Exposes config for button visibility).
-- [ ] Implement `CaptureResultScreen.kt` (Displays taken photo full-screen with the extensible floating button row: Home, Quick Retake, Gallery).
+- [x] Implement `CaptureResultViewModel.kt` (Exposes config for button visibility).
+- [x] Implement `CaptureResultScreen.kt` (Displays taken photo full-screen with the extensible floating button row: Home, Quick Retake, Gallery).
 
 ## Phase 8: Gallery Screen
 - [ ] Implement `GalleryViewModel.kt` (Loads photos asynchronously via repository).
