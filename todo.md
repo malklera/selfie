@@ -16,9 +16,9 @@ This document outlines the step-by-step order to implement the application based
 - [x] Setup Gallery Storage: `GalleryRepository` to list photos from the device using `DocumentFile`.
 
 ## Phase 3: Core App Setup & Navigation
-- [ ] Create the Application class (`SelfieApp.kt`) and configure Coil for GIF support.
-- [ ] Create `MainActivity.kt` with edge-to-edge full-screen configuration and `FLAG_KEEP_SCREEN_ON`.
-- [ ] Define Navigation routes (`Route.kt`) and create the main navigation graph (`AppNavGraph.kt`).
+- [x] Create the Application class (`SelfieApp.kt`) and configure Coil for GIF support.
+- [x] Create `MainActivity.kt` with edge-to-edge full-screen configuration and `FLAG_KEEP_SCREEN_ON`.
+- [x] Define Navigation routes (`Route.kt`) and create the main navigation graph (`AppNavGraph.kt`).
 
 ## Phase 4: Shared UI Components
 - [ ] Implement `MainContentView.kt` (renders None, Image, Video, or GIF).
