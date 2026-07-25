@@ -7,8 +7,19 @@ import coil3.SingletonImageLoader
 import coil3.gif.AnimatedImageDecoder
 import coil3.gif.GifDecoder
 import android.os.Build
+import com.selfie.data.gallery.GalleryRepository
+import com.selfie.data.preferences.PreferencesRepository
 
 class SelfieApp : Application(), SingletonImageLoader.Factory {
+    
+    val preferencesRepository: PreferencesRepository by lazy {
+        PreferencesRepository(this)
+    }
+    
+    val galleryRepository: GalleryRepository by lazy {
+        GalleryRepository(this)
+    }
+
     override fun newImageLoader(context: PlatformContext): ImageLoader {
         return ImageLoader.Builder(context)
             .components {

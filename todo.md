@@ -28,8 +28,8 @@ This document outlines the step-by-step order to implement the application based
 - [x] Implement `FloatingButtonRow.kt` (extensible row of `ButtonSlot` components).
 
 ## Phase 5: Main Screen (Idle View)
-- [ ] Implement `MainViewModel.kt` (Exposes config, handles session camera state).
-- [ ] Implement `MainScreen.kt` (Shows `MainContentView`, invisible top-right config tap zone, tap-to-start, and camera flip button).
+- [x] Implement `MainViewModel.kt` (Exposes config, handles session camera state).
+- [x] Implement `MainScreen.kt` (Shows `MainContentView`, invisible top-right config tap zone, tap-to-start, and camera flip button).
 
 ## Phase 6: Preview Screen (Camera & Capture)
 - [ ] Implement `PreviewViewModel.kt` (CameraX state, countdown logic, photo capture logic via SAF to the user-configured folder).
