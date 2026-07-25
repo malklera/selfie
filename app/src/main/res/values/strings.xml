@@ -1,0 +1,24 @@
+<resources>
+    <string name="app_name">Selfie</string>
+    <string name="btn_volver_inicio">Volver al inicio</string>
+    <string name="btn_otra_foto">Otra foto</string>
+    <string name="btn_galeria">Galería</string>
+    <string name="config_title">Configuración</string>
+    <string name="config_camera_default">Cámara predeterminada</string>
+    <string name="config_camera_front">Frontal</string>
+    <string name="config_camera_back">Trasera</string>
+    <string name="config_show_flip_button">Mostrar botón de cambio de cámara</string>
+    <string name="config_countdown_duration">Duración de la cuenta regresiva (segundos)</string>
+    <string name="config_overlay_image">Imagen de superposición</string>
+    <string name="config_save_folder">Carpeta de guardado</string>
+    <string name="config_main_content">Contenido de la pantalla principal</string>
+    <string name="config_content_none">Ninguno</string>
+    <string name="config_content_image">Imagen</string>
+    <string name="config_content_video">Video</string>
+    <string name="config_content_gif">GIF</string>
+    <string name="config_show_to_main">Mostrar botón "Volver al inicio"</string>
+    <string name="config_show_retake">Mostrar botón "Otra foto"</string>
+    <string name="config_show_gallery">Mostrar botón "Galería"</string>
+    <string name="select_file">Seleccionar archivo</string>
+    <string name="select_folder">Seleccionar carpeta</string>
+</resources>
