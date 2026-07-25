@@ -20,8 +20,9 @@ import android.net.Uri
 import com.selfie.ui.preview.PreviewScreen
 import com.selfie.ui.preview.PreviewViewModel
 
-import com.selfie.ui.capture.CaptureResultScreen
-import com.selfie.ui.capture.CaptureResultViewModel
+import com.selfie.ui.gallery.GalleryDetailScreen
+import com.selfie.ui.gallery.GalleryScreen
+import com.selfie.ui.gallery.GalleryViewModel
 
 @Composable
 fun AppNavGraph(navController: NavHostController) {
@@ -82,7 +83,6 @@ fun AppNavGraph(navController: NavHostController) {
                     }
                 },
                 onNavigateToPreview = {
-                    // Navigate to Preview via Main to ensure correct camera
                     navController.navigate(Route.Main.path) {
                         popUpTo(Route.Main.path) { inclusive = true }
                     }
@@ -93,10 +93,26 @@ fun AppNavGraph(navController: NavHostController) {
             )
         }
         composable(Route.Gallery.path) {
-            Text("Gallery Screen")
+            val viewModel: GalleryViewModel = viewModel(factory = factory)
+            GalleryScreen(
+                viewModel = viewModel,
+                onPhotoClick = { index ->
+                    navController.navigate(Route.GalleryDetail.createRoute(index))
+                },
+                onBack = { navController.popBackStack() }
+            )
         }
-        composable(Route.GalleryDetail.path) {
-            Text("Gallery Detail Screen")
+        composable(
+            route = Route.GalleryDetail.path,
+            arguments = listOf(navArgument("index") { type = NavType.IntType })
+        ) { backStackEntry ->
+            val index = backStackEntry.arguments?.getInt("index") ?: 0
+            val viewModel: GalleryViewModel = viewModel(factory = factory)
+            GalleryDetailScreen(
+                viewModel = viewModel,
+                initialIndex = index,
+                onBack = { navController.popBackStack() }
+            )
         }
         composable(Route.Config.path) {
             Text("Config Screen")

@@ -40,9 +40,9 @@ This document outlines the step-by-step order to implement the application based
 - [x] Implement `CaptureResultScreen.kt` (Displays taken photo full-screen with the extensible floating button row: Home, Quick Retake, Gallery).
 
 ## Phase 8: Gallery Screen
-- [ ] Implement `GalleryViewModel.kt` (Loads photos asynchronously via repository).
-- [ ] Implement `GalleryScreen.kt` (`LazyVerticalGrid` with Coil async image loading).
-- [ ] Implement `GalleryDetailScreen.kt` (`HorizontalPager` for fullscreen swiping between photos).
+- [x] Implement `GalleryViewModel.kt` (Loads photos asynchronously via repository).
+- [x] Implement `GalleryScreen.kt` (`LazyVerticalGrid` with Coil async image loading).
+- [x] Implement `GalleryDetailScreen.kt` (`HorizontalPager` for fullscreen swiping between photos).
 
 ## Phase 9: Configuration Screen
 - [ ] Implement `ConfigViewModel.kt` (Handles saving values to DataStore).

@@ -9,8 +9,8 @@ sealed class Route(val path: String) {
         fun createRoute(photoUri: String) = "capture_result/$photoUri"
     }
     object Gallery : Route("gallery")
-    object GalleryDetail : Route("gallery_detail/{photoUri}") {
-        fun createRoute(photoUri: String) = "gallery_detail/$photoUri"
+    object GalleryDetail : Route("gallery_detail/{index}") {
+        fun createRoute(index: Int) = "gallery_detail/$index"
     }
     object Config : Route("config")
 }
