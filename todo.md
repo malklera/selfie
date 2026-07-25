@@ -11,9 +11,9 @@ This document outlines the step-by-step order to implement the application based
 - [x] Define Spanish string resources (`strings.xml`) and fullscreen theme (`themes.xml`).
 
 ## Phase 2: Domain & Data Layers (Core State)
-- [ ] Define Data Models: `AppConfig`, `MainContent` (sealed class), `ButtonSlot`.
-- [ ] Setup Jetpack DataStore: `AppPreferenceKeys` and `PreferencesRepository`.
-- [ ] Setup Gallery Storage: `GalleryRepository` to list photos from the device using `DocumentFile`.
+- [x] Define Data Models: `AppConfig`, `MainContent` (sealed class), `ButtonSlot`.
+- [x] Setup Jetpack DataStore: `AppPreferenceKeys` and `PreferencesRepository`.
+- [x] Setup Gallery Storage: `GalleryRepository` to list photos from the device using `DocumentFile`.
 
 ## Phase 3: Core App Setup & Navigation
 - [ ] Create the Application class (`SelfieApp.kt`) and configure Coil for GIF support.
