@@ -21,11 +21,11 @@ This document outlines the step-by-step order to implement the application based
 - [x] Define Navigation routes (`Route.kt`) and create the main navigation graph (`AppNavGraph.kt`).
 
 ## Phase 4: Shared UI Components
-- [ ] Implement `MainContentView.kt` (renders None, Image, Video, or GIF).
-- [ ] Implement `CameraFlipButton.kt` (floating switch button).
-- [ ] Implement `CountdownOverlay.kt` (animated large text).
-- [ ] Implement `TransparentOverlay.kt` (semi-transparent image over preview).
-- [ ] Implement `FloatingButtonRow.kt` (extensible row of `ButtonSlot` components).
+- [x] Implement `MainContentView.kt` (renders None, Image, Video, or GIF).
+- [x] Implement `CameraFlipButton.kt` (floating switch button).
+- [x] Implement `CountdownOverlay.kt` (animated large text).
+- [x] Implement `TransparentOverlay.kt` (semi-transparent image over preview).
+- [x] Implement `FloatingButtonRow.kt` (extensible row of `ButtonSlot` components).
 
 ## Phase 5: Main Screen (Idle View)
 - [ ] Implement `MainViewModel.kt` (Exposes config, handles session camera state).
