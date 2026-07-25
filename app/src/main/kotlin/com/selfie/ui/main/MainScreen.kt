@@ -14,6 +14,10 @@ import com.selfie.domain.model.MainContent
 import com.selfie.ui.components.CameraFlipButton
 import com.selfie.ui.components.MainContentView
 
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+
 @Composable
 fun MainScreen(
     viewModel: MainViewModel,
@@ -22,6 +26,7 @@ fun MainScreen(
 ) {
     val config by viewModel.appConfig.collectAsState()
     val isFront by viewModel.effectiveCameraFront.collectAsState()
+    var configTapCount by remember { mutableStateOf(0) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         // Main Content (Video/Image/GIF/None)
@@ -37,7 +42,13 @@ fun MainScreen(
             modifier = Modifier
                 .size(100.dp)
                 .align(Alignment.TopEnd)
-                .clickable { onNavigateToConfig() }
+                .clickable { 
+                    configTapCount++
+                    if (configTapCount >= 5) {
+                        configTapCount = 0
+                        onNavigateToConfig()
+                    }
+                }
         )
 
         // Flip Camera Button

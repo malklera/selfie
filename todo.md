@@ -49,7 +49,7 @@ This document outlines the step-by-step order to implement the application based
 - [x] Implement `ConfigScreen.kt` (UI for settings: default camera, flip button toggle, countdown duration, overlay image picker, save folder picker, main content type/file picker, and result button toggles).
 
 ## Phase 10: Final Polish & Testing
-- [ ] Verify all Spanish text strings.
-- [ ] Test permission handling (Camera, Storage).
-- [ ] Verify fullscreen behavior and screen wake lock.
-- [ ] Perform manual end-to-end flow testing (Main -> Preview -> Capture -> Result -> Gallery).
+- [x] Verify all Spanish text strings.
+- [x] Test permission handling (Camera, Storage).
+- [x] Verify fullscreen behavior and screen wake lock.
+- [x] Perform manual end-to-end flow testing (Main -> Preview -> Capture -> Result -> Gallery).
