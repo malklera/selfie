@@ -16,6 +16,10 @@ import com.selfie.ui.ViewModelFactory
 import com.selfie.ui.main.MainScreen
 import com.selfie.ui.main.MainViewModel
 
+import android.net.Uri
+import com.selfie.ui.preview.PreviewScreen
+import com.selfie.ui.preview.PreviewViewModel
+
 @Composable
 fun AppNavGraph(navController: NavHostController) {
     val context = LocalContext.current
@@ -43,10 +47,25 @@ fun AppNavGraph(navController: NavHostController) {
         composable(
             route = Route.Preview.path,
             arguments = listOf(navArgument("isFront") { type = NavType.BoolType })
-        ) {
-            Text("Preview Screen")
+        ) { backStackEntry ->
+            val isFront = backStackEntry.arguments?.getBoolean("isFront") ?: true
+            val viewModel: PreviewViewModel = viewModel(factory = factory)
+            PreviewScreen(
+                viewModel = viewModel,
+                isFront = isFront,
+                onPhotoCaptured = { uri ->
+                    val encodedUri = Uri.encode(uri.toString())
+                    navController.navigate(Route.CaptureResult.createRoute(encodedUri)) {
+                        popUpTo(Route.Main.path)
+                    }
+                },
+                onBack = { navController.popBackStack() }
+            )
         }
-        composable(Route.CaptureResult.path) {
+        composable(
+            route = Route.CaptureResult.path,
+            arguments = listOf(navArgument("photoUri") { type = NavType.StringType })
+        ) {
             Text("Capture Result Screen")
         }
         composable(Route.Gallery.path) {

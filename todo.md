@@ -32,8 +32,8 @@ This document outlines the step-by-step order to implement the application based
 - [x] Implement `MainScreen.kt` (Shows `MainContentView`, invisible top-right config tap zone, tap-to-start, and camera flip button).
 
 ## Phase 6: Preview Screen (Camera & Capture)
-- [ ] Implement `PreviewViewModel.kt` (CameraX state, countdown logic, photo capture logic via SAF to the user-configured folder).
-- [ ] Implement `PreviewScreen.kt` (CameraX `PreviewView`, `TransparentOverlay`, `CountdownOverlay`, and auto-capture trigger on zero).
+- [x] Implement `PreviewViewModel.kt` (CameraX state, countdown logic, photo capture logic via SAF to the user-configured folder).
+- [x] Implement `PreviewScreen.kt` (CameraX `PreviewView`, `TransparentOverlay`, `CountdownOverlay`, and auto-capture trigger on zero).
 
 ## Phase 7: Capture Result Screen
 - [ ] Implement `CaptureResultViewModel.kt` (Exposes config for button visibility).

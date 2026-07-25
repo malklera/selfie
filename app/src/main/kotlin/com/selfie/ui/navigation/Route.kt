@@ -5,7 +5,9 @@ sealed class Route(val path: String) {
     object Preview : Route("preview/{isFront}") {
         fun createRoute(isFront: Boolean) = "preview/$isFront"
     }
-    object CaptureResult : Route("capture_result")
+    object CaptureResult : Route("capture_result/{photoUri}") {
+        fun createRoute(photoUri: String) = "capture_result/$photoUri"
+    }
     object Gallery : Route("gallery")
     object GalleryDetail : Route("gallery_detail/{photoUri}") {
         fun createRoute(photoUri: String) = "gallery_detail/$photoUri"
