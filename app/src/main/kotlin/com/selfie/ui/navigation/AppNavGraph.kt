@@ -20,9 +20,8 @@ import android.net.Uri
 import com.selfie.ui.preview.PreviewScreen
 import com.selfie.ui.preview.PreviewViewModel
 
-import com.selfie.ui.gallery.GalleryDetailScreen
-import com.selfie.ui.gallery.GalleryScreen
-import com.selfie.ui.gallery.GalleryViewModel
+import com.selfie.ui.config.ConfigScreen
+import com.selfie.ui.config.ConfigViewModel
 
 @Composable
 fun AppNavGraph(navController: NavHostController) {
@@ -115,7 +114,11 @@ fun AppNavGraph(navController: NavHostController) {
             )
         }
         composable(Route.Config.path) {
-            Text("Config Screen")
+            val viewModel: ConfigViewModel = viewModel(factory = factory)
+            ConfigScreen(
+                viewModel = viewModel,
+                onBack = { navController.popBackStack() }
+            )
         }
     }
 }

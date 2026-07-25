@@ -45,8 +45,8 @@ This document outlines the step-by-step order to implement the application based
 - [x] Implement `GalleryDetailScreen.kt` (`HorizontalPager` for fullscreen swiping between photos).
 
 ## Phase 9: Configuration Screen
-- [ ] Implement `ConfigViewModel.kt` (Handles saving values to DataStore).
-- [ ] Implement `ConfigScreen.kt` (UI for settings: default camera, flip button toggle, countdown duration, overlay image picker, save folder picker, main content type/file picker, and result button toggles).
+- [x] Implement `ConfigViewModel.kt` (Handles saving values to DataStore).
+- [x] Implement `ConfigScreen.kt` (UI for settings: default camera, flip button toggle, countdown duration, overlay image picker, save folder picker, main content type/file picker, and result button toggles).
 
 ## Phase 10: Final Polish & Testing
 - [ ] Verify all Spanish text strings.
