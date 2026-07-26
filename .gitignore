@@ -26,3 +26,6 @@ local.properties
 
 # Java
 java_pid*.hprof
+
+# Agent artifacts
+.artifacts/

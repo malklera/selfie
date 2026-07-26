@@ -1,3 +1,5 @@
+package com.selfie
+
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
@@ -31,7 +33,8 @@ class MainActivity : ComponentActivity() {
     private fun hideSystemBars() {
         WindowInsetsControllerCompat(window, window.decorView).apply {
             hide(WindowInsetsCompat.Type.systemBars())
-            systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            // Removed systemBarsBehavior entirely to avoid the unclickable immersive mode popup
+            // and avoid compatibility issues with BEHAVIOR_DEFAULT
         }
     }
 }
