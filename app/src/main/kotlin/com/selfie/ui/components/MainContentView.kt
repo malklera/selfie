@@ -2,13 +2,14 @@ package com.selfie.ui.components
 
 import android.widget.VideoView
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.zIndex
@@ -31,17 +32,17 @@ fun MainContentView(
             .background(Color.Black),
         contentAlignment = Alignment.Center
     ) {
-        if (content is MainContent.None) {
-            Text(
-                text = "Toca para foto",
-                color = Color.White,
-                fontSize = 80.sp,
-                fontWeight = FontWeight.ExtraBold
-            )
-        }
+        // Text is always rendered at the bottom of the stack
+        Text(
+            text = "Toca para foto",
+            color = Color.White,
+            fontSize = 80.sp,
+            fontWeight = FontWeight.ExtraBold
+        )
+
         when (content) {
             is MainContent.None -> {
-                // Keep black background
+                // Background is already black, text is visible
             }
             is MainContent.StaticImage -> {
                 AsyncImage(
@@ -75,14 +76,16 @@ fun MainContentView(
             }
         }
 
-        // Robust clickable overlay using pointerInput and zIndex
+        // Top-most clickable layer
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .zIndex(1f)
-                .pointerInput(Unit) {
-                    detectTapGestures(onTap = { onClick() })
-                }
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onClick
+                )
         )
     }
 }
