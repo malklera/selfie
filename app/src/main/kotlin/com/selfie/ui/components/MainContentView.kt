@@ -27,12 +27,14 @@ fun MainContentView(
             .background(Color.Black),
         contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = "Toca para foto",
-            color = Color.White,
-            fontSize = 80.sp,
-            fontWeight = FontWeight.ExtraBold
-        )
+        if (content is MainContent.None) {
+            Text(
+                text = "Toca para foto",
+                color = Color.White,
+                fontSize = 80.sp,
+                fontWeight = FontWeight.ExtraBold
+            )
+        }
         when (content) {
             is MainContent.None -> {
                 // Keep black background
