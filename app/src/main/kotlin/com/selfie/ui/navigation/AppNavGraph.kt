@@ -22,6 +22,11 @@ import com.selfie.ui.preview.PreviewViewModel
 
 import com.selfie.ui.config.ConfigScreen
 import com.selfie.ui.config.ConfigViewModel
+import com.selfie.ui.capture.CaptureResultScreen
+import com.selfie.ui.capture.CaptureResultViewModel
+import com.selfie.ui.gallery.GalleryScreen
+import com.selfie.ui.gallery.GalleryViewModel
+import com.selfie.ui.gallery.GalleryDetailScreen
 
 @Composable
 fun AppNavGraph(navController: NavHostController) {
