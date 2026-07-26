@@ -32,9 +32,8 @@ fun MainScreen(
         // Main Content (Video/Image/GIF/None)
         MainContentView(
             content = config?.mainContent ?: MainContent.None,
-            modifier = Modifier
-                .fillMaxSize()
-                .clickable { onNavigateToPreview(isFront) }
+            onClick = { onNavigateToPreview(isFront) },
+            modifier = Modifier.fillMaxSize()
         )
 
         // Config Tap Zone (Top Right)

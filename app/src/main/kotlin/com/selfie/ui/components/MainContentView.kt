@@ -2,6 +2,7 @@ package com.selfie.ui.components
 
 import android.widget.VideoView
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -19,6 +20,7 @@ import com.selfie.domain.model.MainContent
 @Composable
 fun MainContentView(
     content: MainContent,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -70,5 +72,12 @@ fun MainContentView(
                 )
             }
         }
+
+        // Clickable overlay on top of everything (including VideoView)
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .clickable { onClick() }
+        )
     }
 }
