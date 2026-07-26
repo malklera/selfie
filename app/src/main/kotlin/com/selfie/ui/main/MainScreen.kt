@@ -26,7 +26,6 @@ fun MainScreen(
 ) {
     val config by viewModel.appConfig.collectAsState()
     val isFront by viewModel.effectiveCameraFront.collectAsState()
-    var configTapCount by remember { mutableStateOf(0) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         // Main Content (Video/Image/GIF/None)
@@ -39,14 +38,10 @@ fun MainScreen(
         // Config Tap Zone (Top Right)
         Box(
             modifier = Modifier
-                .size(100.dp)
+                .size(150.dp)
                 .align(Alignment.TopEnd)
                 .clickable { 
-                    configTapCount++
-                    if (configTapCount >= 5) {
-                        configTapCount = 0
-                        onNavigateToConfig()
-                    }
+                    onNavigateToConfig()
                 }
         )
 
