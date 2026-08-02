@@ -52,6 +52,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import androidx.exifinterface.media.ExifInterface
 import com.selfie.R
 import com.selfie.ui.components.ConfigButton
 import com.selfie.ui.components.CountdownOverlay
@@ -132,8 +133,14 @@ fun CaptureScreen(
                 }
 
                 try {
+                    val rotation = previewView.display.rotation
                     cameraProvider.unbindAll()
                     preview.setSurfaceProvider(previewView.surfaceProvider)
+                    
+                    // Set target rotation based on current display rotation
+                    preview.targetRotation = rotation
+                    imageCapture.targetRotation = rotation
+
                     cameraProvider.bindToLifecycle(
                         lifecycleOwner,
                         cameraSelector,
@@ -372,20 +379,52 @@ private fun takePhoto(
 }
 
 /**
- * Helper to load a bitmap from a content URI or raw file path.
+ * Helper to load a bitmap from a content URI or raw file path,
+ * correcting its orientation using EXIF metadata.
  */
 private fun loadBitmapFromPath(context: Context, path: String): Bitmap? {
     return try {
-        if (path.startsWith("content://") || path.startsWith("file://")) {
+        val bitmap = if (path.startsWith("content://") || path.startsWith("file://")) {
             val uri = Uri.parse(path)
-            context.contentResolver.openInputStream(uri)?.use { inputStream ->
-                BitmapFactory.decodeStream(inputStream)
+            context.contentResolver.openInputStream(uri)?.use { 
+                BitmapFactory.decodeStream(it)
             }
         } else {
             BitmapFactory.decodeFile(path)
         }
+
+        if (bitmap == null) return null
+
+        // Read EXIF orientation
+        val exif = if (path.startsWith("content://") || path.startsWith("file://")) {
+            val uri = Uri.parse(path)
+            context.contentResolver.openInputStream(uri)?.use {
+                ExifInterface(it)
+            }
+        } else {
+            ExifInterface(path)
+        }
+
+        val orientation = exif?.getAttributeInt(
+            ExifInterface.TAG_ORIENTATION,
+            ExifInterface.ORIENTATION_NORMAL
+        ) ?: ExifInterface.ORIENTATION_NORMAL
+
+        val rotationDegrees = when (orientation) {
+            ExifInterface.ORIENTATION_ROTATE_90 -> 90
+            ExifInterface.ORIENTATION_ROTATE_180 -> 180
+            ExifInterface.ORIENTATION_ROTATE_270 -> 270
+            else -> 0
+        }
+
+        if (rotationDegrees != 0) {
+            val matrix = Matrix().apply { postRotate(rotationDegrees.toFloat()) }
+            Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+        } else {
+            bitmap
+        }
     } catch (e: Exception) {
-        Log.e("CaptureScreen", "Error loading bitmap", e)
+        Log.e("CaptureScreen", "Error loading bitmap from $path", e)
         null
     }
 }
