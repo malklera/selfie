@@ -1,80 +1,109 @@
 # Plan from human
 
-- Make a plan and write it down into a file.
+Make a plan and write it down into a file.
 
-- Ask the user for information not provided that may be needed to make the app.
+Make active use of git to keep good history of your changes.
 
-- Make a kotlin app for android.
+Ask the user for information not provided that may be needed to make the app.
 
-- Where possible use the standard library.
+Use kotlin for android.
 
-- Where possible use the device provided APIs, input, file picker, camera, etc.
+Android minimum  **API 23** (Android 6.0) – maximum compatibility
 
-- The target devide is a tablet.
+Where possible use the standard library.
 
-The app is about an app to take pictures in parties.
+Where possible use the device provided APIs, input field, file picker, camera, etc.
 
-Use the front and back cameras.
+The target device is a tablet.
 
-The main screen when opening the app will be referred as "main".
+---
 
-By taping into the upper right corner of main it opens the config screen.
+The app is about taking pictures in parties.
 
-Main may display any of the following:
+Use the front camera.
 
-- nothing
+Use camera-icon.svg as the app icon.
 
-- video, do not know what the format should be for an android app,
-if .mp4 or other, choose,
+Use logo-1920_1920.png any time a loading screen is needed. Scale it as appropriate.
 
-- GIF
+Use standard generic icons and fonts, whatever is builtin or more generic.
 
-- image, a single imagen set in config with file picker, choose some format for it.
+Use dark theme.
 
-On top of this show a button to change between front and back cameras, the default is
-front, set in config, this button do not change the default, only the one to be used
-in this session of the app, meaning if you close the app and open again, you use the default,
-make the display of this button optional from config.
+All user facing text has to be in spanish(my client is spanish speaking), the code will be in english.
 
-When tapping once in any part of main the screen change to a preview of the selected
-camera(default set in config) if the camera selected changed while the app is open
-continue to that selection(but do not save this as the new default)
+Make it fullscreen.
 
-At the same time allow to set an image with transparency on top of the preview, set
-in the config.
+Send a signal to the device to not sleep or automatically block the device.
 
-Display a downward counter that began when the preview is show, the counter is set in config
+All button are floating over whatever is being show.
+
+---
+
+# Main
+
+The `main` screen when opening the app will be referred as "main".
+
+May display any of the following:
+
+- Black background with a message "Toca aqui para foto" in the center.
+
+- png image
+
+The default is set in the `configuration` screen, if not image is selected, the
+message is show.
+
+Show a button in the bottom right corner with a icon representing configuration, put 80%
+transparency, once taped it will take to the `configuration` screen.
+
+When tapping once in any part of the screen outside the button, change to the `capture` screen
+
+---
+
+# Configuration
+
+Use standard file picker for everything, the default to show is the explore type
+file picker with miniature view of files, only display the files that are valid
+for the specific item, default place it opens is `internal storage/pictures`, remember
+the folder of the last selected file and next time open it there, use per picker memory.
+
+Put a title at the top `Configuración`
+
+To the right put two buttons `Guardar` and `X`, `Guardar` will save the current
+state of the config, `X` will close the `configuration` screen and go back to
+the screen from where `configuration` was open, if there are unsaved state, show
+a pop up message saying so with three buttons `Guardar`, `Descartar` and `Cancelar`,
+`Guardar` save the state and close `configuration`, `Descartar` discard the current changes
+and close `configuration`, and `Cancelar` close the pop up and stays in `configuration`
+
+Make this two buttons floating at the top right, sticky so when scrolling down
+they stay visible.
+
+`Portada`: Display the given title, below show a preview of the current selected
+item, below that show a file picker, this is what is show in `main`, it show be
+possible to not have anything, to select no image.
+
+`Cuenta regresiva`: Display the given title, below show the current count down, default
+3 seconds, make it a numeric field input. This is the count down to use between
+showing the `Capture` screen and taking the picture.
+
+`Destino`: Display the given title, below display the full path to the folder where
+the taken pictures are saved, make it a file picker, default `almacenamiento interno/Pictures/selfie`
+
+---
+
+# Capture
+
+At entering the `capture` screen display the camera preview and on top a downward
+counter at the center, 90% transparency.
 
 Once the counter reach zero, take a picture.
 
 Save the picture to the path selected in config, with the name being the timestamp,
-choose the appropriate format.
+`yyyy-mm-dd_hh-mm-ss.jpg`
 
-Keep showing the picture just taken.
+Display the picture just taken.
 
-Display a button to take another picture, which will take us to main.
+After taking the picture display a button at the center bottom to take another picture, which will take us to `main`.
 
-Another button to show the galery, use some in app gallery not the default from the
-device.
-
-Create an architecture to allow to add more buttons and make all of them optional.
-
-All user facing text has to be in spanish.
-
-The idea is for the user(our clients) to always be inside the app, so make this app
-fullscreen.
-
-Send a signal to the device to not sleep or automatically block the device.
-
-Make active use of git to keep good history of your changes.
-
-The gallery to be show towards the user will be from a single folder pre-selected in config, all image taken will be saved there.
-
-The config access for now is open to anyone, later on it will be password locked,
-so take that in consideration when making it, but for now do not implement any password system.
-
-All button are floating over whatever is being show.
-
-All content show is pre loaded by the operator in the config.
-
-Choose the most compatible android version, if at any point some api or functionality is lacking, let me know before you try to upgrade.
+Display the `configuration` button the same way as in `main` with the same functionality.
