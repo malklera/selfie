@@ -105,14 +105,32 @@ fun CaptureScreen(
     val cameraExecutor = remember { Executors.newSingleThreadExecutor() }
     val preview = remember { Preview.Builder().build() }
     val imageCapture = remember { ImageCapture.Builder().build() }
-    val cameraSelector = remember { CameraSelector.DEFAULT_FRONT_CAMERA }
     val previewView = remember { PreviewView(context) }
+    var isCameraReady by remember { mutableStateOf(false) }
 
-    LaunchedEffect(key1 = hasCameraPermission, key2 = state) {
-        if (hasCameraPermission && (state is CaptureState.Countdown || state is CaptureState.Capturing)) {
+    LaunchedEffect(key1 = hasCameraPermission) {
+        if (hasCameraPermission) {
             val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
             cameraProviderFuture.addListener({
                 val cameraProvider = cameraProviderFuture.get()
+                
+                // Select the best available camera
+                val cameraSelector = when {
+                    cameraProvider.hasCamera(CameraSelector.DEFAULT_FRONT_CAMERA) -> {
+                        Log.d("CaptureScreen", "Using Front Camera")
+                        CameraSelector.DEFAULT_FRONT_CAMERA
+                    }
+                    cameraProvider.hasCamera(CameraSelector.DEFAULT_BACK_CAMERA) -> {
+                        Log.d("CaptureScreen", "Front camera not found, using Back Camera")
+                        CameraSelector.DEFAULT_BACK_CAMERA
+                    }
+                    else -> {
+                        Log.e("CaptureScreen", "No cameras found on device")
+                        viewModel.onCaptureError("No se encontró ninguna cámara en el dispositivo")
+                        return@addListener
+                    }
+                }
+
                 try {
                     cameraProvider.unbindAll()
                     preview.setSurfaceProvider(previewView.surfaceProvider)
@@ -122,6 +140,8 @@ fun CaptureScreen(
                         preview,
                         imageCapture
                     )
+                    isCameraReady = true
+                    Log.d("CaptureScreen", "Camera bound successfully")
                 } catch (e: Exception) {
                     Log.e("CaptureScreen", "Camera binding failed", e)
                     viewModel.onCaptureError("Fallo al iniciar cámara: ${e.message}")
@@ -131,20 +151,25 @@ fun CaptureScreen(
     }
 
     // Trigger picture capture when state becomes Capturing
-    LaunchedEffect(key1 = state) {
+    LaunchedEffect(key1 = state, key2 = isCameraReady) {
         if (state is CaptureState.Capturing) {
-            takePhoto(
-                context = context,
-                imageCapture = imageCapture,
-                destinationPath = config.destinationPath,
-                executor = cameraExecutor,
-                onSuccess = { path ->
-                    viewModel.onPhotoCaptured(path)
-                },
-                onError = { error ->
-                    viewModel.onCaptureError(error)
-                }
-            )
+            if (isCameraReady) {
+                takePhoto(
+                    context = context,
+                    imageCapture = imageCapture,
+                    destinationPath = config.destinationPath,
+                    executor = cameraExecutor,
+                    onSuccess = { path ->
+                        viewModel.onPhotoCaptured(path)
+                    },
+                    onError = { error ->
+                        viewModel.onCaptureError(error)
+                    }
+                )
+            } else {
+                Log.w("CaptureScreen", "Capture triggered but camera not ready yet")
+                // We could wait or show a loading state, but for now we'll just log
+            }
         }
     }
 
