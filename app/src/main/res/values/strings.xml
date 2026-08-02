@@ -1,20 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Selfie</string>
-    <string name="touch_for_photo">Toca aquí para foto</string>
-    <string name="configuration">Configuración</string>
-    <string name="save">Guardar</string>
-    <string name="discard">Descartar</string>
-    <string name="cancel">Cancelar</string>
-    <string name="cover">Portada</string>
-    <string name="countdown">Cuenta regresiva</string>
-    <string name="destination">Destino</string>
-    <string name="take_another">Toma otra foto</string>
-    <string name="unsaved_changes">Tienes cambios sin guardar</string>
-    <string name="select_image">Seleccionar imagen</string>
-    <string name="clear_image">Quitar imagen</string>
-    <string name="seconds">segundos</string>
-    <string name="select_folder">Seleccionar carpeta</string>
-    <string name="no_image_selected">Sin imagen seleccionada</string>
-    <string name="camera_permission_required">Se necesita permiso de cámara</string>
+    <string name="app_name">selfie</string>
 </resources>
