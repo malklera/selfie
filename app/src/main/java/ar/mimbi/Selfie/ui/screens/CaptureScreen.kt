@@ -3,8 +3,12 @@ package ar.mimbi.Selfie.ui.screens
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Matrix
+import androidx.exifinterface.media.ExifInterface
 import android.net.Uri
 import android.util.Log
+import android.util.Rational
+import android.view.Surface
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
@@ -44,26 +48,49 @@ fun CaptureScreen(
     
     var countdown by remember { mutableStateOf(config.countdownSeconds) }
     var isCaptured by remember { mutableStateOf(false) }
-    var capturedImageUri by remember { mutableStateOf<Uri?>(null) }
+    var capturedBitmap by remember { mutableStateOf<Bitmap?>(null) }
     
     val cameraExecutor = remember { Executors.newSingleThreadExecutor() }
-    val imageCapture = remember { ImageCapture.Builder().build() }
+    val imageCapture = remember { 
+        ImageCapture.Builder()
+            .setTargetAspectRatio(AspectRatio.RATIO_16_9)
+            .build() 
+    }
     val previewView = remember { PreviewView(context) }
 
     LaunchedEffect(Unit) {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
         cameraProviderFuture.addListener({
             val cameraProvider = cameraProviderFuture.get()
-            val preview = Preview.Builder().build().also {
-                it.setSurfaceProvider(previewView.surfaceProvider)
-            }
+            
+            // Set target rotation based on display
+            val rotation = previewView.display?.rotation ?: Surface.ROTATION_0
+            imageCapture.targetRotation = rotation
+            
+            val preview = Preview.Builder()
+                .setTargetAspectRatio(AspectRatio.RATIO_16_9)
+                .setTargetRotation(rotation)
+                .build().also {
+                    it.setSurfaceProvider(previewView.surfaceProvider)
+                }
 
             val cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
 
             try {
                 cameraProvider.unbindAll()
+                
+                // Use UseCaseGroup to ensure matching ViewPort
+                val useCaseGroupBuilder = UseCaseGroup.Builder()
+                    .addUseCase(preview)
+                    .addUseCase(imageCapture)
+                
+                // Try to get ViewPort from PreviewView
+                previewView.viewPort?.let {
+                    useCaseGroupBuilder.setViewPort(it)
+                }
+                
                 cameraProvider.bindToLifecycle(
-                    lifecycleOwner, cameraSelector, preview, imageCapture
+                    lifecycleOwner, cameraSelector, useCaseGroupBuilder.build()
                 )
             } catch (exc: Exception) {
                 Log.e("CaptureScreen", "Use case binding failed", exc)
@@ -78,7 +105,7 @@ fun CaptureScreen(
                 countdown--
             }
             takePhoto(context, imageCapture, config.destinationPath, cameraExecutor) { uri ->
-                capturedImageUri = uri
+                capturedBitmap = loadAndCorrectBitmap(uri)
                 isCaptured = true
             }
         }
@@ -99,15 +126,13 @@ fun CaptureScreen(
                 )
             }
         } else {
-            capturedImageUri?.let { uri ->
-                val bitmap = BitmapFactory.decodeFile(uri.path)
-                bitmap?.let {
-                    Image(
-                        bitmap = it.asImageBitmap(),
-                        contentDescription = null,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
+            capturedBitmap?.let { bitmap ->
+                Image(
+                    bitmap = bitmap.asImageBitmap(),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                )
             }
             
             Button(
@@ -142,6 +167,52 @@ fun CaptureScreen(
     }
 }
 
+private fun loadAndCorrectBitmap(uri: Uri): Bitmap? {
+    val path = uri.path ?: return null
+    try {
+        val bitmap = BitmapFactory.decodeFile(path) ?: return null
+        val exif = ExifInterface(path)
+        val orientation = exif.getAttributeInt(
+            ExifInterface.TAG_ORIENTATION,
+            ExifInterface.ORIENTATION_NORMAL
+        )
+
+        Log.d("CaptureScreen", "EXIF Orientation: $orientation")
+
+        val matrix = Matrix()
+    // Handle EXIF orientation
+    when (orientation) {
+        ExifInterface.ORIENTATION_ROTATE_90 -> matrix.postRotate(90f)
+        ExifInterface.ORIENTATION_ROTATE_180 -> matrix.postRotate(180f)
+        ExifInterface.ORIENTATION_ROTATE_270 -> matrix.postRotate(270f)
+        ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> matrix.postScale(-1f, 1f)
+        ExifInterface.ORIENTATION_FLIP_VERTICAL -> matrix.postScale(1f, -1f)
+        ExifInterface.ORIENTATION_TRANSPOSE -> {
+            matrix.postRotate(90f)
+            matrix.postScale(-1f, 1f)
+        }
+        ExifInterface.ORIENTATION_TRANSVERSE -> {
+            matrix.postRotate(270f)
+            matrix.postScale(-1f, 1f)
+        }
+    }
+    
+    // First rotate the bitmap correctly
+    val rotatedBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+    
+    // Then mirror the result to match the front camera preview look
+    val mirrorMatrix = Matrix()
+    mirrorMatrix.postScale(-1f, 1f, rotatedBitmap.width / 2f, rotatedBitmap.height / 2f)
+    
+    val result = Bitmap.createBitmap(rotatedBitmap, 0, 0, rotatedBitmap.width, rotatedBitmap.height, mirrorMatrix, true)
+    Log.d("CaptureScreen", "Bitmap processed. Size: ${result.width}x${result.height}")
+    return result
+} catch (e: Exception) {
+        Log.e("CaptureScreen", "Error correcting bitmap", e)
+        return null
+    }
+}
+
 private fun takePhoto(
     context: Context,
     imageCapture: ImageCapture,
@@ -156,7 +227,13 @@ private fun takePhoto(
         .format(System.currentTimeMillis()) + ".jpg"
     val file = File(dir, name)
 
-    val outputOptions = ImageCapture.OutputFileOptions.Builder(file).build()
+    val metadata = ImageCapture.Metadata().apply {
+        isReversedHorizontal = true // We are using front camera
+    }
+
+    val outputOptions = ImageCapture.OutputFileOptions.Builder(file)
+        .setMetadata(metadata)
+        .build()
 
     imageCapture.takePicture(
         outputOptions, executor, object : ImageCapture.OnImageSavedCallback {
