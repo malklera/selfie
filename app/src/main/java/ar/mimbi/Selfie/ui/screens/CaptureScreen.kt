@@ -179,34 +179,34 @@ private fun loadAndCorrectBitmap(uri: Uri): Bitmap? {
 
         Log.d("CaptureScreen", "EXIF Orientation: $orientation")
 
+        // Handle EXIF orientation - complete handling
         val matrix = Matrix()
-    // Handle EXIF orientation
     when (orientation) {
-        ExifInterface.ORIENTATION_ROTATE_90 -> matrix.postRotate(90f)
-        ExifInterface.ORIENTATION_ROTATE_180 -> matrix.postRotate(180f)
-        ExifInterface.ORIENTATION_ROTATE_270 -> matrix.postRotate(270f)
         ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> matrix.postScale(-1f, 1f)
-        ExifInterface.ORIENTATION_FLIP_VERTICAL -> matrix.postScale(1f, -1f)
+        ExifInterface.ORIENTATION_ROTATE_180 -> matrix.postRotate(180f)
+        ExifInterface.ORIENTATION_FLIP_VERTICAL -> {
+            matrix.postRotate(180f)
+            matrix.postScale(-1f, 1f)
+        }
         ExifInterface.ORIENTATION_TRANSPOSE -> {
             matrix.postRotate(90f)
             matrix.postScale(-1f, 1f)
         }
+        ExifInterface.ORIENTATION_ROTATE_90 -> matrix.postRotate(90f)
         ExifInterface.ORIENTATION_TRANSVERSE -> {
             matrix.postRotate(270f)
             matrix.postScale(-1f, 1f)
         }
+        ExifInterface.ORIENTATION_ROTATE_270 -> matrix.postRotate(270f)
     }
     
-    // First rotate the bitmap correctly
-    val rotatedBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
-    
-    // Then mirror the result to match the front camera preview look
-    val mirrorMatrix = Matrix()
-    mirrorMatrix.postScale(-1f, 1f, rotatedBitmap.width / 2f, rotatedBitmap.height / 2f)
-    
-    val result = Bitmap.createBitmap(rotatedBitmap, 0, 0, rotatedBitmap.width, rotatedBitmap.height, mirrorMatrix, true)
-    Log.d("CaptureScreen", "Bitmap processed. Size: ${result.width}x${result.height}")
-    return result
+    // Now we have a "natural" image. To match front camera preview (mirrored), 
+    // we flip it horizontally.
+    matrix.postScale(-1f, 1f, bitmap.width / 2f, bitmap.height / 2f)
+
+    val processedBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+    Log.d("CaptureScreen", "Bitmap processed. Size: ${processedBitmap.width}x${processedBitmap.height}")
+    return processedBitmap
 } catch (e: Exception) {
         Log.e("CaptureScreen", "Error correcting bitmap", e)
         return null
@@ -227,12 +227,7 @@ private fun takePhoto(
         .format(System.currentTimeMillis()) + ".jpg"
     val file = File(dir, name)
 
-    val metadata = ImageCapture.Metadata().apply {
-        isReversedHorizontal = true // We are using front camera
-    }
-
     val outputOptions = ImageCapture.OutputFileOptions.Builder(file)
-        .setMetadata(metadata)
         .build()
 
     imageCapture.takePicture(
