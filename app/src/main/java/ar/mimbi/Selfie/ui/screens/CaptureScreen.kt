@@ -18,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -46,10 +47,20 @@ fun CaptureScreen(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     
-    var countdown by remember { mutableStateOf(config.countdownSeconds) }
-    var isCaptured by remember { mutableStateOf(false) }
+    var countdown by rememberSaveable { mutableStateOf(config.countdownSeconds) }
+    var isCaptured by rememberSaveable { mutableStateOf(false) }
+    var capturedUriString by rememberSaveable { mutableStateOf<String?>(null) }
     var capturedBitmap by remember { mutableStateOf<Bitmap?>(null) }
     
+    // Reload bitmap if we have a saved URI
+    LaunchedEffect(capturedUriString) {
+        capturedUriString?.let { uriString ->
+            if (capturedBitmap == null) {
+                capturedBitmap = loadAndCorrectBitmap(context, Uri.parse(uriString))
+            }
+        }
+    }
+
     val cameraExecutor = remember { Executors.newSingleThreadExecutor() }
     val imageCapture = remember { 
         ImageCapture.Builder()
@@ -105,6 +116,7 @@ fun CaptureScreen(
                 countdown--
             }
             takePhoto(context, imageCapture, config.destinationPath, cameraExecutor) { uri ->
+                capturedUriString = uri.toString()
                 capturedBitmap = loadAndCorrectBitmap(context, uri)
                 isCaptured = true
             }
