@@ -7,7 +7,6 @@ import android.graphics.Matrix
 import androidx.exifinterface.media.ExifInterface
 import android.net.Uri
 import android.util.Log
-import android.util.Rational
 import android.view.Surface
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -29,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import androidx.documentfile.provider.DocumentFile
 import ar.mimbi.Selfie.data.AppConfig
 import kotlinx.coroutines.delay
 import java.io.File
@@ -105,7 +105,7 @@ fun CaptureScreen(
                 countdown--
             }
             takePhoto(context, imageCapture, config.destinationPath, cameraExecutor) { uri ->
-                capturedBitmap = loadAndCorrectBitmap(uri)
+                capturedBitmap = loadAndCorrectBitmap(context, uri)
                 isCaptured = true
             }
         }
@@ -167,47 +167,51 @@ fun CaptureScreen(
     }
 }
 
-private fun loadAndCorrectBitmap(uri: Uri): Bitmap? {
-    val path = uri.path ?: return null
+private fun loadAndCorrectBitmap(context: Context, uri: Uri): Bitmap? {
     try {
-        val bitmap = BitmapFactory.decodeFile(path) ?: return null
-        val exif = ExifInterface(path)
+        val inputStream = context.contentResolver.openInputStream(uri) ?: return null
+        val bitmap = BitmapFactory.decodeStream(inputStream) ?: return null
+        inputStream.close()
+
+        val exifInputStream = context.contentResolver.openInputStream(uri) ?: return null
+        val exif = ExifInterface(exifInputStream)
         val orientation = exif.getAttributeInt(
             ExifInterface.TAG_ORIENTATION,
             ExifInterface.ORIENTATION_NORMAL
         )
+        exifInputStream.close()
 
         Log.d("CaptureScreen", "EXIF Orientation: $orientation")
 
         // Handle EXIF orientation - complete handling
         val matrix = Matrix()
-    when (orientation) {
-        ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> matrix.postScale(-1f, 1f)
-        ExifInterface.ORIENTATION_ROTATE_180 -> matrix.postRotate(180f)
-        ExifInterface.ORIENTATION_FLIP_VERTICAL -> {
-            matrix.postRotate(180f)
-            matrix.postScale(-1f, 1f)
+        when (orientation) {
+            ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> matrix.postScale(-1f, 1f)
+            ExifInterface.ORIENTATION_ROTATE_180 -> matrix.postRotate(180f)
+            ExifInterface.ORIENTATION_FLIP_VERTICAL -> {
+                matrix.postRotate(180f)
+                matrix.postScale(-1f, 1f)
+            }
+            ExifInterface.ORIENTATION_TRANSPOSE -> {
+                matrix.postRotate(90f)
+                matrix.postScale(-1f, 1f)
+            }
+            ExifInterface.ORIENTATION_ROTATE_90 -> matrix.postRotate(90f)
+            ExifInterface.ORIENTATION_TRANSVERSE -> {
+                matrix.postRotate(270f)
+                matrix.postScale(-1f, 1f)
+            }
+            ExifInterface.ORIENTATION_ROTATE_270 -> matrix.postRotate(270f)
         }
-        ExifInterface.ORIENTATION_TRANSPOSE -> {
-            matrix.postRotate(90f)
-            matrix.postScale(-1f, 1f)
-        }
-        ExifInterface.ORIENTATION_ROTATE_90 -> matrix.postRotate(90f)
-        ExifInterface.ORIENTATION_TRANSVERSE -> {
-            matrix.postRotate(270f)
-            matrix.postScale(-1f, 1f)
-        }
-        ExifInterface.ORIENTATION_ROTATE_270 -> matrix.postRotate(270f)
-    }
-    
-    // Now we have a "natural" image. To match front camera preview (mirrored), 
-    // we flip it horizontally.
-    matrix.postScale(-1f, 1f, bitmap.width / 2f, bitmap.height / 2f)
+        
+        // Now we have a "natural" image. To match front camera preview (mirrored), 
+        // we flip it horizontally.
+        matrix.postScale(-1f, 1f, bitmap.width / 2f, bitmap.height / 2f)
 
-    val processedBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
-    Log.d("CaptureScreen", "Bitmap processed. Size: ${processedBitmap.width}x${processedBitmap.height}")
-    return processedBitmap
-} catch (e: Exception) {
+        val processedBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+        Log.d("CaptureScreen", "Bitmap processed. Size: ${processedBitmap.width}x${processedBitmap.height}")
+        return processedBitmap
+    } catch (e: Exception) {
         Log.e("CaptureScreen", "Error correcting bitmap", e)
         return null
     }
@@ -220,15 +224,41 @@ private fun takePhoto(
     executor: ExecutorService,
     onCaptured: (Uri) -> Unit
 ) {
-    val dir = File(destinationPath)
-    if (!dir.exists()) dir.mkdirs()
-    
     val name = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.US)
         .format(System.currentTimeMillis()) + ".jpg"
+
+    val uri = try { Uri.parse(destinationPath) } catch (e: Exception) { null }
+    if (uri?.scheme == "content") {
+        val documentFile = DocumentFile.fromTreeUri(context, uri)
+        val newFile = documentFile?.createFile("image/jpeg", name)
+        newFile?.let {
+            val outputOptions = ImageCapture.OutputFileOptions.Builder(
+                context.contentResolver,
+                it.uri,
+                android.content.ContentValues()
+            ).build()
+
+            imageCapture.takePicture(
+                outputOptions, executor, object : ImageCapture.OnImageSavedCallback {
+                    override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
+                        onCaptured(it.uri)
+                    }
+
+                    override fun onError(exception: ImageCaptureException) {
+                        Log.e("CaptureScreen", "Photo capture failed: ${exception.message}", exception)
+                    }
+                }
+            )
+            return
+        }
+    }
+    
+    // Fallback to File API
+    val dir = File(destinationPath)
+    if (!dir.exists()) dir.mkdirs()
     val file = File(dir, name)
 
-    val outputOptions = ImageCapture.OutputFileOptions.Builder(file)
-        .build()
+    val outputOptions = ImageCapture.OutputFileOptions.Builder(file).build()
 
     imageCapture.takePicture(
         outputOptions, executor, object : ImageCapture.OnImageSavedCallback {
