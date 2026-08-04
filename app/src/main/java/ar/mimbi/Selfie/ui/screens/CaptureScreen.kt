@@ -69,6 +69,21 @@ fun CaptureScreen(
     }
     val previewView = remember { PreviewView(context) }
 
+    var isPreviewReady by remember { mutableStateOf(false) }
+    
+    // Observer for camera stream state to ensure preview is visible
+    DisposableEffect(previewView) {
+        val observer = androidx.lifecycle.Observer<PreviewView.StreamState> { state ->
+            if (state == PreviewView.StreamState.STREAMING) {
+                isPreviewReady = true
+            }
+        }
+        previewView.previewStreamState.observe(lifecycleOwner, observer)
+        onDispose {
+            previewView.previewStreamState.removeObserver(observer)
+        }
+    }
+
     LaunchedEffect(Unit) {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
         cameraProviderFuture.addListener({
@@ -109,8 +124,8 @@ fun CaptureScreen(
         }, ContextCompat.getMainExecutor(context))
     }
 
-    LaunchedEffect(isCaptured) {
-        if (!isCaptured) {
+    LaunchedEffect(isCaptured, isPreviewReady) {
+        if (!isCaptured && isPreviewReady) {
             while (countdown > 0) {
                 delay(1000)
                 countdown--
@@ -127,15 +142,17 @@ fun CaptureScreen(
         if (!isCaptured) {
             AndroidView(factory = { previewView }, modifier = Modifier.fillMaxSize())
             
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = countdown.toString(),
-                    color = Color.White.copy(alpha = 0.9f),
-                    fontSize = 120.sp
-                )
+            if (isPreviewReady) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = countdown.toString(),
+                        color = Color.White.copy(alpha = 0.9f),
+                        fontSize = 120.sp
+                    )
+                }
             }
         } else {
             capturedBitmap?.let { bitmap ->
