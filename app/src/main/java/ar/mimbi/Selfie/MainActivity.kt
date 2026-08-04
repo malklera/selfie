@@ -5,16 +5,11 @@ import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -37,19 +32,12 @@ class MainActivity : ComponentActivity() {
         // Keep screen on
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
-        // Fullscreen
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-        val controller = WindowCompat.getInsetsController(window, window.decorView)
-        controller.hide(WindowInsetsCompat.Type.systemBars())
-        controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-
-        enableEdgeToEdge()
+        // COMPLETELY DISABLE ALL FULLSCREEN/IMMERSIVE MODES FOR DEBUGGING
+        // Standard window behavior ruled out to find the touch issue source
         
         val requestPermissionLauncher = registerForActivityResult(
-            ActivityResultContracts.RequestMultiplePermissions()
-        ) { permissions ->
-            // Handle permissions
-        }
+            androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions()
+        ) { _ -> }
         
         requestPermissionLauncher.launch(arrayOf(
             Manifest.permission.CAMERA,
@@ -58,7 +46,7 @@ class MainActivity : ComponentActivity() {
         ))
 
         setContent {
-            SelfieTheme(darkTheme = true) { // Force Dark Theme
+            SelfieTheme(darkTheme = true) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
@@ -98,9 +86,11 @@ fun SelfieApp(configDataStore: ConfigDataStore) {
         composable("capture") {
             CaptureScreen(
                 config = config,
-                onNavigateToMain = { navController.navigate("main") {
-                    popUpTo("main") { inclusive = true }
-                } },
+                onNavigateToMain = { 
+                    navController.navigate("main") {
+                        popUpTo("main") { inclusive = true }
+                    } 
+                },
                 onNavigateToConfig = { navController.navigate("config") }
             )
         }
