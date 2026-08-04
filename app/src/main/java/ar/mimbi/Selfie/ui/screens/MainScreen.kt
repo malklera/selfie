@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
@@ -15,6 +16,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
@@ -35,31 +37,39 @@ fun MainScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black)
-            .clickable { onNavigateToCapture() }
     ) {
-        if (config.portadaPath != null && File(config.portadaPath).exists()) {
-            val bitmap = BitmapFactory.decodeFile(config.portadaPath)
-            if (bitmap != null) {
-                Image(
-                    bitmap = bitmap.asImageBitmap(),
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
-                )
+        // Full-screen clickable area for capture
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .clickable { onNavigateToCapture() }
+        ) {
+            if (config.portadaPath != null && File(config.portadaPath).exists()) {
+                val bitmap = BitmapFactory.decodeFile(config.portadaPath)
+                if (bitmap != null) {
+                    Image(
+                        bitmap = bitmap.asImageBitmap(),
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    DefaultMessage()
+                }
             } else {
                 DefaultMessage()
             }
-        } else {
-            DefaultMessage()
         }
 
+        // Settings button on top
         IconButton(
             onClick = onNavigateToConfig,
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(16.dp)
                 .size(64.dp)
-                .background(Color.Black.copy(alpha = 0.2f)) // 80% transparency = 20% alpha? "80% transparency" usually means alpha=0.2
+                .background(Color.Black.copy(alpha = 0.4f), shape = CircleShape)
+                .clip(CircleShape)
         ) {
             Icon(
                 imageVector = Icons.Default.Settings,
