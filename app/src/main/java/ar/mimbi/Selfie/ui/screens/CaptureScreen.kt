@@ -141,22 +141,22 @@ fun CaptureScreen(
             ) {
                 Text("Toca para otra foto")
             }
-        }
 
-        IconButton(
-            onClick = onNavigateToConfig,
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(16.dp)
-                .size(64.dp)
-                .background(Color.Black.copy(alpha = 0.2f))
-        ) {
-            Icon(
-                imageVector = Icons.Default.Settings,
-                contentDescription = "Configuración",
-                tint = Color.White.copy(alpha = 0.8f),
-                modifier = Modifier.size(48.dp)
-            )
+            IconButton(
+                onClick = onNavigateToConfig,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp)
+                    .size(64.dp)
+                    .background(Color.Black.copy(alpha = 0.2f))
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Settings,
+                    contentDescription = "Configuración",
+                    tint = Color.White.copy(alpha = 0.8f),
+                    modifier = Modifier.size(48.dp)
+                )
+            }
         }
     }
     
