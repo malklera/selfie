@@ -220,14 +220,13 @@ fun CaptureScreen(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(16.dp)
-                    .size(64.dp)
-                    .background(Color.Black.copy(alpha = 0.2f))
+                    .size(58.dp)
             ) {
                 Icon(
                     imageVector = Icons.Default.Settings,
                     contentDescription = "Configuración",
-                    tint = Color.White.copy(alpha = 0.8f),
-                    modifier = Modifier.size(48.dp)
+                    tint = Color.White.copy(alpha = 0.2f),
+                    modifier = Modifier.size(43.dp)
                 )
             }
         }
