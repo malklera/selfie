@@ -13,6 +13,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -29,8 +34,11 @@ import coil.compose.SubcomposeAsyncImageContent
 fun MainScreen(
     config: AppConfig,
     onNavigateToCapture: () -> Unit,
-    onNavigateToConfig: () -> Unit
+    onNavigateToConfig: () -> Unit,
+    onImageReady: () -> Unit = {}
 ) {
+    var isReady by remember { mutableStateOf(false) }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -50,6 +58,14 @@ fun MainScreen(
                     contentScale = ContentScale.Crop
                 ) {
                     val state = painter.state
+                    
+                    LaunchedEffect(state) {
+                        if (state is AsyncImagePainter.State.Success || state is AsyncImagePainter.State.Error) {
+                            isReady = true
+                            onImageReady()
+                        }
+                    }
+
                     if (state is AsyncImagePainter.State.Error || state is AsyncImagePainter.State.Empty) {
                         DefaultMessage()
                     } else {
@@ -58,23 +74,30 @@ fun MainScreen(
                 }
             } else {
                 DefaultMessage()
+                // If there's no image path, the screen is essentially ready
+                LaunchedEffect(Unit) {
+                    isReady = true
+                    onImageReady()
+                }
             }
         }
 
         // Settings button on top
-        IconButton(
-            onClick = onNavigateToConfig,
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(16.dp)
-                .size(58.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.Settings,
-                contentDescription = "Configuración",
-                tint = Color.White.copy(alpha = 0.2f),
-                modifier = Modifier.size(43.dp)
-            )
+        if (isReady) {
+            IconButton(
+                onClick = onNavigateToConfig,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp)
+                    .size(58.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Settings,
+                    contentDescription = "Configuración",
+                    tint = Color.White.copy(alpha = 0.2f),
+                    modifier = Modifier.size(43.dp)
+                )
+            }
         }
     }
 }
