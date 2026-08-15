@@ -4,7 +4,7 @@ App to be used with the "Selfie Mirror", it is made to be used in a tablet.
 
 ## TODO
 
-[ ] Make the access to configuration to be taping 5 times.
+[x] Make the access to configuration to be taping 5 times.
 
 [ ] Think if I want to add a password for configuration.
 

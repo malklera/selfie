@@ -15,8 +15,6 @@ import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -32,6 +30,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.documentfile.provider.DocumentFile
 import ar.mimbi.Selfie.data.AppConfig
+import ar.mimbi.Selfie.ui.components.SecretSettingsButton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -215,20 +214,13 @@ fun CaptureScreen(
                 Text("Toca para otra foto")
             }
 
-            IconButton(
-                onClick = onNavigateToConfig,
+            SecretSettingsButton(
+                onNavigateToConfig = onNavigateToConfig,
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(16.dp)
                     .size(58.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Settings,
-                    contentDescription = "Configuración",
-                    tint = Color.White.copy(alpha = 0.2f),
-                    modifier = Modifier.size(43.dp)
-                )
-            }
+            )
         }
     }
     
