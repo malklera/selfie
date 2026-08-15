@@ -8,6 +8,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.selection.DisableSelection
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -22,6 +24,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import ar.mimbi.Selfie.data.AppConfig
+import ar.mimbi.Selfie.BuildConfig
 import coil.compose.AsyncImage
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -74,81 +77,112 @@ fun ConfigurationScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text("Configuración") },
-                actions = {
-                    IconButton(onClick = {
-                        val finalSeconds = countdownSeconds.toIntOrNull() ?: 3
-                        onSave(AppConfig(portadaPath, finalSeconds, destinationPath))
-                    }) {
-                        Icon(Icons.Default.Save, contentDescription = "Guardar")
-                    }
-                    IconButton(onClick = {
-                        if (hasChanges) {
-                            showUnsavedDialog = true
-                        } else {
-                            onClose()
+    SelectionContainer {
+        Scaffold(
+            topBar = {
+                DisableSelection {
+                    CenterAlignedTopAppBar(
+                        title = { Text("Configuración") },
+                        actions = {
+                            IconButton(onClick = {
+                                val finalSeconds = countdownSeconds.toIntOrNull() ?: 3
+                                onSave(AppConfig(portadaPath, finalSeconds, destinationPath))
+                            }) {
+                                Icon(Icons.Default.Save, contentDescription = "Guardar")
+                            }
+                            IconButton(onClick = {
+                                if (hasChanges) {
+                                    showUnsavedDialog = true
+                                } else {
+                                    onClose()
+                                }
+                            }) {
+                                Icon(Icons.Default.Close, contentDescription = "Cerrar")
+                            }
                         }
-                    }) {
-                        Icon(Icons.Default.Close, contentDescription = "Cerrar")
+                    )
+                }
+            }
+        ) { padding ->
+            Column(
+                modifier = Modifier
+                    .padding(padding)
+                    .fillMaxSize()
+                    .padding(16.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(24.dp)
+            ) {
+                DisableSelection {
+                    // Portada
+                    Column {
+                        Text("Portada", style = MaterialTheme.typography.titleLarge)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        portadaPath?.let { path ->
+                            Text("Ruta: $path", style = MaterialTheme.typography.bodySmall)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            AsyncImage(
+                                model = path,
+                                contentDescription = "Vista previa de portada",
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(200.dp)
+                                    .background(Color.Gray.copy(alpha = 0.2f)),
+                                contentScale = ContentScale.Fit
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                        } ?: Text("Ninguna imagen seleccionada")
+
+                        Button(onClick = { imagePicker.launch(arrayOf("image/*")) }) {
+                            Text("Seleccionar Imagen")
+                        }
+                    }
+
+                    // Cuenta regresiva
+                    Column {
+                        Text("Cuenta regresiva", style = MaterialTheme.typography.titleLarge)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        TextField(
+                            value = countdownSeconds,
+                            onValueChange = {
+                                if (it.all { char -> char.isDigit() }) countdownSeconds =
+                                    it
+                            },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+
+                    // Destino
+                    Column {
+                        Text("Destino", style = MaterialTheme.typography.titleLarge)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text("Ruta: $destinationPath")
+                        Button(onClick = { directoryPicker.launch(null) }) {
+                            Text("Seleccionar Carpeta")
+                        }
+                    }
+
+                    // Acerca de
+                    Column {
+                        HorizontalDivider()
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text("Acerca de", style = MaterialTheme.typography.titleLarge)
+                        Spacer(modifier = Modifier.height(8.dp))
                     }
                 }
-            )
-        }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .padding(padding)
-                .fillMaxSize()
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
-        ) {
-            // Portada
-            Column {
-                Text("Portada", style = MaterialTheme.typography.titleLarge)
-                Spacer(modifier = Modifier.height(8.dp))
-                portadaPath?.let { path ->
-                    Text("Ruta: $path", style = MaterialTheme.typography.bodySmall)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    AsyncImage(
-                        model = path,
-                        contentDescription = "Vista previa de portada",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(200.dp)
-                            .background(Color.Gray.copy(alpha = 0.2f)),
-                        contentScale = ContentScale.Fit
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                } ?: Text("Ninguna imagen seleccionada")
                 
-                Button(onClick = { imagePicker.launch(arrayOf("image/*")) }) {
-                    Text("Seleccionar Imagen")
-                }
-            }
-
-            // Cuenta regresiva
-            Column {
-                Text("Cuenta regresiva", style = MaterialTheme.typography.titleLarge)
-                Spacer(modifier = Modifier.height(8.dp))
-                TextField(
-                    value = countdownSeconds,
-                    onValueChange = { if (it.all { char -> char.isDigit() }) countdownSeconds = it },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-
-            // Destino
-            Column {
-                Text("Destino", style = MaterialTheme.typography.titleLarge)
-                Spacer(modifier = Modifier.height(8.dp))
-                Text("Ruta: $destinationPath")
-                Button(onClick = { directoryPicker.launch(null) }) {
-                    Text("Seleccionar Carpeta")
+                Column {
+                    val versionText = if (BuildConfig.GIT_TAG.isNotEmpty()) {
+                        "${BuildConfig.GIT_TAG} (${BuildConfig.GIT_COMMIT})"
+                    } else {
+                        BuildConfig.GIT_COMMIT
+                    }
+                    Text(
+                        "Versión: $versionText",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Text("Licencia: MIT", style = MaterialTheme.typography.bodyMedium)
+                    Text("Autor: github.com/malklera", style = MaterialTheme.typography.bodyMedium)
                 }
             }
         }

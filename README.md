@@ -8,8 +8,9 @@ App to be used with the "Selfie Mirror", it is made to be used in a tablet.
 
 [ ] Think if I want to add a password for configuration.
 
-[ ] Add a "Acerca de" section at the end of configuration with the build information: 
-release tag and commit, license: MIT, and contact: "github.com/malklera".
+[x] Add a "Acerca de" section at the end of configuration with the build information:
+"Version: release tag and commit, "Licensia": MIT, and "Autor": "github.com/malklera".
+is there a way to automatically add the realease and commit when the app is build?
 
 [ ] Change the display of paths used in configuration to show something more human
 readable instead of URIs.
