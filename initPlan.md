@@ -1,7 +1,5 @@
 # Plan from human
 
-Make a plan and write it down into a file.
-
 Make active use of git to keep good history of your changes.
 
 Ask the user for information not provided that may be needed to make the app.
@@ -95,7 +93,8 @@ the taken pictures are saved, make it a file picker, default `almacenamiento int
 # Capture
 
 At entering the `capture` screen display the camera preview and on top a downward
-counter at the center, 90% transparency.
+counter at the center, 90% transparency. Ensure the countdown only began after the
+preview is show.
 
 Once the counter reach zero, take a picture.
 
@@ -104,6 +103,11 @@ Save the picture to the path selected in config, with the name being the timesta
 
 Display the picture just taken.
 
-After taking the picture display a button at the center bottom to take another picture, which will take us to `main`.
+After taking the picture display a button at the center bottom to take another picture,
+which will take us to `main`. Only show the button after the picture is taken, when
+displaying it.
 
 Display the `configuration` button the same way as in `main` with the same functionality.
+
+When entering->exiting the `configuration` screen, ensure it goes back to the displaying
+part, not to the countdown.

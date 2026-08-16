@@ -1,36 +1,40 @@
 package ar.mimbi.Selfie.ui.screens
 
-import android.graphics.BitmapFactory
-import android.util.Log
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ar.mimbi.Selfie.data.AppConfig
-import java.io.File
+import ar.mimbi.Selfie.data.UserActionTracker
+import ar.mimbi.Selfie.ui.components.SecretSettingsButton
+import coil.compose.SubcomposeAsyncImage
+import coil.compose.AsyncImagePainter
+import coil.compose.SubcomposeAsyncImageContent
 
 @Composable
 fun MainScreen(
     config: AppConfig,
     onNavigateToCapture: () -> Unit,
-    onNavigateToConfig: () -> Unit
+    onNavigateToConfig: () -> Unit,
+    onImageReady: () -> Unit = {}
 ) {
-    Log.d("MainScreen", "MainScreen composed")
+    var isReady by remember { mutableStateOf(false) }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -40,43 +44,51 @@ fun MainScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .clickable { 
-                    Log.d("MainScreen", "Capture area clicked")
-                    onNavigateToCapture() 
+                .clickable {
+                    UserActionTracker.trackAction("Tocar para capturar")
+                    onNavigateToCapture()
                 }
         ) {
-            if (config.portadaPath != null && File(config.portadaPath).exists()) {
-                val bitmap = BitmapFactory.decodeFile(config.portadaPath)
-                if (bitmap != null) {
-                    Image(
-                        bitmap = bitmap.asImageBitmap(),
-                        contentDescription = null,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                } else {
-                    DefaultMessage()
+            if (config.portadaPath != null) {
+                SubcomposeAsyncImage(
+                    model = config.portadaPath,
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.FillBounds
+                ) {
+                    val state = painter.state
+                    
+                    LaunchedEffect(state) {
+                        if (state is AsyncImagePainter.State.Success || state is AsyncImagePainter.State.Error) {
+                            isReady = true
+                            onImageReady()
+                        }
+                    }
+
+                    if (state is AsyncImagePainter.State.Error || state is AsyncImagePainter.State.Empty) {
+                        DefaultMessage()
+                    } else {
+                        SubcomposeAsyncImageContent()
+                    }
                 }
             } else {
                 DefaultMessage()
+                // If there's no image path, the screen is essentially ready
+                LaunchedEffect(Unit) {
+                    isReady = true
+                    onImageReady()
+                }
             }
         }
 
-        // Standard Button for Settings to rule out IconButton hit area issues
-        Button(
-            onClick = {
-                Log.d("MainScreen", "Settings Button clicked")
-                onNavigateToConfig()
-            },
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(32.dp)
-                .size(80.dp)
-                .clip(CircleShape)
-        ) {
-            Icon(
-                imageVector = Icons.Default.Settings,
-                contentDescription = "Configuración"
+        // Settings button on top
+        if (isReady) {
+            SecretSettingsButton(
+                onNavigateToConfig = onNavigateToConfig,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp)
+                    .size(58.dp)
             )
         }
     }

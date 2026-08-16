@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -15,21 +16,30 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // GIT_TAG: only shows if there's an actual tag
+        val gitTag = providers.exec {
+            commandLine("git", "describe", "--tags", "--abbrev=0")
+            isIgnoreExitValue = true
+        }.standardOutput.asText.map { it.trim() }.getOrElse("")
+
+        // GIT_COMMIT: always shows the short hash
+        val gitCommit = providers.exec {
+            commandLine("git", "rev-parse", "--short", "HEAD")
+        }.standardOutput.asText.map { it.trim() }.getOrElse("unknown")
+
+        buildConfigField("String", "GIT_TAG", "\"$gitTag\"")
+        buildConfigField("String", "GIT_COMMIT", "\"$gitCommit\"")
     }
 
-    buildTypes {
-        release {
-            optimization {
-                enable = false
-            }
-        }
+    buildFeatures {
+        compose = true
+        buildConfig = true
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
-    }
-    buildFeatures {
-        compose = true
     }
 }
 
@@ -49,6 +59,15 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.androidx.exifinterface)
+    implementation(libs.coil.compose)
+    implementation(libs.androidx.documentfile)
+    implementation(libs.androidx.core.splashscreen)
+    
+    // Room
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
+
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)

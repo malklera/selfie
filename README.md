@@ -1,0 +1,44 @@
+# Selfie
+
+App to be used with the "Selfie Mirror", it is made to be used in a tablet.
+
+## TODO
+
+[x] Make the access to configuration to be taping 5 times.
+
+
+[x] Add a "Acerca de" section at the end of configuration with the build information:
+"Version: release tag and commit, "Licensia": MIT, and "Autor": "github.com/malklera".
+is there a way to automatically add the realease and commit when the app is build?
+
+[x] Change the display of paths used in configuration to show something more human
+readable instead of URIs.
+
+[x] Add a toast when saving configurations
+
+[x] Add a section in configuration that show the resolution of the screen of the
+device.
+
+[x] Add a login system for errors, add a section in configuration that take you
+to a new screen where the history of all logins is keep, allow this logins to be
+selected and copied.
+
+Each time there is an error add a structured login with the following information:
+timestamp, build commit, last action taken by the user, screen where the error occurs,
+error message.
+
+[ ] Think if I want to add a password for configuration.
+
+[ ] Add a section in configuration where you can choose the quality of the pictures
+
+Use a dropdown menu, showing first the 9:16 resolutions supported by the hardware,
+only show the supported ones, in descending order, after that show the 3:4 ones,
+separate the sections and indicate the ratios.
+
+Highlight the currently selected one.
+
+When opening the dropdown move the scroll so that the selected resolution is in view.
+
+When the dropdown is colapsed, show the selected resolution.
+
+By default select max quality available 9:16.

@@ -2,4 +2,10 @@
 <resources>
 
     <style name="Theme.Selfie" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <!-- Startup theme for Splash Screen API -->
+    <style name="Theme.App.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">#000000</item>
+        <item name="postSplashScreenTheme">@style/Theme.Selfie</item>
+    </style>
 </resources>
