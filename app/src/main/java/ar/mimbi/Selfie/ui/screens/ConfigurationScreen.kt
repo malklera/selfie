@@ -1,7 +1,11 @@
 package ar.mimbi.Selfie.ui.screens
 
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.provider.DocumentsContract
+import android.provider.MediaStore
+import android.provider.OpenableColumns
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -118,7 +122,7 @@ fun ConfigurationScreen(
                         Text("Portada", style = MaterialTheme.typography.titleLarge)
                         Spacer(modifier = Modifier.height(8.dp))
                         portadaPath?.let { path ->
-                            Text("Ruta: $path", style = MaterialTheme.typography.bodySmall)
+                            Text("Ruta: ${formatPathForDisplay(context, path)}", style = MaterialTheme.typography.bodySmall)
                             Spacer(modifier = Modifier.height(8.dp))
                             AsyncImage(
                                 model = path,
@@ -156,7 +160,7 @@ fun ConfigurationScreen(
                     Column {
                         Text("Destino", style = MaterialTheme.typography.titleLarge)
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text("Ruta: $destinationPath")
+                        Text("Ruta: ${formatPathForDisplay(context, destinationPath)}")
                         Button(onClick = { directoryPicker.launch(null) }) {
                             Text("Seleccionar Carpeta")
                         }
@@ -218,4 +222,148 @@ fun ConfigurationScreen(
             }
         )
     }
+}
+
+private fun formatPathForDisplay(context: Context, uriString: String?): String {
+    if (uriString.isNullOrEmpty()) return "Ninguna"
+
+    val internalStorageLabels = listOf(
+        "/storage/emulated/0" to "Almacenamiento interno",
+        "/sdcard" to "Almacenamiento interno",
+        "/mnt/sdcard" to "Almacenamiento interno"
+    )
+
+    for ((prefix, label) in internalStorageLabels) {
+        if (uriString.startsWith(prefix)) {
+            return uriString.replaceFirst(prefix, label)
+        }
+    }
+
+    try {
+        val uri = Uri.parse(uriString)
+        if (uri.scheme == "content") {
+            var resolvedUri = uri
+            
+            // 1. Resolve SAF Media Documents to real MediaStore URIs to get path info
+            if (DocumentsContract.isDocumentUri(context, uri)) {
+                if ("com.android.providers.media.documents" == uri.authority) {
+                    val docId = DocumentsContract.getDocumentId(uri)
+                    val split = docId.split(":")
+                    if (split.size >= 2) {
+                        val type = split[0]
+                        val id = split[1]
+                        val baseUri = when (type) {
+                            "image" -> MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+                            "video" -> MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+                            "audio" -> MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+                            else -> null
+                        }
+                        if (baseUri != null) resolvedUri = Uri.withAppendedPath(baseUri, id)
+                    }
+                }
+            }
+
+            // 2. Try Database Resolution (MediaStore/Resolved SAF)
+            try {
+                val projection = mutableListOf(OpenableColumns.DISPLAY_NAME)
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                    projection.add(MediaStore.MediaColumns.RELATIVE_PATH)
+                }
+                projection.add(MediaStore.MediaColumns.DATA)
+
+                context.contentResolver.query(resolvedUri, projection.toTypedArray(), null, null, null)?.use { cursor ->
+                    if (cursor.moveToFirst()) {
+                        val name = cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME))
+                        var path: String? = null
+                        
+                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                            val relPathIndex = cursor.getColumnIndex(MediaStore.MediaColumns.RELATIVE_PATH)
+                            if (relPathIndex != -1) path = cursor.getString(relPathIndex)
+                        }
+                        
+                        if (path.isNullOrEmpty()) {
+                            val dataIndex = cursor.getColumnIndex(MediaStore.MediaColumns.DATA)
+                            if (dataIndex != -1) {
+                                val fullPath = cursor.getString(dataIndex)
+                                if (!fullPath.isNullOrEmpty()) path = fullPath.substringBeforeLast('/', "")
+                            }
+                        }
+
+                        if (!path.isNullOrEmpty()) {
+                            val cleanPath = path.trim('/')
+                            val friendlyPath = if (cleanPath.startsWith("0/")) {
+                                "Almacenamiento interno/" + cleanPath.substringAfter("0/")
+                            } else {
+                                cleanPath.replace("emulated/0", "Almacenamiento interno")
+                            }
+                            return "$friendlyPath/$name".replace("//", "/")
+                        }
+                    }
+                }
+            } catch (e: Exception) { /* Ignore */ }
+
+            // 3. SAF Tree/Document Manual Parsing (for File Manager picks)
+            var docId: String? = null
+            try {
+                if (DocumentsContract.isDocumentUri(context, uri)) {
+                    docId = DocumentsContract.getDocumentId(uri)
+                } else {
+                    docId = try { DocumentsContract.getTreeDocumentId(uri) } catch (e: Exception) { null }
+                }
+            } catch (e: Exception) { /* Ignore */ }
+
+            if (docId == null) {
+                val decodedUri = Uri.decode(uriString)
+                if (decodedUri.contains("primary:")) {
+                    docId = "primary:" + decodedUri.substringAfter("primary:")
+                }
+            }
+
+            if (docId != null) {
+                if (docId.startsWith("primary:")) {
+                    val relativePath = docId.substringAfter("primary:").trim('/')
+                    return if (relativePath.isEmpty()) "Almacenamiento interno" else "Almacenamiento interno/$relativePath"
+                } else if (docId.contains(":")) {
+                    val volume = docId.substringBefore(":")
+                    val path = docId.substringAfter(":").trim('/')
+                    return if (volume == "primary") {
+                        if (path.isEmpty()) "Almacenamiento interno" else "Almacenamiento interno/$path"
+                    } else {
+                        "$volume/$path"
+                    }
+                }
+            }
+
+            // 4. Last resort: Filename from OpenableColumns or URI segments
+            try {
+                context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
+                    if (cursor.moveToFirst()) {
+                        val name = cursor.getString(0)
+                        if (!name.isNullOrEmpty()) return name
+                    }
+                }
+            } catch (e: Exception) { /* Ignore */ }
+
+            val decoded = Uri.decode(uriString)
+            val segments = decoded.split("/").filter { it.isNotEmpty() }
+            val lastSegment = segments.lastOrNull()
+            if (lastSegment != null) {
+                if (lastSegment.contains("primary:")) {
+                    return "Almacenamiento interno/" + lastSegment.substringAfter("primary:")
+                }
+                return lastSegment
+            }
+            return decoded
+        } else if (uri.scheme == "file") {
+            val path = uri.path
+            if (path != null) {
+                for ((prefix, label) in internalStorageLabels) {
+                    if (path.startsWith(prefix)) return path.replaceFirst(prefix, label)
+                }
+                return path
+            }
+        }
+    } catch (e: Exception) { /* Ignore */ }
+
+    return Uri.decode(uriString)
 }

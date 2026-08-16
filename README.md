@@ -12,7 +12,7 @@ App to be used with the "Selfie Mirror", it is made to be used in a tablet.
 "Version: release tag and commit, "Licensia": MIT, and "Autor": "github.com/malklera".
 is there a way to automatically add the realease and commit when the app is build?
 
-[ ] Change the display of paths used in configuration to show something more human
+[x] Change the display of paths used in configuration to show something more human
 readable instead of URIs.
 
 [ ] Add a toast when saving configurations
