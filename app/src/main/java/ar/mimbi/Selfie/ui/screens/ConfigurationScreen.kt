@@ -3,6 +3,7 @@ package ar.mimbi.Selfie.ui.screens
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.widget.Toast
 import android.provider.DocumentsContract
 import android.provider.MediaStore
 import android.provider.OpenableColumns
@@ -91,6 +92,7 @@ fun ConfigurationScreen(
                             IconButton(onClick = {
                                 val finalSeconds = countdownSeconds.toIntOrNull() ?: 3
                                 onSave(AppConfig(portadaPath, finalSeconds, destinationPath))
+                                Toast.makeText(context, "Configuración guardada", Toast.LENGTH_SHORT).show()
                             }) {
                                 Icon(Icons.Default.Save, contentDescription = "Guardar")
                             }
@@ -201,6 +203,7 @@ fun ConfigurationScreen(
                 TextButton(onClick = {
                     val finalSeconds = countdownSeconds.toIntOrNull() ?: 3
                     onSave(AppConfig(portadaPath, finalSeconds, destinationPath))
+                    Toast.makeText(context, "Configuración guardada", Toast.LENGTH_SHORT).show()
                     showUnsavedDialog = false
                     onClose()
                 }) {

@@ -15,7 +15,7 @@ is there a way to automatically add the realease and commit when the app is buil
 [x] Change the display of paths used in configuration to show something more human
 readable instead of URIs.
 
-[ ] Add a toast when saving configurations
+[x] Add a toast when saving configurations
 
 [ ] Add a section in configuration that show the resolution of the screen of the
 device.
