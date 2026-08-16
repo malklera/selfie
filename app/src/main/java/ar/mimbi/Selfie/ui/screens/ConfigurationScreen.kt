@@ -30,7 +30,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import ar.mimbi.Selfie.data.AppConfig
 import ar.mimbi.Selfie.BuildConfig
-import coil.compose.AsyncImage
+import coil.compose.SubcomposeAsyncImage
+import coil.compose.AsyncImagePainter
+import coil.compose.SubcomposeAsyncImageContent
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -126,7 +128,12 @@ fun ConfigurationScreen(
                         portadaPath?.let { path ->
                             Text("Ruta: ${formatPathForDisplay(context, path)}", style = MaterialTheme.typography.bodySmall)
                             Spacer(modifier = Modifier.height(8.dp))
-                            AsyncImage(
+                            
+                            val displayMetrics = context.resources.displayMetrics
+                            val screenAspect = displayMetrics.widthPixels.toFloat() / displayMetrics.heightPixels.toFloat()
+                            var imageAspect by remember { mutableStateOf<Float?>(null) }
+
+                            SubcomposeAsyncImage(
                                 model = path,
                                 contentDescription = "Vista previa de portada",
                                 modifier = Modifier
@@ -134,7 +141,35 @@ fun ConfigurationScreen(
                                     .height(200.dp)
                                     .background(Color.Gray.copy(alpha = 0.2f)),
                                 contentScale = ContentScale.Fit
-                            )
+                            ) {
+                                val state = painter.state
+                                if (state is AsyncImagePainter.State.Success) {
+                                    val size = state.painter.intrinsicSize
+                                    if (size.width > 0 && size.height > 0) {
+                                        imageAspect = size.width / size.height
+                                    }
+                                }
+                                
+                                if (state is AsyncImagePainter.State.Error || state is AsyncImagePainter.State.Empty) {
+                                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                        Text("Error al cargar imagen", color = Color.Red)
+                                    }
+                                } else {
+                                    SubcomposeAsyncImageContent()
+                                }
+                            }
+                            
+                            imageAspect?.let { aspect ->
+                                val diff = kotlin.math.abs(aspect - screenAspect)
+                                if (diff > 0.01f) {
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        text = "⚠️ La relación de aspecto de la imagen no coincide con la de la pantalla. Se verá deformada.",
+                                        color = MaterialTheme.colorScheme.error,
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                }
+                            }
                             Spacer(modifier = Modifier.height(8.dp))
                         } ?: Text("Ninguna imagen seleccionada")
 

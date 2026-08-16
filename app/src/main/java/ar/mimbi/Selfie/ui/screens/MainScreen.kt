@@ -54,7 +54,7 @@ fun MainScreen(
                     model = config.portadaPath,
                     contentDescription = null,
                     modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
+                    contentScale = ContentScale.FillBounds
                 ) {
                     val state = painter.state
                     
