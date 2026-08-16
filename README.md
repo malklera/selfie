@@ -6,7 +6,6 @@ App to be used with the "Selfie Mirror", it is made to be used in a tablet.
 
 [x] Make the access to configuration to be taping 5 times.
 
-[ ] Think if I want to add a password for configuration.
 
 [x] Add a "Acerca de" section at the end of configuration with the build information:
 "Version: release tag and commit, "Licensia": MIT, and "Autor": "github.com/malklera".
@@ -28,6 +27,8 @@ Each time there is an error add a structured login with the following informatio
 timestamp, build commit, last action taken by the user, screen where the error occurs,
 error message.
 
+[ ] Think if I want to add a password for configuration.
+
 [ ] Add a section in configuration where you can choose the quality of the pictures
 
 Use a dropdown menu, showing first the 9:16 resolutions supported by the hardware,
@@ -41,5 +42,3 @@ When opening the dropdown move the scroll so that the selected resolution is in 
 When the dropdown is colapsed, show the selected resolution.
 
 By default select max quality available 9:16.
-
-
