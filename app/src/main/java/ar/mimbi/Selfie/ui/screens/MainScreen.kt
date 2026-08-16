@@ -24,6 +24,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ar.mimbi.Selfie.data.AppConfig
+import ar.mimbi.Selfie.data.UserActionTracker
 import ar.mimbi.Selfie.ui.components.SecretSettingsButton
 import coil.compose.SubcomposeAsyncImage
 import coil.compose.AsyncImagePainter
@@ -47,7 +48,10 @@ fun MainScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .clickable { onNavigateToCapture() }
+                .clickable {
+                    UserActionTracker.trackAction("Tocar para capturar")
+                    onNavigateToCapture()
+                }
         ) {
             if (config.portadaPath != null) {
                 SubcomposeAsyncImage(

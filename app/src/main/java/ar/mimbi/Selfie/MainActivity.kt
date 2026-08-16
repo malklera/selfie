@@ -23,8 +23,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import ar.mimbi.Selfie.data.ConfigDataStore
+import ar.mimbi.Selfie.data.ErrorLogger
+import ar.mimbi.Selfie.data.UserActionTracker
 import ar.mimbi.Selfie.ui.screens.CaptureScreen
 import ar.mimbi.Selfie.ui.screens.ConfigurationScreen
+import ar.mimbi.Selfie.ui.screens.ErrorHistoryScreen
 import ar.mimbi.Selfie.ui.screens.MainScreen
 import ar.mimbi.Selfie.ui.screens.SplashScreen
 import ar.mimbi.Selfie.ui.theme.SelfieTheme
@@ -39,6 +42,7 @@ class MainActivity : ComponentActivity() {
         }
         super.onCreate(savedInstanceState)
         
+        ErrorLogger.init(applicationContext)
         configDataStore = ConfigDataStore(applicationContext)
 
         // Keep screen on
@@ -84,6 +88,14 @@ fun SelfieApp(configDataStore: ConfigDataStore) {
     val config = configState.value
     val scope = rememberCoroutineScope()
     
+    // Listen to navigation changes to track screen
+    LaunchedEffect(navController) {
+        navController.currentBackStackEntryFlow.collect { entry ->
+            val route = entry.destination.route ?: "Unknown"
+            UserActionTracker.updateScreen(route)
+        }
+    }
+
     // State to track if the main screen content (image) is ready
     var isMainContentReady by remember { mutableStateOf(false) }
 
@@ -113,7 +125,8 @@ fun SelfieApp(configDataStore: ConfigDataStore) {
                                     configDataStore.saveConfig(newConfig)
                                 }
                             },
-                            onClose = { navController.popBackStack() }
+                            onClose = { navController.popBackStack() },
+                            onNavigateToErrorHistory = { navController.navigate("error_history") }
                         )
                     }
                     composable("capture") {
@@ -123,6 +136,11 @@ fun SelfieApp(configDataStore: ConfigDataStore) {
                                 popUpTo("main") { inclusive = true }
                             } },
                             onNavigateToConfig = { navController.navigate("config") }
+                        )
+                    }
+                    composable("error_history") {
+                        ErrorHistoryScreen(
+                            onBack = { navController.popBackStack() }
                         )
                     }
                 }

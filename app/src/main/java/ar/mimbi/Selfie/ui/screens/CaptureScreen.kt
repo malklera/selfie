@@ -30,6 +30,8 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.documentfile.provider.DocumentFile
 import ar.mimbi.Selfie.data.AppConfig
+import ar.mimbi.Selfie.data.ErrorLogger
+import ar.mimbi.Selfie.data.UserActionTracker
 import ar.mimbi.Selfie.ui.components.SecretSettingsButton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -141,6 +143,7 @@ fun CaptureScreen(
                     lifecycleOwner, cameraSelector, useCaseGroupBuilder.build()
                 )
             } catch (exc: Exception) {
+                ErrorLogger.log("Use case binding failed: ${exc.message}")
                 Log.e("CaptureScreen", "Use case binding failed", exc)
             }
         }, ContextCompat.getMainExecutor(context))
@@ -172,6 +175,7 @@ fun CaptureScreen(
                 },
                 onError = { error ->
                     ContextCompat.getMainExecutor(context).execute {
+                        ErrorLogger.log("Capture error: $error")
                         Log.e("CaptureScreen", "Capture error: $error")
                         Toast.makeText(context, error, Toast.LENGTH_LONG).show()
                         captureAttempt++
@@ -208,7 +212,10 @@ fun CaptureScreen(
             }
             
             Button(
-                onClick = onNavigateToMain,
+                onClick = {
+                    UserActionTracker.trackAction("Tocar para otra foto")
+                    onNavigateToMain()
+                },
                 modifier = Modifier.align(Alignment.BottomCenter).padding(32.dp)
             ) {
                 Text("Toca para otra foto")
@@ -276,6 +283,7 @@ private fun loadAndCorrectBitmap(context: Context, uri: Uri): Bitmap? {
         Log.d("CaptureScreen", "Bitmap processed. Size: ${processedBitmap.width}x${processedBitmap.height}")
         return processedBitmap
     } catch (e: Exception) {
+        ErrorLogger.log("Error correcting bitmap: ${e.message}")
         Log.e("CaptureScreen", "Error correcting bitmap", e)
         return null
     }
@@ -304,9 +312,11 @@ private fun takePhoto(
                         Log.d("CaptureScreen", "Paso 3: Guardado completado con éxito")
                         onCaptured(finalUri)
                     } else {
+                        ErrorLogger.log("Paso 3: Falló la creación del archivo final")
                         onError("Paso 3: Falló la creación del archivo final")
                     }
                 } catch (e: Exception) {
+                    ErrorLogger.log("Paso 3: Error de sistema al mover (${e.localizedMessage})")
                     Log.e("CaptureScreen", "Error moving file", e)
                     onError("Paso 3: Error de sistema al mover (${e.localizedMessage})")
                 } finally {
@@ -315,6 +325,7 @@ private fun takePhoto(
             }
 
             override fun onError(exception: ImageCaptureException) {
+                ErrorLogger.log("Photo capture failed: ${exception.message}")
                 Log.e("CaptureScreen", "Photo capture failed: ${exception.message}", exception)
                 val msg = when (exception.imageCaptureError) {
                     ImageCapture.ERROR_FILE_IO -> "Paso 1: Error de disco (Espacio o Permiso)"
@@ -338,11 +349,13 @@ private fun saveToFinalDestination(context: Context, sourceFile: File, destinati
         // Use SAF to save
         val documentFile = DocumentFile.fromTreeUri(context, destUri)
         if (documentFile == null || !documentFile.exists()) {
+            ErrorLogger.log("Paso 3: SAF - Carpeta no existe")
             Log.e("CaptureScreen", "Paso 3: SAF - Carpeta no existe")
             return null
         }
         
         val newFile = documentFile.createFile("image/jpeg", name) ?: run {
+            ErrorLogger.log("Paso 3: SAF - No se pudo crear archivo")
             Log.e("CaptureScreen", "Paso 3: SAF - No se pudo crear archivo")
             return null
         }

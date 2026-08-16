@@ -29,6 +29,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import ar.mimbi.Selfie.data.AppConfig
+import ar.mimbi.Selfie.data.ErrorLogger
+import ar.mimbi.Selfie.data.UserActionTracker
 import ar.mimbi.Selfie.BuildConfig
 import coil.compose.SubcomposeAsyncImage
 import coil.compose.AsyncImagePainter
@@ -39,7 +41,8 @@ import coil.compose.SubcomposeAsyncImageContent
 fun ConfigurationScreen(
     initialConfig: AppConfig,
     onSave: (AppConfig) -> Unit,
-    onClose: () -> Unit
+    onClose: () -> Unit,
+    onNavigateToErrorHistory: () -> Unit
 ) {
     val context = LocalContext.current
     var portadaPath by remember { mutableStateOf(initialConfig.portadaPath) }
@@ -55,6 +58,7 @@ fun ConfigurationScreen(
     val imagePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri ->
+        UserActionTracker.trackAction("Seleccionar imagen de portada")
         uri?.let {
             try {
                 context.contentResolver.takePersistableUriPermission(
@@ -62,6 +66,7 @@ fun ConfigurationScreen(
                     Intent.FLAG_GRANT_READ_URI_PERMISSION
                 )
             } catch (e: Exception) {
+                ErrorLogger.log("Error al tomar permisos de imagen: ${e.message}")
                 e.printStackTrace()
             }
             portadaPath = it.toString()
@@ -71,6 +76,7 @@ fun ConfigurationScreen(
     val directoryPicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocumentTree()
     ) { uri ->
+        UserActionTracker.trackAction("Seleccionar carpeta de destino")
         uri?.let {
             try {
                 context.contentResolver.takePersistableUriPermission(
@@ -78,6 +84,7 @@ fun ConfigurationScreen(
                     Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
                 )
             } catch (e: Exception) {
+                ErrorLogger.log("Error al tomar permisos de carpeta: ${e.message}")
                 e.printStackTrace()
             }
             destinationPath = it.toString()
@@ -92,6 +99,7 @@ fun ConfigurationScreen(
                         title = { Text("Configuración") },
                         actions = {
                             IconButton(onClick = {
+                                UserActionTracker.trackAction("Guardar configuración")
                                 val finalSeconds = countdownSeconds.toIntOrNull() ?: 3
                                 onSave(AppConfig(portadaPath, finalSeconds, destinationPath))
                                 Toast.makeText(context, "Configuración guardada", Toast.LENGTH_SHORT).show()
@@ -99,6 +107,7 @@ fun ConfigurationScreen(
                                 Icon(Icons.Default.Save, contentDescription = "Guardar")
                             }
                             IconButton(onClick = {
+                                UserActionTracker.trackAction("Cerrar configuración")
                                 if (hasChanges) {
                                     showUnsavedDialog = true
                                 } else {
@@ -220,6 +229,23 @@ fun ConfigurationScreen(
 
                         Text("Resolución: $w x $h", style = MaterialTheme.typography.bodyMedium)
                         Text("Relación de aspecto: $aspectW:$aspectH", style = MaterialTheme.typography.bodyMedium)
+                    }
+
+                    // Mantenimiento
+                    Column {
+                        HorizontalDivider()
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text("Mantenimiento", style = MaterialTheme.typography.titleLarge)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Button(
+                            onClick = {
+                                UserActionTracker.trackAction("Ver historial de errores")
+                                onNavigateToErrorHistory()
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+                        ) {
+                            Text("Ver Historial de Errores")
+                        }
                     }
 
                     // Acerca de
