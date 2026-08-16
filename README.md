@@ -17,7 +17,7 @@ readable instead of URIs.
 
 [x] Add a toast when saving configurations
 
-[ ] Add a section in configuration that show the resolution of the screen of the
+[x] Add a section in configuration that show the resolution of the screen of the
 device.
 
 [ ] Add a login system for errors, add a section in configuration that take you

@@ -168,6 +168,25 @@ fun ConfigurationScreen(
                         }
                     }
 
+                    // Pantalla
+                    Column {
+                        HorizontalDivider()
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text("Pantalla", style = MaterialTheme.typography.titleLarge)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        val displayMetrics = context.resources.displayMetrics
+                        val w = displayMetrics.widthPixels
+                        val h = displayMetrics.heightPixels
+                        
+                        fun calculateGcd(a: Int, b: Int): Int = if (b == 0) a else calculateGcd(b, a % b)
+                        val common = calculateGcd(w, h)
+                        val aspectW = w / common
+                        val aspectH = h / common
+
+                        Text("Resolución: $w x $h", style = MaterialTheme.typography.bodyMedium)
+                        Text("Relación de aspecto: $aspectW:$aspectH", style = MaterialTheme.typography.bodyMedium)
+                    }
+
                     // Acerca de
                     Column {
                         HorizontalDivider()
