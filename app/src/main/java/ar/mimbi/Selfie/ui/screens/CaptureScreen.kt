@@ -4,12 +4,15 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
-import android.widget.Toast
-import androidx.exifinterface.media.ExifInterface
 import android.net.Uri
 import android.util.Log
+import android.util.Size
 import android.view.Surface
+import android.widget.Toast
 import androidx.camera.core.*
+import androidx.camera.core.resolutionselector.AspectRatioStrategy
+import androidx.camera.core.resolutionselector.ResolutionSelector
+import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Image
@@ -29,7 +32,9 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.documentfile.provider.DocumentFile
+import androidx.exifinterface.media.ExifInterface
 import ar.mimbi.Selfie.data.AppConfig
+import ar.mimbi.Selfie.data.CameraResolutionHelper
 import ar.mimbi.Selfie.data.ErrorLogger
 import ar.mimbi.Selfie.data.UserActionTracker
 import ar.mimbi.Selfie.ui.components.SecretSettingsButton
@@ -59,6 +64,11 @@ fun CaptureScreen(
     var isFolderCheckPassed by remember { mutableStateOf(false) }
     var folderErrorMessage by remember { mutableStateOf<String?>(null) }
     
+    val selectedResolution = remember(config.pictureResolution) {
+        CameraResolutionHelper.parseResolution(config.pictureResolution)
+            ?: CameraResolutionHelper.getDefaultResolution(context)
+    }
+
     // 1. Pre-check folder access
     LaunchedEffect(config.destinationPath) {
         val result = checkDestinationWritable(context, config.destinationPath)
@@ -77,7 +87,13 @@ fun CaptureScreen(
         capturedUriString?.let { uriString ->
             if (capturedBitmap == null) {
                 val bitmap = withContext(Dispatchers.IO) {
-                    loadAndCorrectBitmap(context, Uri.parse(uriString))
+                    try {
+                        context.contentResolver.openInputStream(Uri.parse(uriString))?.use { input ->
+                            BitmapFactory.decodeStream(input)
+                        }
+                    } catch (e: Exception) {
+                        null
+                    }
                 }
                 capturedBitmap = bitmap
             }
@@ -85,13 +101,36 @@ fun CaptureScreen(
     }
 
     val cameraExecutor = remember { Executors.newSingleThreadExecutor() }
-    val imageCapture = remember { 
+    val previewView = remember {
+        PreviewView(context).apply {
+            scaleType = PreviewView.ScaleType.FILL_CENTER
+        }
+    }
+
+    val imageCapture = remember(selectedResolution) {
+        val resolutionSelectorBuilder = ResolutionSelector.Builder()
+        if (selectedResolution != null) {
+            val sensorSize = Size(
+                maxOf(selectedResolution.width, selectedResolution.height),
+                minOf(selectedResolution.width, selectedResolution.height)
+            )
+            resolutionSelectorBuilder.setResolutionStrategy(
+                ResolutionStrategy(sensorSize, ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER)
+            )
+            val aspectStrategy = if (selectedResolution.is3_4) {
+                AspectRatioStrategy.RATIO_4_3_FALLBACK_AUTO_STRATEGY
+            } else {
+                AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY
+            }
+            resolutionSelectorBuilder.setAspectRatioStrategy(aspectStrategy)
+        }
+
         ImageCapture.Builder()
             .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
             .setFlashMode(ImageCapture.FLASH_MODE_OFF)
-            .build() 
+            .setResolutionSelector(resolutionSelectorBuilder.build())
+            .build()
     }
-    val previewView = remember { PreviewView(context) }
 
     var isPreviewReady by remember { mutableStateOf(false) }
     
@@ -108,7 +147,7 @@ fun CaptureScreen(
         }
     }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(selectedResolution) {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
         cameraProviderFuture.addListener({
             val cameraProvider = cameraProviderFuture.get()
@@ -116,10 +155,27 @@ fun CaptureScreen(
             // Set target rotation based on display
             val rotation = previewView.display?.rotation ?: Surface.ROTATION_0
             imageCapture.targetRotation = rotation
+
+            val resolutionSelectorBuilder = ResolutionSelector.Builder()
+            if (selectedResolution != null) {
+                val sensorSize = Size(
+                    maxOf(selectedResolution.width, selectedResolution.height),
+                    minOf(selectedResolution.width, selectedResolution.height)
+                )
+                resolutionSelectorBuilder.setResolutionStrategy(
+                    ResolutionStrategy(sensorSize, ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER)
+                )
+                val aspectStrategy = if (selectedResolution.is3_4) {
+                    AspectRatioStrategy.RATIO_4_3_FALLBACK_AUTO_STRATEGY
+                } else {
+                    AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY
+                }
+                resolutionSelectorBuilder.setAspectRatioStrategy(aspectStrategy)
+            }
             
             val preview = Preview.Builder()
-                .setTargetAspectRatio(AspectRatio.RATIO_16_9)
                 .setTargetRotation(rotation)
+                .setResolutionSelector(resolutionSelectorBuilder.build())
                 .build().also {
                     it.setSurfaceProvider(previewView.surfaceProvider)
                 }
@@ -163,13 +219,21 @@ fun CaptureScreen(
             
             // Small buffer to ensure UI is settled
             delay(200)
+
+            val pWidth = if (previewView.width > 0) previewView.width else context.resources.displayMetrics.widthPixels
+            val pHeight = if (previewView.height > 0) previewView.height else context.resources.displayMetrics.heightPixels
             
-            takePhoto(context, imageCapture, config.destinationPath, cameraExecutor,
-                onCaptured = { uri ->
-                    val correctedBitmap = loadAndCorrectBitmap(context, uri)
+            takePhoto(
+                context = context,
+                imageCapture = imageCapture,
+                destinationPath = config.destinationPath,
+                previewWidth = pWidth,
+                previewHeight = pHeight,
+                executor = cameraExecutor,
+                onCaptured = { uri, bitmap ->
                     ContextCompat.getMainExecutor(context).execute {
                         capturedUriString = uri.toString()
-                        capturedBitmap = correctedBitmap
+                        capturedBitmap = bitmap
                         isCaptured = true
                     }
                 },
@@ -207,7 +271,7 @@ fun CaptureScreen(
                     bitmap = bitmap.asImageBitmap(),
                     contentDescription = null,
                     modifier = Modifier.fillMaxSize(),
-                    contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                    contentScale = androidx.compose.ui.layout.ContentScale.Fit
                 )
             }
             
@@ -238,23 +302,23 @@ fun CaptureScreen(
     }
 }
 
-private fun loadAndCorrectBitmap(context: Context, uri: Uri): Bitmap? {
+private fun loadProcessAndCropBitmap(
+    context: Context,
+    file: File,
+    previewWidth: Int,
+    previewHeight: Int
+): Bitmap? {
     try {
-        val inputStream = context.contentResolver.openInputStream(uri) ?: return null
-        val bitmap = BitmapFactory.decodeStream(inputStream) ?: return null
-        inputStream.close()
+        val bitmap = BitmapFactory.decodeFile(file.absolutePath) ?: return null
 
-        val exifInputStream = context.contentResolver.openInputStream(uri) ?: return null
-        val exif = ExifInterface(exifInputStream)
+        val exif = ExifInterface(file.absolutePath)
         val orientation = exif.getAttributeInt(
             ExifInterface.TAG_ORIENTATION,
             ExifInterface.ORIENTATION_NORMAL
         )
-        exifInputStream.close()
 
-        Log.d("CaptureScreen", "EXIF Orientation: $orientation")
+        Log.d("CaptureScreen", "EXIF Orientation: $orientation, Raw Size: ${bitmap.width}x${bitmap.height}")
 
-        // Handle EXIF orientation - complete handling
         val matrix = Matrix()
         when (orientation) {
             ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> matrix.postScale(-1f, 1f)
@@ -275,16 +339,38 @@ private fun loadAndCorrectBitmap(context: Context, uri: Uri): Bitmap? {
             ExifInterface.ORIENTATION_ROTATE_270 -> matrix.postRotate(270f)
         }
         
-        // Now we have a "natural" image. To match front camera preview (mirrored), 
-        // we flip it horizontally.
+        // Front camera mirroring to match preview viewfinder
         matrix.postScale(-1f, 1f, bitmap.width / 2f, bitmap.height / 2f)
 
-        val processedBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
-        Log.d("CaptureScreen", "Bitmap processed. Size: ${processedBitmap.width}x${processedBitmap.height}")
-        return processedBitmap
+        val orientedBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+
+        // Perform center crop to match preview aspect ratio (What You See Is What You Get)
+        if (previewWidth > 0 && previewHeight > 0) {
+            val previewRatio = previewWidth.toFloat() / previewHeight.toFloat()
+            val imgRatio = orientedBitmap.width.toFloat() / orientedBitmap.height.toFloat()
+
+            if (kotlin.math.abs(previewRatio - imgRatio) > 0.005f) {
+                val cropped = if (previewRatio < imgRatio) {
+                    // Preview is taller/narrower -> crop width
+                    val targetW = (orientedBitmap.height * previewRatio).toInt().coerceIn(1, orientedBitmap.width)
+                    val startX = ((orientedBitmap.width - targetW) / 2).coerceAtLeast(0)
+                    Bitmap.createBitmap(orientedBitmap, startX, 0, targetW, orientedBitmap.height)
+                } else {
+                    // Preview is wider/shorter -> crop height
+                    val targetH = (orientedBitmap.width / previewRatio).toInt().coerceIn(1, orientedBitmap.height)
+                    val startY = ((orientedBitmap.height - targetH) / 2).coerceAtLeast(0)
+                    Bitmap.createBitmap(orientedBitmap, 0, startY, orientedBitmap.width, targetH)
+                }
+                Log.d("CaptureScreen", "Bitmap cropped from ${orientedBitmap.width}x${orientedBitmap.height} to ${cropped.width}x${cropped.height}")
+                return cropped
+            }
+        }
+
+        Log.d("CaptureScreen", "Bitmap processed without crop. Size: ${orientedBitmap.width}x${orientedBitmap.height}")
+        return orientedBitmap
     } catch (e: Exception) {
-        ErrorLogger.log("Error correcting bitmap: ${e.message}")
-        Log.e("CaptureScreen", "Error correcting bitmap", e)
+        ErrorLogger.log("Error processing captured bitmap: ${e.message}")
+        Log.e("CaptureScreen", "Error processing captured bitmap", e)
         return null
     }
 }
@@ -293,11 +379,12 @@ private fun takePhoto(
     context: Context,
     imageCapture: ImageCapture,
     destinationPath: String,
+    previewWidth: Int,
+    previewHeight: Int,
     executor: ExecutorService,
-    onCaptured: (Uri) -> Unit,
+    onCaptured: (Uri, Bitmap) -> Unit,
     onError: (String) -> Unit
 ) {
-    // 1. Create a temporary file in internal cache
     val tempFile = File(context.cacheDir, "temp_capture_${System.currentTimeMillis()}.jpg")
     val outputOptions = ImageCapture.OutputFileOptions.Builder(tempFile).build()
 
@@ -306,19 +393,27 @@ private fun takePhoto(
         outputOptions, executor, object : ImageCapture.OnImageSavedCallback {
             override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
                 try {
-                    Log.d("CaptureScreen", "Paso 2: Foto capturada. Moviendo a destino final...")
-                    val finalUri = saveToFinalDestination(context, tempFile, destinationPath)
+                    Log.d("CaptureScreen", "Paso 2: Foto capturada. Procesando y recortando para coincidir con la vista previa...")
+                    val processedBitmap = loadProcessAndCropBitmap(context, tempFile, previewWidth, previewHeight)
+                    if (processedBitmap == null) {
+                        ErrorLogger.log("Paso 2: Falló el procesamiento de la imagen")
+                        onError("Paso 2: Falló el procesamiento de la imagen")
+                        return
+                    }
+
+                    Log.d("CaptureScreen", "Paso 3: Guardando imagen en destino final...")
+                    val finalUri = saveBitmapToDestination(context, processedBitmap, destinationPath)
                     if (finalUri != null) {
                         Log.d("CaptureScreen", "Paso 3: Guardado completado con éxito")
-                        onCaptured(finalUri)
+                        onCaptured(finalUri, processedBitmap)
                     } else {
                         ErrorLogger.log("Paso 3: Falló la creación del archivo final")
                         onError("Paso 3: Falló la creación del archivo final")
                     }
                 } catch (e: Exception) {
-                    ErrorLogger.log("Paso 3: Error de sistema al mover (${e.localizedMessage})")
-                    Log.e("CaptureScreen", "Error moving file", e)
-                    onError("Paso 3: Error de sistema al mover (${e.localizedMessage})")
+                    ErrorLogger.log("Paso 3: Error de sistema al guardar (${e.localizedMessage})")
+                    Log.e("CaptureScreen", "Error saving file", e)
+                    onError("Paso 3: Error de sistema al guardar (${e.localizedMessage})")
                 } finally {
                     if (tempFile.exists()) tempFile.delete()
                 }
@@ -339,14 +434,13 @@ private fun takePhoto(
     )
 }
 
-private fun saveToFinalDestination(context: Context, sourceFile: File, destinationPath: String): Uri? {
+private fun saveBitmapToDestination(context: Context, bitmap: Bitmap, destinationPath: String): Uri? {
     val name = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.US)
         .format(System.currentTimeMillis()) + ".jpg"
 
     val destUri = try { Uri.parse(destinationPath) } catch (e: Exception) { null }
 
     if (destUri?.scheme == "content") {
-        // Use SAF to save
         val documentFile = DocumentFile.fromTreeUri(context, destUri)
         if (documentFile == null || !documentFile.exists()) {
             ErrorLogger.log("Paso 3: SAF - Carpeta no existe")
@@ -361,13 +455,10 @@ private fun saveToFinalDestination(context: Context, sourceFile: File, destinati
         }
         
         context.contentResolver.openOutputStream(newFile.uri)?.use { output ->
-            sourceFile.inputStream().use { input ->
-                input.copyTo(output)
-            }
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 95, output)
         }
         return newFile.uri
     } else {
-        // Use File API
         val dir = File(destinationPath)
         if (!dir.exists() && !dir.mkdirs()) {
             Log.e("CaptureScreen", "Paso 3: File - No se pudo crear carpeta")
@@ -375,7 +466,9 @@ private fun saveToFinalDestination(context: Context, sourceFile: File, destinati
         }
         
         val targetFile = File(dir, name)
-        sourceFile.copyTo(targetFile, overwrite = true)
+        targetFile.outputStream().use { output ->
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 95, output)
+        }
         return Uri.fromFile(targetFile)
     }
 }

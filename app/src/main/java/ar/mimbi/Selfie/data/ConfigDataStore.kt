@@ -17,6 +17,7 @@ class ConfigDataStore(private val context: Context) {
         val PORTADA_PATH = stringPreferencesKey("portada_path")
         val COUNTDOWN_SECONDS = intPreferencesKey("countdown_seconds")
         val DESTINATION_PATH = stringPreferencesKey("destination_path")
+        val PICTURE_RESOLUTION = stringPreferencesKey("picture_resolution")
     }
 
     val appConfigFlow: Flow<AppConfig> = context.dataStore.data
@@ -24,7 +25,8 @@ class ConfigDataStore(private val context: Context) {
             AppConfig(
                 portadaPath = preferences[PORTADA_PATH],
                 countdownSeconds = preferences[COUNTDOWN_SECONDS] ?: 3,
-                destinationPath = preferences[DESTINATION_PATH] ?: "/storage/emulated/0/Pictures/selfie"
+                destinationPath = preferences[DESTINATION_PATH] ?: "/storage/emulated/0/Pictures/selfie",
+                pictureResolution = preferences[PICTURE_RESOLUTION]
             )
         }
 
@@ -37,6 +39,11 @@ class ConfigDataStore(private val context: Context) {
             }
             preferences[COUNTDOWN_SECONDS] = config.countdownSeconds
             preferences[DESTINATION_PATH] = config.destinationPath
+            if (config.pictureResolution != null) {
+                preferences[PICTURE_RESOLUTION] = config.pictureResolution
+            } else {
+                preferences.remove(PICTURE_RESOLUTION)
+            }
         }
     }
 }

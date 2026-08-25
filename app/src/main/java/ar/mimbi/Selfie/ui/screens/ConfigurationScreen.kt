@@ -17,6 +17,7 @@ import androidx.compose.foundation.text.selection.DisableSelection
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.*
@@ -26,9 +27,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import ar.mimbi.Selfie.data.AppConfig
+import ar.mimbi.Selfie.data.CameraResolution
+import ar.mimbi.Selfie.data.CameraResolutionHelper
 import ar.mimbi.Selfie.data.ErrorLogger
 import ar.mimbi.Selfie.data.UserActionTracker
 import ar.mimbi.Selfie.BuildConfig
@@ -48,12 +53,23 @@ fun ConfigurationScreen(
     var portadaPath by remember { mutableStateOf(initialConfig.portadaPath) }
     var countdownSeconds by remember { mutableStateOf(initialConfig.countdownSeconds.toString()) }
     var destinationPath by remember { mutableStateOf(initialConfig.destinationPath) }
+
+    val resolutionsPair = remember { CameraResolutionHelper.getSupportedResolutions(context) }
+    val supported9_16 = resolutionsPair.first
+    val supported3_4 = resolutionsPair.second
+    val defaultResKey = remember {
+        CameraResolutionHelper.getDefaultResolution(context)?.key
+    }
+    var pictureResolution by remember {
+        mutableStateOf(initialConfig.pictureResolution ?: defaultResKey)
+    }
     
     var showUnsavedDialog by remember { mutableStateOf(false) }
 
     val hasChanges = portadaPath != initialConfig.portadaPath ||
             countdownSeconds != initialConfig.countdownSeconds.toString() ||
-            destinationPath != initialConfig.destinationPath
+            destinationPath != initialConfig.destinationPath ||
+            pictureResolution != (initialConfig.pictureResolution ?: defaultResKey)
 
     val imagePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
@@ -101,7 +117,7 @@ fun ConfigurationScreen(
                             IconButton(onClick = {
                                 UserActionTracker.trackAction("Guardar configuración")
                                 val finalSeconds = countdownSeconds.toIntOrNull() ?: 3
-                                onSave(AppConfig(portadaPath, finalSeconds, destinationPath))
+                                onSave(AppConfig(portadaPath, finalSeconds, destinationPath, pictureResolution))
                                 Toast.makeText(context, "Configuración guardada", Toast.LENGTH_SHORT).show()
                             }) {
                                 Icon(Icons.Default.Save, contentDescription = "Guardar")
@@ -212,6 +228,165 @@ fun ConfigurationScreen(
                         }
                     }
 
+                    // Calidad de las fotos
+                    Column {
+                        Text("Calidad de las fotos", style = MaterialTheme.typography.titleLarge)
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        var dropdownExpanded by remember { mutableStateOf(false) }
+                        val menuScrollState = rememberScrollState()
+                        val density = LocalDensity.current
+
+                        val currentResolutionObj = remember(pictureResolution, supported9_16, supported3_4) {
+                            (supported9_16 + supported3_4).firstOrNull { it.key == pictureResolution }
+                                ?: CameraResolutionHelper.parseResolution(pictureResolution)
+                        }
+
+                        val displayText = currentResolutionObj?.let { res ->
+                            val ratioLabel = if (res.is9_16) " (9:16)" else if (res.is3_4) " (3:4)" else ""
+                            "${res.displayText}$ratioLabel"
+                        } ?: (pictureResolution ?: "Predeterminada (9:16)")
+
+                        // Auto-scroll to selected resolution when opened
+                        LaunchedEffect(dropdownExpanded) {
+                            if (dropdownExpanded) {
+                                val targetY = with(density) {
+                                    val itemHeight = 48.dp.toPx()
+                                    val headerHeight = 36.dp.toPx()
+                                    val dividerHeight = 8.dp.toPx()
+                                    val paddingOffset = 40.dp.toPx()
+
+                                    val index9_16 = supported9_16.indexOfFirst { it.key == pictureResolution }
+                                    val index3_4 = supported3_4.indexOfFirst { it.key == pictureResolution }
+
+                                    when {
+                                        index9_16 >= 0 -> {
+                                            (headerHeight + index9_16 * itemHeight - paddingOffset).coerceAtLeast(0f)
+                                        }
+                                        index3_4 >= 0 -> {
+                                            val prevHeight = headerHeight + supported9_16.size * itemHeight + dividerHeight
+                                            (prevHeight + headerHeight + index3_4 * itemHeight - paddingOffset).coerceAtLeast(0f)
+                                        }
+                                        else -> 0f
+                                    }
+                                }
+                                if (targetY > 0) {
+                                    menuScrollState.scrollTo(targetY.toInt())
+                                }
+                            }
+                        }
+
+                        ExposedDropdownMenuBox(
+                            expanded = dropdownExpanded,
+                            onExpandedChange = { dropdownExpanded = it },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            OutlinedTextField(
+                                value = displayText,
+                                onValueChange = {},
+                                readOnly = true,
+                                label = { Text("Resolución") },
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = dropdownExpanded) },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+                            )
+
+                            ExposedDropdownMenu(
+                                expanded = dropdownExpanded,
+                                onDismissRequest = { dropdownExpanded = false },
+                                scrollState = menuScrollState,
+                                modifier = Modifier.heightIn(max = 280.dp)
+                            ) {
+                                if (supported9_16.isEmpty() && supported3_4.isEmpty()) {
+                                    DropdownMenuItem(
+                                        text = { Text("Sin resoluciones compatibles encontradas") },
+                                        onClick = { dropdownExpanded = false }
+                                    )
+                                } else {
+                                    if (supported9_16.isNotEmpty()) {
+                                        Text(
+                                            text = "Relación 9:16",
+                                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                            color = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                                        )
+                                        supported9_16.forEach { res ->
+                                            val isSelected = res.key == pictureResolution
+                                            DropdownMenuItem(
+                                                text = {
+                                                    Text(
+                                                        text = res.displayText,
+                                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                                    )
+                                                },
+                                                trailingIcon = {
+                                                    if (isSelected) {
+                                                        Icon(
+                                                            Icons.Default.Check,
+                                                            contentDescription = "Seleccionado",
+                                                            tint = MaterialTheme.colorScheme.primary
+                                                        )
+                                                    }
+                                                },
+                                                modifier = if (isSelected) {
+                                                    Modifier.background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f))
+                                                } else Modifier,
+                                                onClick = {
+                                                    UserActionTracker.trackAction("Seleccionar resolución ${res.displayText} (9:16)")
+                                                    pictureResolution = res.key
+                                                    dropdownExpanded = false
+                                                }
+                                            )
+                                        }
+                                    }
+
+                                    if (supported3_4.isNotEmpty()) {
+                                        if (supported9_16.isNotEmpty()) {
+                                            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                                        }
+                                        Text(
+                                            text = "Relación 3:4",
+                                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                            color = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                                        )
+                                        supported3_4.forEach { res ->
+                                            val isSelected = res.key == pictureResolution
+                                            DropdownMenuItem(
+                                                text = {
+                                                    Text(
+                                                        text = res.displayText,
+                                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                                    )
+                                                },
+                                                trailingIcon = {
+                                                    if (isSelected) {
+                                                        Icon(
+                                                            Icons.Default.Check,
+                                                            contentDescription = "Seleccionado",
+                                                            tint = MaterialTheme.colorScheme.primary
+                                                        )
+                                                    }
+                                                },
+                                                modifier = if (isSelected) {
+                                                    Modifier.background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f))
+                                                } else Modifier,
+                                                onClick = {
+                                                    UserActionTracker.trackAction("Seleccionar resolución ${res.displayText} (3:4)")
+                                                    pictureResolution = res.key
+                                                    dropdownExpanded = false
+                                                }
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     // Pantalla
                     Column {
                         HorizontalDivider()
@@ -282,7 +457,7 @@ fun ConfigurationScreen(
             confirmButton = {
                 TextButton(onClick = {
                     val finalSeconds = countdownSeconds.toIntOrNull() ?: 3
-                    onSave(AppConfig(portadaPath, finalSeconds, destinationPath))
+                    onSave(AppConfig(portadaPath, finalSeconds, destinationPath, pictureResolution))
                     Toast.makeText(context, "Configuración guardada", Toast.LENGTH_SHORT).show()
                     showUnsavedDialog = false
                     onClose()
