@@ -42,3 +42,9 @@ When opening the dropdown move the scroll so that the selected resolution is in 
 When the dropdown is colapsed, show the selected resolution.
 
 By default select max quality available 9:16.
+
+The preview in the capture screen should be a scaled and cropped view of the camera,
+if the aspect ratio of the hardware and screen are the same, just scale up/down as
+needed, if they are different crop the preview to fit in the screen, ensure when saving
+the image that the resolution is the same as in the preview, what the user see is
+what is saved.

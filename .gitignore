@@ -29,3 +29,5 @@ java_pid*.hprof
 
 # Agent artifacts
 .artifacts/
+
+foto/
