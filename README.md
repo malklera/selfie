@@ -29,7 +29,7 @@ error message.
 
 [ ] Think if I want to add a password for configuration.
 
-[ ] Add a section in configuration where you can choose the quality of the pictures
+[x] Add a section in configuration where you can choose the quality of the pictures
 
 Use a dropdown menu, showing first the 9:16 resolutions supported by the hardware,
 only show the supported ones, in descending order, after that show the 3:4 ones,
