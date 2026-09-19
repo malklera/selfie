@@ -40,6 +40,7 @@ import ar.mimbi.Selfie.BuildConfig
 import coil.compose.SubcomposeAsyncImage
 import coil.compose.AsyncImagePainter
 import coil.compose.SubcomposeAsyncImageContent
+import kotlin.math.abs
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,6 +52,7 @@ fun ConfigurationScreen(
 ) {
     val context = LocalContext.current
     var portadaPath by remember { mutableStateOf(initialConfig.portadaPath) }
+    var captureBoxPath by remember { mutableStateOf(initialConfig.captureBoxPath) }
     var countdownSeconds by remember { mutableStateOf(initialConfig.countdownSeconds.toString()) }
     var destinationPath by remember { mutableStateOf(initialConfig.destinationPath) }
 
@@ -67,6 +69,7 @@ fun ConfigurationScreen(
     var showUnsavedDialog by remember { mutableStateOf(false) }
 
     val hasChanges = portadaPath != initialConfig.portadaPath ||
+            captureBoxPath != initialConfig.captureBoxPath ||
             countdownSeconds != initialConfig.countdownSeconds.toString() ||
             destinationPath != initialConfig.destinationPath ||
             pictureResolution != (initialConfig.pictureResolution ?: defaultResKey)
@@ -86,6 +89,24 @@ fun ConfigurationScreen(
                 e.printStackTrace()
             }
             portadaPath = it.toString()
+        }
+    }
+
+    val captureBoxPicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        UserActionTracker.trackAction("Seleccionar cuadro de captura")
+        uri?.let {
+            try {
+                context.contentResolver.takePersistableUriPermission(
+                    it,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+            } catch (e: Exception) {
+                ErrorLogger.log("Error al tomar permisos de cuadro de captura: ${e.message}")
+                e.printStackTrace()
+            }
+            captureBoxPath = it.toString()
         }
     }
 
@@ -117,7 +138,7 @@ fun ConfigurationScreen(
                             IconButton(onClick = {
                                 UserActionTracker.trackAction("Guardar configuración")
                                 val finalSeconds = countdownSeconds.toIntOrNull() ?: 3
-                                onSave(AppConfig(portadaPath, finalSeconds, destinationPath, pictureResolution))
+                                onSave(AppConfig(portadaPath, captureBoxPath, finalSeconds, destinationPath, pictureResolution))
                                 Toast.makeText(context, "Configuración guardada", Toast.LENGTH_SHORT).show()
                             }) {
                                 Icon(Icons.Default.Save, contentDescription = "Guardar")
@@ -199,6 +220,63 @@ fun ConfigurationScreen(
                         } ?: Text("Ninguna imagen seleccionada")
 
                         Button(onClick = { imagePicker.launch(arrayOf("image/*")) }) {
+                            Text("Seleccionar Imagen")
+                        }
+                    }
+
+                    // Cuadro de captura
+                    Column {
+                        Text("Cuadro de captura", style = MaterialTheme.typography.titleLarge)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        captureBoxPath?.let { path ->
+                            Text("Ruta: ${formatPathForDisplay(context, path)}", style = MaterialTheme.typography.bodySmall)
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            val displayMetrics = context.resources.displayMetrics
+                            val screenAspect = displayMetrics.widthPixels.toFloat() / displayMetrics.heightPixels.toFloat()
+                            var imageAspect by remember { mutableStateOf<Float?>(null) }
+
+                            SubcomposeAsyncImage(
+                                model = path,
+                                contentDescription = "Vista previa de cuadro de captura",
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(200.dp)
+                                    .background(Color.Gray.copy(alpha = 0.2f)),
+                                contentScale = ContentScale.Fit
+                            ) {
+                                val state = painter.state
+                                if (state is AsyncImagePainter.State.Success) {
+                                    val size = state.painter.intrinsicSize
+                                    if (size.width > 0 && size.height > 0) {
+                                        imageAspect = size.width / size.height
+                                    }
+                                }
+
+                                if (state is AsyncImagePainter.State.Error || state is AsyncImagePainter.State.Empty) {
+                                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                        Text("Error al cargar imagen", color = Color.Red)
+                                    }
+                                } else {
+                                    SubcomposeAsyncImageContent()
+                                }
+                            }
+
+                            imageAspect?.let { aspect ->
+                                val diff = abs(aspect - screenAspect)
+                                if (diff > 0.01f) {
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        text = "⚠️ La relación de aspecto de la imagen no coincide con la de la pantalla. Se verá deformada.",
+                                        color = MaterialTheme.colorScheme.error,
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                        } ?: Text("Ninguna imagen seleccionada")
+
+                        Button(onClick = { captureBoxPicker.launch(arrayOf("image/*")) }) {
                             Text("Seleccionar Imagen")
                         }
                     }
@@ -457,7 +535,7 @@ fun ConfigurationScreen(
             confirmButton = {
                 TextButton(onClick = {
                     val finalSeconds = countdownSeconds.toIntOrNull() ?: 3
-                    onSave(AppConfig(portadaPath, finalSeconds, destinationPath, pictureResolution))
+                    onSave(AppConfig(portadaPath, captureBoxPath, finalSeconds, destinationPath, pictureResolution))
                     Toast.makeText(context, "Configuración guardada", Toast.LENGTH_SHORT).show()
                     showUnsavedDialog = false
                     onClose()
