@@ -4,9 +4,6 @@ App to be used with the "Selfie Mirror", it is made to be used in a tablet.
 
 ## TODO
 
-[x] Make the access to configuration to be taping 5 times.
-
-
 [x] Add a "Acerca de" section at the end of configuration with the build information:
 "Version: release tag and commit, "Licensia": MIT, and "Autor": "github.com/malklera".
 is there a way to automatically add the realease and commit when the app is build?
@@ -48,3 +45,8 @@ if the aspect ratio of the hardware and screen are the same, just scale up/down 
 needed, if they are different crop the preview to fit in the screen, ensure when saving
 the image that the resolution is the same as in the preview, what the user see is
 what is saved.
+
+[ ] Add a new section in configuration, below the main screen picture selection,
+copy its way of showing miniature, path, informing of ratio difference with screen
+resolution, file selection, all of it, this image will be used in the capture screen
+to show in the preview and when saving the photo so make it available but do not use it yet
