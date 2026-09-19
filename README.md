@@ -46,7 +46,12 @@ needed, if they are different crop the preview to fit in the screen, ensure when
 the image that the resolution is the same as in the preview, what the user see is
 what is saved.
 
-[ ] Add a new section in configuration, below the main screen picture selection,
+[x] Add a new section in configuration, below the main screen picture selection,
 copy its way of showing miniature, path, informing of ratio difference with screen
 resolution, file selection, all of it, this image will be used in the capture screen
 to show in the preview and when saving the photo so make it available but do not use it yet
+
+[ ] Use the capture box image and show it on top of the preview of the camera
+in the capture screen, resize to fit the screen even if it deforms, when the picture
+is taken save the camera capture with the capture box on top as a single image,
+what the user see is what is saved
