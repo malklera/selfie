@@ -3,6 +3,7 @@ package ar.mimbi.Selfie.ui.screens
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Canvas
 import android.graphics.Matrix
 import android.net.Uri
 import android.util.Log
@@ -25,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
@@ -60,6 +62,7 @@ fun CaptureScreen(
     var isCaptured by rememberSaveable { mutableStateOf(false) }
     var capturedUriString by rememberSaveable { mutableStateOf<String?>(null) }
     var capturedBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    var captureBoxBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var captureAttempt by remember { mutableStateOf(0) }
     var isFolderCheckPassed by remember { mutableStateOf(false) }
     var folderErrorMessage by remember { mutableStateOf<String?>(null) }
@@ -97,6 +100,23 @@ fun CaptureScreen(
                 }
                 capturedBitmap = bitmap
             }
+        }
+    }
+
+    // Load capture box bitmap
+    LaunchedEffect(config.captureBoxPath) {
+        config.captureBoxPath?.let { path ->
+            val bitmap = withContext(Dispatchers.IO) {
+                try {
+                    context.contentResolver.openInputStream(Uri.parse(path))?.use { input ->
+                        BitmapFactory.decodeStream(input)
+                    }
+                } catch (e: Exception) {
+                    ErrorLogger.log("Error loading capture box: ${e.message}")
+                    null
+                }
+            }
+            captureBoxBitmap = bitmap
         }
     }
 
@@ -226,6 +246,7 @@ fun CaptureScreen(
             takePhoto(
                 context = context,
                 imageCapture = imageCapture,
+                captureBoxBitmap = captureBoxBitmap,
                 destinationPath = config.destinationPath,
                 previewWidth = pWidth,
                 previewHeight = pHeight,
@@ -252,6 +273,15 @@ fun CaptureScreen(
     Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
         if (!isCaptured) {
             AndroidView(factory = { previewView }, modifier = Modifier.fillMaxSize())
+
+            captureBoxBitmap?.let {
+                Image(
+                    bitmap = it.asImageBitmap(),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.FillBounds
+                )
+            }
             
             if (isPreviewReady) {
                 Box(
@@ -271,7 +301,7 @@ fun CaptureScreen(
                     bitmap = bitmap.asImageBitmap(),
                     contentDescription = null,
                     modifier = Modifier.fillMaxSize(),
-                    contentScale = androidx.compose.ui.layout.ContentScale.Fit
+                    contentScale = ContentScale.Fit
                 )
             }
             
@@ -306,7 +336,8 @@ private fun loadProcessAndCropBitmap(
     context: Context,
     file: File,
     previewWidth: Int,
-    previewHeight: Int
+    previewHeight: Int,
+    overlay: Bitmap? = null
 ): Bitmap? {
     try {
         val bitmap = BitmapFactory.decodeFile(file.absolutePath) ?: return null
@@ -345,6 +376,7 @@ private fun loadProcessAndCropBitmap(
         val orientedBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
 
         // Perform center crop to match preview aspect ratio (What You See Is What You Get)
+        var finalBitmap = orientedBitmap
         if (previewWidth > 0 && previewHeight > 0) {
             val previewRatio = previewWidth.toFloat() / previewHeight.toFloat()
             val imgRatio = orientedBitmap.width.toFloat() / orientedBitmap.height.toFloat()
@@ -362,12 +394,24 @@ private fun loadProcessAndCropBitmap(
                     Bitmap.createBitmap(orientedBitmap, 0, startY, orientedBitmap.width, targetH)
                 }
                 Log.d("CaptureScreen", "Bitmap cropped from ${orientedBitmap.width}x${orientedBitmap.height} to ${cropped.width}x${cropped.height}")
-                return cropped
+                finalBitmap = cropped
             }
         }
 
-        Log.d("CaptureScreen", "Bitmap processed without crop. Size: ${orientedBitmap.width}x${orientedBitmap.height}")
-        return orientedBitmap
+        // Apply overlay if provided
+        if (overlay != null) {
+            val mergedBitmap = Bitmap.createBitmap(finalBitmap.width, finalBitmap.height, finalBitmap.config ?: Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(mergedBitmap)
+            canvas.drawBitmap(finalBitmap, 0f, 0f, null)
+            
+            // Resize overlay to fit the base bitmap exactly (deforming if necessary, as requested)
+            val scaledOverlay = Bitmap.createScaledBitmap(overlay, finalBitmap.width, finalBitmap.height, true)
+            canvas.drawBitmap(scaledOverlay, 0f, 0f, null)
+            finalBitmap = mergedBitmap
+        }
+
+        Log.d("CaptureScreen", "Bitmap processed. Size: ${finalBitmap.width}x${finalBitmap.height}")
+        return finalBitmap
     } catch (e: Exception) {
         ErrorLogger.log("Error processing captured bitmap: ${e.message}")
         Log.e("CaptureScreen", "Error processing captured bitmap", e)
@@ -378,6 +422,7 @@ private fun loadProcessAndCropBitmap(
 private fun takePhoto(
     context: Context,
     imageCapture: ImageCapture,
+    captureBoxBitmap: Bitmap?,
     destinationPath: String,
     previewWidth: Int,
     previewHeight: Int,
@@ -393,8 +438,14 @@ private fun takePhoto(
         outputOptions, executor, object : ImageCapture.OnImageSavedCallback {
             override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
                 try {
-                    Log.d("CaptureScreen", "Paso 2: Foto capturada. Procesando y recortando para coincidir con la vista previa...")
-                    val processedBitmap = loadProcessAndCropBitmap(context, tempFile, previewWidth, previewHeight)
+                    Log.d("CaptureScreen", "Paso 2: Foto capturada. Procesando, recortando y aplicando overlay...")
+                    val processedBitmap = loadProcessAndCropBitmap(
+                        context = context,
+                        file = tempFile,
+                        previewWidth = previewWidth,
+                        previewHeight = previewHeight,
+                        overlay = captureBoxBitmap
+                    )
                     if (processedBitmap == null) {
                         ErrorLogger.log("Paso 2: Falló el procesamiento de la imagen")
                         onError("Paso 2: Falló el procesamiento de la imagen")
