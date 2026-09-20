@@ -25,7 +25,12 @@ local.properties
 *~
 
 # Java
-java_pid*.hprof
+*.hprof
+
+# Logs
+*.log
 
 # Agent artifacts
 .artifacts/
+
+foto/
