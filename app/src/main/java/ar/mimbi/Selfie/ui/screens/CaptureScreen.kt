@@ -474,10 +474,7 @@ private fun takePhoto(
                 if (tempFile.exists()) tempFile.delete()
             }
         }
-        override fun onError(exception: ImageCaptureException) {
-            Log.e("CaptureScreen", "Photo capture failed", exception)
-        }
-    })
+    )
 }
 
 private fun saveBitmapToDestination(context: Context, bitmap: Bitmap, destinationPath: String): Uri? {

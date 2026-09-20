@@ -55,3 +55,5 @@ to show in the preview and when saving the photo so make it available but do not
 in the capture screen, resize to fit the screen even if it deforms, when the picture
 is taken save the camera capture with the capture box on top as a single image,
 what the user see is what is saved
+
+[ ] Replace loading logo for a simple one
