@@ -57,3 +57,6 @@ is taken save the camera capture with the capture box on top as a single image,
 what the user see is what is saved
 
 [x] Replace loading logo for the initial splash screen that says "Selfie by Malklera"
+
+Tablet resolution: 1200*1904
+Ratio: 75:119
