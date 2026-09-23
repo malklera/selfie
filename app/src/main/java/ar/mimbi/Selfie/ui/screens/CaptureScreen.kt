@@ -288,31 +288,47 @@ fun CaptureScreen(
                 }
             }
         } else {
-            capturedBitmap?.let { bitmap ->
-                Image(
-                    bitmap = bitmap.asImageBitmap(),
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Fit
+            Box(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(top = 24.dp, bottom = 24.dp, start = 24.dp, end = 24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    capturedBitmap?.let { bitmap ->
+                        Image(
+                            bitmap = bitmap.asImageBitmap(),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxWidth(),
+                            contentScale = ContentScale.Fit
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Button(
+                        onClick = {
+                            UserActionTracker.trackAction("Tocar para otra foto")
+                            onNavigateToMain()
+                        }
+                    ) {
+                        Text("Toca para otra foto")
+                    }
+                }
+
+                SecretSettingsButton(
+                    onNavigateToConfig = onNavigateToConfig,
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(16.dp)
+                        .size(58.dp)
                 )
             }
-            Button(
-                onClick = {
-                    UserActionTracker.trackAction("Tocar para otra foto")
-                    onNavigateToMain()
-                },
-                modifier = Modifier.align(Alignment.BottomCenter).padding(32.dp)
-            ) {
-                Text("Toca para otra foto")
-            }
-
-            SecretSettingsButton(
-                onNavigateToConfig = onNavigateToConfig,
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(16.dp)
-                    .size(58.dp)
-            )
         }
     }
     

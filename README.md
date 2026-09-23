@@ -58,18 +58,21 @@ what the user see is what is saved
 
 [x] Replace loading logo for the initial splash screen that says "Selfie by Malklera"
 
-Achicar la imagen que se muestra, agregar margenes abajo y arriba, escalar la imagen manteniendo proporciones
-
-fondo negro
-
-Agregar "Tu foto esta lista!" arriba, negrita, letra imprenta, en amarillo
-
 El botón abajo hacerlo transparente con borde gris, cambiar texto a emoji/icon cámara Otra foto, imprenta, amarillo?
 
-[ ] Scale down the view of the final image, where the "Toca para otra foto" 
+[x] Scale down the view of the final image, where the "Toca para otra foto" 
 buttom is, leave some margins below and above, enough for the buttom to not be
 on top of the displayed image, center it, keep aspect ratio, do not change the
 size of the saved image, only the display.
+
+[ ] Add "Tu foto esta lista!" in bold, some print font, in yellow above the 
+view of the image taken.
+
+[ ] Change the buttom text from the current one to "[emoji/icon of camera] Otra foto!"
+With transparent fille, leave a gray border.
+
+
+
 
 ---
 
