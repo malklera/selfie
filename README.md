@@ -58,18 +58,23 @@ what the user see is what is saved
 
 [x] Replace loading logo for the initial splash screen that says "Selfie by Malklera"
 
-El botón abajo hacerlo transparente con borde gris, cambiar texto a emoji/icon cámara Otra foto, imprenta, amarillo?
-
 [x] Scale down the view of the final image, where the "Toca para otra foto" 
 buttom is, leave some margins below and above, enough for the buttom to not be
 on top of the displayed image, center it, keep aspect ratio, do not change the
 size of the saved image, only the display.
 
-[ ] Add "Tu foto esta lista!" in bold, some print font, in yellow above the 
+[x] Add "¡TU FOTO ESTÁ LISTA!" in bold, some print font, in yellow above the 
 view of the image taken.
 
-[ ] Change the buttom text from the current one to "[emoji/icon of camera] Otra foto!"
-With transparent fille, leave a gray border.
+[ ] Change the buttom text from the current one to "[emoji/icon of camera] OTRA FOTO"
+With transparent fill, or the same black as the background, whatever is more
+performing or consume less resources, leave a gray border, white text.
+
+[ ] Add some rounding to the corners of the image show, just apply to the showing, not
+to the image. And double the padding above and below.
+
+[ ] Add a section to the configuration screen at the buttom, above the "Acerca de" section
+called "Impresión"
 
 
 
