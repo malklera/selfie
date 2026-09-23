@@ -58,5 +58,34 @@ what the user see is what is saved
 
 [x] Replace loading logo for the initial splash screen that says "Selfie by Malklera"
 
+Achicar la imagen que se muestra, agregar margenes abajo y arriba, escalar la imagen manteniendo proporciones
+
+fondo negro
+
+Agregar "Tu foto esta lista!" arriba, negrita, letra imprenta, en amarillo
+
+El botón abajo hacerlo transparente con borde gris, cambiar texto a emoji/icon cámara Otra foto, imprenta, amarillo?
+
+[ ] Scale down the view of the final image, where the "Toca para otra foto" 
+buttom is, leave some margins below and above, enough for the buttom to not be
+on top of the displayed image, center it, keep aspect ratio, do not change the
+size of the saved image, only the display.
+
+---
+
+Impresión
+
+Agregar sección a configuración
+Switch to show botón
+Contador de fotos impresas y máximo de impresiones, solo permitir ingresar números, agregar botón para resetear a 0 las fotos tomadas
+Selección de impresora
+Tipo de hoja
+Seleccionnde plantillas de como imprimir las imágenes
+
+En la sección que muestra la foto tomada mostrar botón de "emoji/icon impresora Imprimir" en la misma altura del botón otra foto, equidistante con respecto a los bordes
+
+
+---
+
 Tablet resolution: 1200*1904
 Ratio: 75:119

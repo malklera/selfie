@@ -111,3 +111,7 @@ Display the `configuration` button the same way as in `main` with the same funct
 
 When entering->exiting the `configuration` screen, ensure it goes back to the displaying
 part, not to the countdown.
+
+---
+
+# 
