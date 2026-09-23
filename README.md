@@ -66,7 +66,7 @@ size of the saved image, only the display.
 [x] Add "¡TU FOTO ESTÁ LISTA!" in bold, some print font, in yellow above the 
 view of the image taken.
 
-[ ] Change the buttom text from the current one to "[emoji/icon of camera] OTRA FOTO"
+[x] Change the buttom text from the current one to "[emoji/icon of camera] OTRA FOTO"
 With transparent fill, or the same black as the background, whatever is more
 performing or consume less resources, leave a gray border, white text.
 

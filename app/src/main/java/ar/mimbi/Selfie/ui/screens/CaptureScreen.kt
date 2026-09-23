@@ -17,6 +17,7 @@ import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -325,11 +326,20 @@ fun CaptureScreen(
 
                     Button(
                         onClick = {
-                            UserActionTracker.trackAction("Tocar para otra foto")
+                            UserActionTracker.trackAction("OTRA FOTO")
                             onNavigateToMain()
-                        }
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.Transparent,
+                            contentColor = Color.White
+                        ),
+                        border = BorderStroke(1.dp, Color.Gray)
                     ) {
-                        Text("Toca para otra foto")
+                        Text(
+                            text = "📸 OTRA FOTO",
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
 
