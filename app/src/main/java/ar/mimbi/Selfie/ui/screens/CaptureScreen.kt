@@ -20,6 +20,9 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -27,6 +30,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
@@ -34,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.documentfile.provider.DocumentFile
@@ -297,7 +302,7 @@ fun CaptureScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(top = 24.dp, bottom = 24.dp, start = 24.dp, end = 24.dp),
+                        .padding(top = 48.dp, bottom = 48.dp, start = 24.dp, end = 24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
@@ -306,23 +311,45 @@ fun CaptureScreen(
                         color = Color.Yellow,
                         fontWeight = FontWeight.Bold,
                         fontFamily = FontFamily.SansSerif,
-                        fontSize = 22.sp
+                        fontSize = 26.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
                     )
                     
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(32.dp))
 
-                    capturedBitmap?.let { bitmap ->
-                        Image(
-                            bitmap = bitmap.asImageBitmap(),
-                            contentDescription = null,
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxWidth(),
-                            contentScale = ContentScale.Fit
-                        )
+                    BoxWithConstraints(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        capturedBitmap?.let { bitmap ->
+                            val imageRatio = bitmap.width.toFloat() / bitmap.height.toFloat()
+                            val containerRatio = maxWidth.value / maxHeight.value
+                            
+                            val (displayWidth, displayHeight) = if (imageRatio > containerRatio) {
+                                maxWidth to (maxWidth.value / imageRatio).dp
+                            } else {
+                                (maxHeight.value * imageRatio).dp to maxHeight
+                            }
+                            
+                            Box(
+                                modifier = Modifier
+                                    .size(displayWidth, displayHeight)
+                                    .clip(RoundedCornerShape(32.dp))
+                            ) {
+                                Image(
+                                    bitmap = bitmap.asImageBitmap(),
+                                    contentDescription = null,
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Fit
+                                )
+                            }
+                        }
                     }
                     
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(32.dp))
 
                     Button(
                         onClick = {
@@ -333,12 +360,15 @@ fun CaptureScreen(
                             containerColor = Color.Transparent,
                             contentColor = Color.White
                         ),
-                        border = BorderStroke(1.dp, Color.Gray)
+                        border = BorderStroke(1.5.dp, Color.Gray),
+                        shape = RoundedCornerShape(24.dp)
                     ) {
                         Text(
                             text = "📸 OTRA FOTO",
                             color = Color.White,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                         )
                     }
                 }

@@ -70,7 +70,7 @@ view of the image taken.
 With transparent fill, or the same black as the background, whatever is more
 performing or consume less resources, leave a gray border, white text.
 
-[ ] Add some rounding to the corners of the image show, just apply to the showing, not
+[x] Add some rounding to the corners of the image show, just apply to the showing, not
 to the image. And double the padding above and below.
 
 [ ] Add a section to the configuration screen at the buttom, above the "Acerca de" section
