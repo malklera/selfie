@@ -94,7 +94,7 @@ name, the preview of the mode, and some information about it, e.g. full width, s
 image (height, width), quality(printing quality, not resolution), for now just put
 a placeholder here.
 
-[ ] Move the config button show to the top left, same style and margins.
+[x] Move the config button show to the top left, same style and margins.
 
 [ ] Add printing buttom to the screen where the "otra foto" button is show.
 
