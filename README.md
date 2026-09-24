@@ -73,9 +73,36 @@ performing or consume less resources, leave a gray border, white text.
 [x] Add some rounding to the corners of the image show, just apply to the showing, not
 to the image. And double the padding above and below.
 
-[ ] Add a section to the configuration screen at the buttom, above the "Acerca de" section
+[x] Add a section to the configuration screen at the buttom, above the "Acerca de" section
 called "Impresión"
 
+There put a switch with the title "Mostrar botom", this will control if the "Imprimir"
+buttom will be show in the screen where the "otra foto" is shown, do nothing about that
+for now.
+
+Below that put "Maximo número de impresiones" with a numeric input field besides
+
+Below that, "Impresos" with the number of printings made, put a button besides
+that will reset to 0 the counter.
+
+Below that, "Selección de impresora", for now put nothing here, i want to learn
+a little more about this.
+
+Below that, "Modo de impresión", show a preview of the current mode selected,
+if taped open a new screen where a list of modes will be show, a title of the mode
+name, the preview of the mode, and some information about it, e.g. full width, single
+image (height, width), quality(printing quality, not resolution), for now just put
+a placeholder here.
+
+[ ] Move the config button show to the top left, same style and margins.
+
+[ ] Add printing buttom to the screen where the "otra foto" button is show.
+
+Only show if the switch in configuration>printing is on.
+
+Show the same style as the "otra foto" button, "printer icon/emoji Imprimir" to
+the right, same height, align both buttons to be equidistant, if there is not
+enough space to show them, show only the icon/emoji of the buttons.
 
 
 

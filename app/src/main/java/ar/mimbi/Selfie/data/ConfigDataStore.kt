@@ -3,6 +3,7 @@ package ar.mimbi.Selfie.data
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -19,6 +20,10 @@ class ConfigDataStore(private val context: Context) {
         val COUNTDOWN_SECONDS = intPreferencesKey("countdown_seconds")
         val DESTINATION_PATH = stringPreferencesKey("destination_path")
         val PICTURE_RESOLUTION = stringPreferencesKey("picture_resolution")
+        val SHOW_PRINT_BUTTON = booleanPreferencesKey("show_print_button")
+        val MAX_PRINT_COUNT = intPreferencesKey("max_print_count")
+        val PRINT_COUNT = intPreferencesKey("print_count")
+        val PRINT_MODE = stringPreferencesKey("print_mode")
     }
 
     val appConfigFlow: Flow<AppConfig> = context.dataStore.data
@@ -28,7 +33,11 @@ class ConfigDataStore(private val context: Context) {
                 captureBoxPath = preferences[CAPTURE_BOX_PATH],
                 countdownSeconds = preferences[COUNTDOWN_SECONDS] ?: 3,
                 destinationPath = preferences[DESTINATION_PATH] ?: "/storage/emulated/0/Pictures/selfie",
-                pictureResolution = preferences[PICTURE_RESOLUTION]
+                pictureResolution = preferences[PICTURE_RESOLUTION],
+                showPrintButton = preferences[SHOW_PRINT_BUTTON] ?: false,
+                maxPrintCount = preferences[MAX_PRINT_COUNT] ?: 0,
+                printCount = preferences[PRINT_COUNT] ?: 0,
+                printMode = preferences[PRINT_MODE] ?: "mode_full_width_single"
             )
         }
 
@@ -51,6 +60,10 @@ class ConfigDataStore(private val context: Context) {
             } else {
                 preferences.remove(PICTURE_RESOLUTION)
             }
+            preferences[SHOW_PRINT_BUTTON] = config.showPrintButton
+            preferences[MAX_PRINT_COUNT] = config.maxPrintCount
+            preferences[PRINT_COUNT] = config.printCount
+            preferences[PRINT_MODE] = config.printMode
         }
     }
 }

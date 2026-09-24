@@ -29,6 +29,7 @@ import ar.mimbi.Selfie.ui.screens.CaptureScreen
 import ar.mimbi.Selfie.ui.screens.ConfigurationScreen
 import ar.mimbi.Selfie.ui.screens.ErrorHistoryScreen
 import ar.mimbi.Selfie.ui.screens.MainScreen
+import ar.mimbi.Selfie.ui.screens.PrintModeSelectionScreen
 import ar.mimbi.Selfie.ui.screens.SplashScreen
 import ar.mimbi.Selfie.ui.theme.SelfieTheme
 import kotlinx.coroutines.launch
@@ -58,7 +59,7 @@ class MainActivity : ComponentActivity() {
         windowInsetsController.hide(WindowInsetsCompat.Type.systemBars())
         
         val requestPermissionLauncher = registerForActivityResult(
-            androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions()
+            ActivityResultContracts.RequestMultiplePermissions()
         ) { _ -> }
         
         requestPermissionLauncher.launch(arrayOf(
@@ -116,16 +117,39 @@ fun SelfieApp(configDataStore: ConfigDataStore) {
                             onImageReady = { isMainContentReady = true }
                         )
                     }
-                    composable("config") {
+                    composable("config") { backStackEntry ->
+                        val returnedPrintMode = backStackEntry.savedStateHandle.get<String>("selected_print_mode")
                         ConfigurationScreen(
                             initialConfig = config,
+                            selectedPrintModeOverride = returnedPrintMode,
                             onSave = { newConfig ->
                                 scope.launch {
                                     configDataStore.saveConfig(newConfig)
                                 }
                             },
                             onClose = { navController.popBackStack() },
-                            onNavigateToErrorHistory = { navController.navigate("error_history") }
+                            onNavigateToErrorHistory = { navController.navigate("error_history") },
+                            onNavigateToPrintModeSelection = { currentMode ->
+                                backStackEntry.savedStateHandle.set("current_print_mode", currentMode)
+                                navController.navigate("print_mode_selection")
+                            }
+                        )
+                    }
+                    composable("print_mode_selection") {
+                        val currentModeId = navController.previousBackStackEntry
+                            ?.savedStateHandle
+                            ?.get<String>("current_print_mode")
+                            ?: config.printMode
+
+                        PrintModeSelectionScreen(
+                            currentModeId = currentModeId,
+                            onSelectMode = { selectedId ->
+                                navController.previousBackStackEntry
+                                    ?.savedStateHandle
+                                    ?.set("selected_print_mode", selectedId)
+                                navController.popBackStack()
+                            },
+                            onBack = { navController.popBackStack() }
                         )
                     }
                     composable("capture") {

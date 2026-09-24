@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import android.net.Uri
+import android.os.Build
 import android.widget.Toast
 import android.provider.DocumentsContract
 import android.provider.MediaStore
@@ -11,6 +12,7 @@ import android.provider.OpenableColumns
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -36,8 +38,10 @@ import ar.mimbi.Selfie.data.AppConfig
 import ar.mimbi.Selfie.data.CameraResolution
 import ar.mimbi.Selfie.data.CameraResolutionHelper
 import ar.mimbi.Selfie.data.ErrorLogger
+import ar.mimbi.Selfie.data.PrintMode
 import ar.mimbi.Selfie.data.UserActionTracker
 import ar.mimbi.Selfie.BuildConfig
+import ar.mimbi.Selfie.ui.components.PrintModePreview
 import coil.compose.SubcomposeAsyncImage
 import coil.compose.AsyncImagePainter
 import coil.compose.SubcomposeAsyncImageContent
@@ -47,9 +51,11 @@ import kotlin.math.abs
 @Composable
 fun ConfigurationScreen(
     initialConfig: AppConfig,
+    selectedPrintModeOverride: String? = null,
     onSave: (AppConfig) -> Unit,
     onClose: () -> Unit,
-    onNavigateToErrorHistory: () -> Unit
+    onNavigateToErrorHistory: () -> Unit,
+    onNavigateToPrintModeSelection: (currentMode: String) -> Unit = {}
 ) {
     val context = LocalContext.current
     var portadaPath by remember { mutableStateOf(initialConfig.portadaPath) }
@@ -66,6 +72,17 @@ fun ConfigurationScreen(
     var pictureResolution by remember {
         mutableStateOf(initialConfig.pictureResolution ?: defaultResKey)
     }
+
+    var showPrintButton by remember { mutableStateOf(initialConfig.showPrintButton) }
+    var maxPrintCount by remember { mutableStateOf(initialConfig.maxPrintCount.toString()) }
+    var printCount by remember { mutableStateOf(initialConfig.printCount) }
+    var printMode by remember { mutableStateOf(selectedPrintModeOverride ?: initialConfig.printMode) }
+
+    LaunchedEffect(selectedPrintModeOverride) {
+        if (selectedPrintModeOverride != null) {
+            printMode = selectedPrintModeOverride
+        }
+    }
     
     var showUnsavedDialog by remember { mutableStateOf(false) }
 
@@ -73,7 +90,11 @@ fun ConfigurationScreen(
             captureBoxPath != initialConfig.captureBoxPath ||
             countdownSeconds != initialConfig.countdownSeconds.toString() ||
             destinationPath != initialConfig.destinationPath ||
-            pictureResolution != (initialConfig.pictureResolution ?: defaultResKey)
+            pictureResolution != (initialConfig.pictureResolution ?: defaultResKey) ||
+            showPrintButton != initialConfig.showPrintButton ||
+            maxPrintCount != initialConfig.maxPrintCount.toString() ||
+            printCount != initialConfig.printCount ||
+            printMode != initialConfig.printMode
 
     val imagePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
@@ -139,7 +160,20 @@ fun ConfigurationScreen(
                             IconButton(onClick = {
                                 UserActionTracker.trackAction("Guardar configuración")
                                 val finalSeconds = countdownSeconds.toIntOrNull() ?: 3
-                                onSave(AppConfig(portadaPath, captureBoxPath, finalSeconds, destinationPath, pictureResolution))
+                                val finalMaxPrintCount = maxPrintCount.toIntOrNull() ?: 0
+                                onSave(
+                                    AppConfig(
+                                        portadaPath = portadaPath,
+                                        captureBoxPath = captureBoxPath,
+                                        countdownSeconds = finalSeconds,
+                                        destinationPath = destinationPath,
+                                        pictureResolution = pictureResolution,
+                                        showPrintButton = showPrintButton,
+                                        maxPrintCount = finalMaxPrintCount,
+                                        printCount = printCount,
+                                        printMode = printMode
+                                    )
+                                )
                                 Toast.makeText(context, "Configuración guardada", Toast.LENGTH_SHORT).show()
                             }) {
                                 Icon(Icons.Default.Save, contentDescription = "Guardar")
@@ -207,7 +241,7 @@ fun ConfigurationScreen(
                             }
                             
                             imageAspect?.let { aspect ->
-                                val diff = kotlin.math.abs(aspect - screenAspect)
+                                val diff = abs(aspect - screenAspect)
                                 if (diff > 0.01f) {
                                     Spacer(modifier = Modifier.height(8.dp))
                                     Text(
@@ -485,6 +519,158 @@ fun ConfigurationScreen(
                         Text("Relación de aspecto: $aspectW:$aspectH", style = MaterialTheme.typography.bodyMedium)
                     }
 
+                    // Impresión
+                    Column {
+                        HorizontalDivider()
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text("Impresión", style = MaterialTheme.typography.titleLarge)
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // Switch: Mostrar botón
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text("Mostrar botón", style = MaterialTheme.typography.bodyLarge)
+                            Switch(
+                                checked = showPrintButton,
+                                onCheckedChange = {
+                                    UserActionTracker.trackAction("Cambiar mostrar botón de impresión: $it")
+                                    showPrintButton = it
+                                }
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // Máximo número de impresiones
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "Máximo número de impresiones",
+                                style = MaterialTheme.typography.bodyLarge,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            OutlinedTextField(
+                                value = maxPrintCount,
+                                onValueChange = { text ->
+                                    if (text.all { char -> char.isDigit() }) {
+                                        maxPrintCount = text
+                                    }
+                                },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                singleLine = true,
+                                modifier = Modifier.width(100.dp)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // Impresos + Botón para resetear a 0
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("Impresos", style = MaterialTheme.typography.bodyLarge)
+                                Text(
+                                    "Cantidad realizada: $printCount",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Button(
+                                onClick = {
+                                    UserActionTracker.trackAction("Reiniciar contador de impresiones a 0")
+                                    printCount = 0
+                                }
+                            ) {
+                                Text("Resetear a 0")
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Selección de impresora
+                        Column {
+                            Text(
+                                "Selección de impresora",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                "No configurado por el momento",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.outline
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Modo de impresión
+                        Column {
+                            Text(
+                                "Modo de impresión",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            val currentMode = PrintMode.getById(printMode)
+
+                            OutlinedCard(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        UserActionTracker.trackAction("Navegar a selección de modo de impresión")
+                                        onNavigateToPrintModeSelection(printMode)
+                                    },
+                                border = CardDefaults.outlinedCardBorder()
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(12.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    PrintModePreview(
+                                        mode = currentMode,
+                                        modifier = Modifier.size(60.dp, 80.dp)
+                                    )
+
+                                    Column(
+                                        modifier = Modifier.weight(1f),
+                                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                                    ) {
+                                        Text(
+                                            text = currentMode.name,
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        Text(
+                                            text = "Ancho completo: ${if (currentMode.isFullWidth) "Sí" else "No"} • Calidad: ${currentMode.quality}",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        Text(
+                                            text = "Tocar para cambiar modo",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     // Mantenimiento
                     Column {
                         HorizontalDivider()
@@ -537,7 +723,20 @@ fun ConfigurationScreen(
                 TextButton(onClick = {
                     Log.d("ConfigScreen", "Dialog Save clicked")
                     val finalSeconds = countdownSeconds.toIntOrNull() ?: 3
-                    onSave(AppConfig(portadaPath, captureBoxPath, finalSeconds, destinationPath, pictureResolution))
+                    val finalMaxPrintCount = maxPrintCount.toIntOrNull() ?: 0
+                    onSave(
+                        AppConfig(
+                            portadaPath = portadaPath,
+                            captureBoxPath = captureBoxPath,
+                            countdownSeconds = finalSeconds,
+                            destinationPath = destinationPath,
+                            pictureResolution = pictureResolution,
+                            showPrintButton = showPrintButton,
+                            maxPrintCount = finalMaxPrintCount,
+                            printCount = printCount,
+                            printMode = printMode
+                        )
+                    )
                     Toast.makeText(context, "Configuración guardada", Toast.LENGTH_SHORT).show()
                     showUnsavedDialog = false
                     onClose()
@@ -605,7 +804,7 @@ private fun formatPathForDisplay(context: Context, uriString: String?): String {
             // 2. Try Database Resolution (MediaStore/Resolved SAF)
             try {
                 val projection = mutableListOf(OpenableColumns.DISPLAY_NAME)
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                     projection.add(MediaStore.MediaColumns.RELATIVE_PATH)
                 }
                 projection.add(MediaStore.MediaColumns.DATA)
@@ -615,7 +814,7 @@ private fun formatPathForDisplay(context: Context, uriString: String?): String {
                         val name = cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME))
                         var path: String? = null
                         
-                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                             val relPathIndex = cursor.getColumnIndex(MediaStore.MediaColumns.RELATIVE_PATH)
                             if (relPathIndex != -1) path = cursor.getString(relPathIndex)
                         }
