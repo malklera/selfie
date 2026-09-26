@@ -143,6 +143,12 @@ it do not seems like.
 - [x] Any time the keyboard is opened for an input field, ensure to scroll the view
 so the input field is in view above the keyboard.
 
+- [ ] there is a bug when scrolling, any time you tap->scroll(up/down)->lift 
+the buttons of android that do back, main screen and apps opened?? the hamburger
+that give you a list of apps opened currently, how do it is called?, well that 
+set of buttons appear partially before disappearing, it do not happen when you 
+tap an empty place without scrolling
+
 - [ ] Add a confirmation popup when selecting the number of copies to print.
 
 - [ ] In "gestion de cola de impresion", should there be a preview of the images??
