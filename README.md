@@ -130,9 +130,11 @@ exposes
 - [x] In any numeric input field, if it is currently "0", clear the field when opening it, so the
 user can began typing directly.
 
-- [ ] Empty numeric input filed is "0" not the previous value as if it was not changed.
+- [x] Empty numeric input field is "0" not the previous value as if it was not changed.
+e.g. focus a numeric input field, delete everything and save, it should be 0 not the previous value.
 
-- [ ] Ensure the user can exit all input fields by taping anywhere in the screen.
+- [ ] Ensure the user can exit all input fields by taping anywhere in the screen, 
+any other input field or button, or dismissing the keyboard.
 
 - [ ] In "gestion de coloa de impresion", should there be a preview of the images??
 

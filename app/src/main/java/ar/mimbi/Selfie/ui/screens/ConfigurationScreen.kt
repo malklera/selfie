@@ -152,7 +152,7 @@ fun ConfigurationScreen(
                         actions = {
                             IconButton(onClick = {
                                 UserActionTracker.trackAction("Guardar configuración")
-                                val finalSeconds = countdownSeconds.toIntOrNull() ?: 3
+                                val finalSeconds = countdownSeconds.toIntOrNull() ?: 0
                                 val finalMaxPrintCount = maxPrintCount.toIntOrNull() ?: 0
                                 onSave(
                                     AppConfig(
@@ -721,7 +721,7 @@ fun ConfigurationScreen(
             confirmButton = {
                 TextButton(onClick = {
                     Log.d("ConfigScreen", "Dialog Save clicked")
-                    val finalSeconds = countdownSeconds.toIntOrNull() ?: 3
+                    val finalSeconds = countdownSeconds.toIntOrNull() ?: 0
                     val finalMaxPrintCount = maxPrintCount.toIntOrNull() ?: 0
                     onSave(
                         AppConfig(
