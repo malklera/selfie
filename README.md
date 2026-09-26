@@ -127,8 +127,10 @@ Should this have a config selection??
 to the template, like quality, margins, color, whatever the printer agnostic library
 exposes
 
-- [ ] In any numeric input field, if it is currently "0", clear the field when opening it, so the
+- [x] In any numeric input field, if it is currently "0", clear the field when opening it, so the
 user can began typing directly.
+
+- [ ] Empty numeric input filed is "0" not the previous value as if it was not changed.
 
 - [ ] Ensure the user can exit all input fields by taping anywhere in the screen.
 
@@ -137,6 +139,11 @@ user can began typing directly.
 - [ ] In "gestion de coloa de impresion", the "(Lote #number)" what do it represent?
 i expect that it show page printed when more than one image goes to one page, but
 it do not seems like.
+
+- [ ] Any time the keyboard is opened for an input field, ensure to scroll the view
+so the input field is in view above the keyboard.
+
+- [ ] Add a confirmation popup when selecting the number of copies to print.
 ---
 
 Tablet resolution: 1200*1904

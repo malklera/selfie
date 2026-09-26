@@ -27,6 +27,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -318,7 +319,13 @@ fun ConfigurationScreen(
                                     it
                             },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .onFocusChanged { focusState ->
+                                    if (focusState.isFocused && countdownSeconds == "0") {
+                                        countdownSeconds = ""
+                                    }
+                                }
                         )
                     }
 
@@ -556,7 +563,13 @@ fun ConfigurationScreen(
                                 },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                 singleLine = true,
-                                modifier = Modifier.width(100.dp)
+                                modifier = Modifier
+                                    .width(100.dp)
+                                    .onFocusChanged { focusState ->
+                                        if (focusState.isFocused && maxPrintCount == "0") {
+                                            maxPrintCount = ""
+                                        }
+                                    }
                             )
                         }
 
