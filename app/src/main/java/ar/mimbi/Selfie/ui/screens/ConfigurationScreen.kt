@@ -43,6 +43,11 @@ import androidx.compose.ui.unit.sp
 import ar.mimbi.Selfie.data.AppConfig
 import ar.mimbi.Selfie.data.CameraResolution
 import ar.mimbi.Selfie.data.CameraResolutionHelper
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
+import kotlinx.coroutines.launch
 import ar.mimbi.Selfie.data.ErrorLogger
 import ar.mimbi.Selfie.data.UserActionTracker
 import ar.mimbi.Selfie.BuildConfig
@@ -51,7 +56,7 @@ import coil.compose.AsyncImagePainter
 import coil.compose.SubcomposeAsyncImageContent
 import kotlin.math.abs
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
 @Composable
 fun ConfigurationScreen(
     initialConfig: AppConfig,
@@ -65,10 +70,26 @@ fun ConfigurationScreen(
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
     val density = LocalDensity.current
+    val coroutineScope = rememberCoroutineScope()
     val isKeyboardVisible = WindowInsets.ime.getBottom(density) > 0
     LaunchedEffect(isKeyboardVisible) {
         if (!isKeyboardVisible) {
             focusManager.clearFocus()
+        }
+    }
+    val countdownFocusRequester = remember { BringIntoViewRequester() }
+    var countdownFocused by remember { mutableStateOf(false) }
+    LaunchedEffect(isKeyboardVisible, countdownFocused) {
+        if (isKeyboardVisible && countdownFocused) {
+            countdownFocusRequester.bringIntoView()
+        }
+    }
+
+    val maxPrintFocusRequester = remember { BringIntoViewRequester() }
+    var maxPrintFocused by remember { mutableStateOf(false) }
+    LaunchedEffect(isKeyboardVisible, maxPrintFocused) {
+        if (isKeyboardVisible && maxPrintFocused) {
+            maxPrintFocusRequester.bringIntoView()
         }
     }
     var portadaPath by remember { mutableStateOf(initialConfig.portadaPath) }
@@ -199,6 +220,7 @@ fun ConfigurationScreen(
                 }
             }
         ) { padding ->
+            val scrollState = rememberScrollState()
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -211,7 +233,9 @@ fun ConfigurationScreen(
                     }
                     .padding(padding)
                     .padding(16.dp)
-                    .verticalScroll(rememberScrollState()),
+                    .imePadding()
+                    .imeNestedScroll()
+                    .verticalScroll(scrollState),
                 verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
                 DisableSelection {
@@ -348,9 +372,16 @@ fun ConfigurationScreen(
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .bringIntoViewRequester(countdownFocusRequester)
                                 .onFocusChanged { focusState ->
-                                    if (focusState.isFocused && countdownSeconds == "0") {
-                                        countdownSeconds = ""
+                                    countdownFocused = focusState.isFocused
+                                    if (focusState.isFocused) {
+                                        coroutineScope.launch {
+                                            countdownFocusRequester.bringIntoView()
+                                        }
+                                        if (countdownSeconds == "0") {
+                                            countdownSeconds = ""
+                                        }
                                     }
                                 }
                         )
@@ -595,9 +626,16 @@ fun ConfigurationScreen(
                                 singleLine = true,
                                 modifier = Modifier
                                     .width(100.dp)
+                                    .bringIntoViewRequester(maxPrintFocusRequester)
                                     .onFocusChanged { focusState ->
-                                        if (focusState.isFocused && maxPrintCount == "0") {
-                                            maxPrintCount = ""
+                                        maxPrintFocused = focusState.isFocused
+                                        if (focusState.isFocused) {
+                                            coroutineScope.launch {
+                                                maxPrintFocusRequester.bringIntoView()
+                                            }
+                                            if (maxPrintCount == "0") {
+                                                maxPrintCount = ""
+                                            }
                                         }
                                     }
                             )

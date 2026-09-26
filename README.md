@@ -136,16 +136,19 @@ e.g. focus a numeric input field, delete everything and save, it should be 0 not
 - [x] Ensure the user can exit all input fields by taping anywhere in the screen, 
 any other input field or button, or dismissing the keyboard.
 
-- [ ] In "gestion de cola de impresion", should there be a preview of the images??
-
 - [ ] In "gestion de cola de impresion", the "(Lote #number)" what do it represent?
 i expect that it show page printed when more than one image goes to one page, but
 it do not seems like.
 
-- [ ] Any time the keyboard is opened for an input field, ensure to scroll the view
+- [x] Any time the keyboard is opened for an input field, ensure to scroll the view
 so the input field is in view above the keyboard.
 
 - [ ] Add a confirmation popup when selecting the number of copies to print.
+
+- [ ] In "gestion de cola de impresion", should there be a preview of the images??
+
+
+
 ---
 
 Tablet resolution: 1200*1904
