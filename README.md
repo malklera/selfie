@@ -2,6 +2,16 @@
 
 App to be used with the "Selfie Mirror", it is made to be used in a tablet.
 
+## Building
+
+```sh
+JAVA_HOME=/opt/android-studio/jbr ./gradlew assembleRelease
+```
+
+The .apk file is at
+
+`app/build/outputs/apk/release/`
+
 ## TODO
 
 - [x] Add a "Acerca de" section at the end of configuration with the build information:
@@ -117,7 +127,16 @@ Should this have a config selection??
 to the template, like quality, margins, color, whatever the printer agnostic library
 exposes
 
+- [ ] In any numeric input field, if it is currently "0", clear the field when opening it, so the
+user can began typing directly.
 
+- [ ] Ensure the user can exit all input fields by taping anywhere in the screen.
+
+- [ ] In "gestion de coloa de impresion", should there be a preview of the images??
+
+- [ ] In "gestion de coloa de impresion", the "(Lote #number)" what do it represent?
+i expect that it show page printed when more than one image goes to one page, but
+it do not seems like.
 ---
 
 Tablet resolution: 1200*1904
