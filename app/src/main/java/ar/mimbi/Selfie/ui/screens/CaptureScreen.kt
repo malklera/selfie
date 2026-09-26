@@ -43,6 +43,8 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.documentfile.provider.DocumentFile
 import androidx.exifinterface.media.ExifInterface
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.window.Dialog
 import ar.mimbi.Selfie.data.AppConfig
 import ar.mimbi.Selfie.data.CameraResolutionHelper
 import ar.mimbi.Selfie.data.ErrorLogger
@@ -61,7 +63,8 @@ import java.util.concurrent.Executors
 fun CaptureScreen(
     config: AppConfig,
     onNavigateToMain: () -> Unit,
-    onNavigateToConfig: () -> Unit
+    onNavigateToConfig: () -> Unit,
+    onPrint: (Int) -> Unit = {}
 ) {
     Log.d("CaptureScreen", "CaptureScreen composed")
     val context = LocalContext.current
@@ -351,24 +354,199 @@ fun CaptureScreen(
                     
                     Spacer(modifier = Modifier.height(32.dp))
 
-                    Button(
-                        onClick = {
-                            UserActionTracker.trackAction("OTRA FOTO")
-                            onNavigateToMain()
-                        },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.Transparent,
-                            contentColor = Color.White
-                        ),
-                        border = BorderStroke(1.5.dp, Color.Gray),
-                        shape = RoundedCornerShape(24.dp)
-                    ) {
-                        Text(
-                            text = "📸 OTRA FOTO",
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp
-                        )
+                    if (config.showPrintButton) {
+                        var showCopiesMenu by remember { mutableStateOf(false) }
+                        var showRemainingPrintsDialog by remember { mutableStateOf(false) }
+                        val remainingPrints = (config.maxPrintCount - config.printCount).coerceAtLeast(0)
+
+                        if (showRemainingPrintsDialog) {
+                            AlertDialog(
+                                onDismissRequest = { showRemainingPrintsDialog = false },
+                                title = { Text("Impresiones restantes") },
+                                text = { Text("Este es el número de impresiones restantes.") },
+                                confirmButton = {
+                                    TextButton(onClick = { showRemainingPrintsDialog = false }) {
+                                        Text("Aceptar")
+                                    }
+                                }
+                            )
+                        }
+
+                        if (showCopiesMenu) {
+                            Dialog(onDismissRequest = { showCopiesMenu = false }) {
+                                Card(
+                                    shape = RoundedCornerShape(16.dp),
+                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                                    modifier = Modifier.padding(16.dp)
+                                ) {
+                                    Column(
+                                        modifier = Modifier.padding(16.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        Text(
+                                            text = "Seleccionar cantidad de copias",
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        Spacer(modifier = Modifier.height(16.dp))
+
+                                        for (row in 0..2) {
+                                            Row(
+                                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                                modifier = Modifier.padding(vertical = 4.dp)
+                                            ) {
+                                                for (col in 1..3) {
+                                                    val copies = row * 3 + col
+                                                    val isEnabled = copies <= remainingPrints
+                                                    OutlinedButton(
+                                                        onClick = {
+                                                            showCopiesMenu = false
+                                                            UserActionTracker.trackAction("Imprimir $copies copias")
+                                                            onPrint(copies)
+                                                            Toast.makeText(
+                                                                context,
+                                                                "Imprimiendo $copies ${if (copies == 1) "copia" else "copias"}",
+                                                                Toast.LENGTH_SHORT
+                                                            ).show()
+                                                        },
+                                                        enabled = isEnabled,
+                                                        modifier = Modifier.size(56.dp),
+                                                        contentPadding = PaddingValues(0.dp)
+                                                    ) {
+                                                        Text(
+                                                            text = "$copies",
+                                                            fontSize = 18.sp,
+                                                            fontWeight = FontWeight.Bold
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        if (remainingPrints == 0) {
+                                            Spacer(modifier = Modifier.height(8.dp))
+                                            Text(
+                                                text = "No quedan impresiones disponibles",
+                                                color = MaterialTheme.colorScheme.error,
+                                                style = MaterialTheme.typography.bodySmall
+                                            )
+                                        }
+
+                                        Spacer(modifier = Modifier.height(12.dp))
+                                        TextButton(onClick = { showCopiesMenu = false }) {
+                                            Text("Cancelar")
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        BoxWithConstraints(
+                            modifier = Modifier.fillMaxWidth(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            val showIconOnly = maxWidth < 380.dp
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceEvenly,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                // Button 1: OTRA FOTO
+                                Button(
+                                    onClick = {
+                                        UserActionTracker.trackAction("OTRA FOTO")
+                                        onNavigateToMain()
+                                    },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = Color.Transparent,
+                                        contentColor = Color.White
+                                    ),
+                                    border = BorderStroke(1.5.dp, Color.Gray),
+                                    shape = RoundedCornerShape(24.dp),
+                                    modifier = Modifier.height(48.dp)
+                                ) {
+                                    Text(
+                                        text = if (showIconOnly) "📸" else "📸 OTRA FOTO",
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 18.sp
+                                    )
+                                }
+
+                                // Button 2: IMPRIMIR & Counter
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Button(
+                                        onClick = {
+                                            UserActionTracker.trackAction("Tocar botón de imprimir")
+                                            showCopiesMenu = true
+                                        },
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = Color.Transparent,
+                                            contentColor = Color.White
+                                        ),
+                                        border = BorderStroke(1.5.dp, Color.Gray),
+                                        shape = RoundedCornerShape(24.dp),
+                                        modifier = Modifier.height(48.dp)
+                                    ) {
+                                        Text(
+                                            text = if (showIconOnly) "🖨️" else "🖨️ IMPRIMIR",
+                                            color = Color.White,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 18.sp
+                                        )
+                                    }
+
+                                    // Counter badge to the right of printing button
+                                    Surface(
+                                        onClick = {
+                                            UserActionTracker.trackAction("Ver impresiones restantes")
+                                            showRemainingPrintsDialog = true
+                                        },
+                                        shape = CircleShape,
+                                        color = Color.DarkGray.copy(alpha = 0.8f),
+                                        border = BorderStroke(1.dp, Color.Gray),
+                                        modifier = Modifier.height(36.dp)
+                                    ) {
+                                        Box(
+                                            contentAlignment = Alignment.Center,
+                                            modifier = Modifier.padding(horizontal = 10.dp)
+                                        ) {
+                                            Text(
+                                                text = "$remainingPrints",
+                                                color = Color.White,
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 14.sp
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        Button(
+                            onClick = {
+                                UserActionTracker.trackAction("OTRA FOTO")
+                                onNavigateToMain()
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color.Transparent,
+                                contentColor = Color.White
+                            ),
+                            border = BorderStroke(1.5.dp, Color.Gray),
+                            shape = RoundedCornerShape(24.dp),
+                            modifier = Modifier.height(48.dp)
+                        ) {
+                            Text(
+                                text = "📸 OTRA FOTO",
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 18.sp
+                            )
+                        }
                     }
                 }
 

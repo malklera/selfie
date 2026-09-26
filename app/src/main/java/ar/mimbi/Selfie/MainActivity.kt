@@ -158,7 +158,12 @@ fun SelfieApp(configDataStore: ConfigDataStore) {
                             onNavigateToMain = { navController.navigate("main") {
                                 popUpTo("main") { inclusive = true }
                             } },
-                            onNavigateToConfig = { navController.navigate("config") }
+                            onNavigateToConfig = { navController.navigate("config") },
+                            onPrint = { copies ->
+                                scope.launch {
+                                    configDataStore.incrementPrintCount(copies)
+                                }
+                            }
                         )
                     }
                     composable("error_history") {

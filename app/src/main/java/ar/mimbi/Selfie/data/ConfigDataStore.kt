@@ -66,4 +66,11 @@ class ConfigDataStore(private val context: Context) {
             preferences[PRINT_MODE] = config.printMode
         }
     }
+
+    suspend fun incrementPrintCount(copies: Int) {
+        context.dataStore.edit { preferences ->
+            val current = preferences[PRINT_COUNT] ?: 0
+            preferences[PRINT_COUNT] = current + copies
+        }
+    }
 }
