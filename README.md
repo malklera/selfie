@@ -133,12 +133,12 @@ user can began typing directly.
 - [x] Empty numeric input field is "0" not the previous value as if it was not changed.
 e.g. focus a numeric input field, delete everything and save, it should be 0 not the previous value.
 
-- [ ] Ensure the user can exit all input fields by taping anywhere in the screen, 
+- [x] Ensure the user can exit all input fields by taping anywhere in the screen, 
 any other input field or button, or dismissing the keyboard.
 
-- [ ] In "gestion de coloa de impresion", should there be a preview of the images??
+- [ ] In "gestion de cola de impresion", should there be a preview of the images??
 
-- [ ] In "gestion de coloa de impresion", the "(Lote #number)" what do it represent?
+- [ ] In "gestion de cola de impresion", the "(Lote #number)" what do it represent?
 i expect that it show page printed when more than one image goes to one page, but
 it do not seems like.
 

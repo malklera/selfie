@@ -8,6 +8,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -21,6 +22,7 @@ fun CopySelectorDialog(
     onDismiss: () -> Unit
 ) {
     var copyCount by remember { mutableIntStateOf(initialCopies) }
+    val focusManager = LocalFocusManager.current
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
@@ -48,7 +50,10 @@ fun CopySelectorDialog(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     OutlinedButton(
-                        onClick = { if (copyCount > 1) copyCount-- },
+                        onClick = {
+                            focusManager.clearFocus()
+                            if (copyCount > 1) copyCount--
+                        },
                         enabled = copyCount > 1,
                         shape = RoundedCornerShape(8.dp)
                     ) {
@@ -63,7 +68,10 @@ fun CopySelectorDialog(
                     )
 
                     OutlinedButton(
-                        onClick = { if (maxCopies == 0 || copyCount < maxCopies) copyCount++ },
+                        onClick = {
+                            focusManager.clearFocus()
+                            if (maxCopies == 0 || copyCount < maxCopies) copyCount++
+                        },
                         enabled = maxCopies == 0 || copyCount < maxCopies,
                         shape = RoundedCornerShape(8.dp)
                     ) {
@@ -77,14 +85,20 @@ fun CopySelectorDialog(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End
                 ) {
-                    TextButton(onClick = onDismiss) {
+                    TextButton(onClick = {
+                        focusManager.clearFocus()
+                        onDismiss()
+                    }) {
                         Text("Cancelar")
                     }
 
                     Spacer(modifier = Modifier.width(8.dp))
 
                     Button(
-                        onClick = { onConfirm(copyCount) },
+                        onClick = {
+                            focusManager.clearFocus()
+                            onConfirm(copyCount)
+                        },
                         shape = RoundedCornerShape(8.dp)
                     ) {
                         Text("Imprimir")
