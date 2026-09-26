@@ -23,7 +23,6 @@ class ConfigDataStore(private val context: Context) {
         val SHOW_PRINT_BUTTON = booleanPreferencesKey("show_print_button")
         val MAX_PRINT_COUNT = intPreferencesKey("max_print_count")
         val PRINT_COUNT = intPreferencesKey("print_count")
-        val PRINT_MODE = stringPreferencesKey("print_mode")
     }
 
     val appConfigFlow: Flow<AppConfig> = context.dataStore.data
@@ -36,8 +35,7 @@ class ConfigDataStore(private val context: Context) {
                 pictureResolution = preferences[PICTURE_RESOLUTION],
                 showPrintButton = preferences[SHOW_PRINT_BUTTON] ?: false,
                 maxPrintCount = preferences[MAX_PRINT_COUNT] ?: 0,
-                printCount = preferences[PRINT_COUNT] ?: 0,
-                printMode = preferences[PRINT_MODE] ?: "mode_full_width_single"
+                printCount = preferences[PRINT_COUNT] ?: 0
             )
         }
 
@@ -63,7 +61,6 @@ class ConfigDataStore(private val context: Context) {
             preferences[SHOW_PRINT_BUTTON] = config.showPrintButton
             preferences[MAX_PRINT_COUNT] = config.maxPrintCount
             preferences[PRINT_COUNT] = config.printCount
-            preferences[PRINT_MODE] = config.printMode
         }
     }
 

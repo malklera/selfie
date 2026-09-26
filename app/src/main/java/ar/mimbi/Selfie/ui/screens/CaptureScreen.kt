@@ -64,7 +64,7 @@ fun CaptureScreen(
     config: AppConfig,
     onNavigateToMain: () -> Unit,
     onNavigateToConfig: () -> Unit,
-    onPrint: (Int) -> Unit = {}
+    onPrint: (photoUri: String, copies: Int) -> Unit = { _, _ -> }
 ) {
     Log.d("CaptureScreen", "CaptureScreen composed")
     val context = LocalContext.current
@@ -402,10 +402,10 @@ fun CaptureScreen(
                                                         onClick = {
                                                             showCopiesMenu = false
                                                             UserActionTracker.trackAction("Imprimir $copies copias")
-                                                            onPrint(copies)
+                                                            onPrint(capturedUriString ?: "", copies)
                                                             Toast.makeText(
                                                                 context,
-                                                                "Imprimiendo $copies ${if (copies == 1) "copia" else "copias"}",
+                                                                "Foto agregada a la cola de impresión ($copies ${if (copies == 1) "copia" else "copias"})",
                                                                 Toast.LENGTH_SHORT
                                                             ).show()
                                                         },

@@ -34,14 +34,13 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import ar.mimbi.Selfie.data.AppConfig
 import ar.mimbi.Selfie.data.CameraResolution
 import ar.mimbi.Selfie.data.CameraResolutionHelper
 import ar.mimbi.Selfie.data.ErrorLogger
-import ar.mimbi.Selfie.data.PrintMode
 import ar.mimbi.Selfie.data.UserActionTracker
 import ar.mimbi.Selfie.BuildConfig
-import ar.mimbi.Selfie.ui.components.PrintModePreview
 import coil.compose.SubcomposeAsyncImage
 import coil.compose.AsyncImagePainter
 import coil.compose.SubcomposeAsyncImageContent
@@ -51,11 +50,12 @@ import kotlin.math.abs
 @Composable
 fun ConfigurationScreen(
     initialConfig: AppConfig,
-    selectedPrintModeOverride: String? = null,
     onSave: (AppConfig) -> Unit,
     onClose: () -> Unit,
     onNavigateToErrorHistory: () -> Unit,
-    onNavigateToPrintModeSelection: (currentMode: String) -> Unit = {}
+    onNavigateToPrinterConfig: () -> Unit = {},
+    onNavigateToTemplateConfig: () -> Unit = {},
+    onNavigateToQueueManagement: () -> Unit = {}
 ) {
     val context = LocalContext.current
     var portadaPath by remember { mutableStateOf(initialConfig.portadaPath) }
@@ -76,13 +76,6 @@ fun ConfigurationScreen(
     var showPrintButton by remember { mutableStateOf(initialConfig.showPrintButton) }
     var maxPrintCount by remember { mutableStateOf(initialConfig.maxPrintCount.toString()) }
     var printCount by remember { mutableStateOf(initialConfig.printCount) }
-    var printMode by remember { mutableStateOf(selectedPrintModeOverride ?: initialConfig.printMode) }
-
-    LaunchedEffect(selectedPrintModeOverride) {
-        if (selectedPrintModeOverride != null) {
-            printMode = selectedPrintModeOverride
-        }
-    }
     
     var showUnsavedDialog by remember { mutableStateOf(false) }
 
@@ -93,8 +86,7 @@ fun ConfigurationScreen(
             pictureResolution != (initialConfig.pictureResolution ?: defaultResKey) ||
             showPrintButton != initialConfig.showPrintButton ||
             maxPrintCount != initialConfig.maxPrintCount.toString() ||
-            printCount != initialConfig.printCount ||
-            printMode != initialConfig.printMode
+            printCount != initialConfig.printCount
 
     val imagePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
@@ -170,8 +162,7 @@ fun ConfigurationScreen(
                                         pictureResolution = pictureResolution,
                                         showPrintButton = showPrintButton,
                                         maxPrintCount = finalMaxPrintCount,
-                                        printCount = printCount,
-                                        printMode = printMode
+                                        printCount = printCount
                                     )
                                 )
                                 Toast.makeText(context, "Configuración guardada", Toast.LENGTH_SHORT).show()
@@ -597,78 +588,73 @@ fun ConfigurationScreen(
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // Selección de impresora
-                        Column {
+                        // Sistema de Impresión
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text(
-                                "Selección de impresora",
+                                "Configuración del Sistema de Impresión",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold
                             )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                "No configurado por el momento",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.outline
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        // Modo de impresión
-                        Column {
-                            Text(
-                                "Modo de impresión",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            val currentMode = PrintMode.getById(printMode)
 
                             OutlinedCard(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable {
-                                        UserActionTracker.trackAction("Navegar a selección de modo de impresión")
-                                        onNavigateToPrintModeSelection(printMode)
-                                    },
-                                border = CardDefaults.outlinedCardBorder()
+                                    .clickable { onNavigateToPrinterConfig() }
                             ) {
                                 Row(
                                     modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(12.dp),
-                                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                        .padding(12.dp)
+                                        .fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    PrintModePreview(
-                                        mode = currentMode,
-                                        modifier = Modifier.size(60.dp, 80.dp)
-                                    )
+                                    Column {
+                                        Text("Configuración de Impresora", fontWeight = FontWeight.Bold)
+                                        Text("Estado, conexión y adaptador de impresora", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
+                                }
+                            }
 
-                                    Column(
-                                        modifier = Modifier.weight(1f),
-                                        verticalArrangement = Arrangement.spacedBy(2.dp)
-                                    ) {
-                                        Text(
-                                            text = currentMode.name,
-                                            style = MaterialTheme.typography.bodyLarge,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                        Text(
-                                            text = "Ancho completo: ${if (currentMode.isFullWidth) "Sí" else "No"} • Calidad: ${currentMode.quality}",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                        Text(
-                                            text = "Tocar para cambiar modo",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.primary
-                                        )
+                            OutlinedCard(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { onNavigateToTemplateConfig() }
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .padding(12.dp)
+                                        .fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column {
+                                        Text("Plantillas de Impresión", fontWeight = FontWeight.Bold)
+                                        Text("Configurar distribución de fotos por página (1, 2, 4 fotos)", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
+                                }
+                            }
+
+                            OutlinedCard(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { onNavigateToQueueManagement() }
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .padding(12.dp)
+                                        .fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column {
+                                        Text("Gestión de Cola de Impresión", fontWeight = FontWeight.Bold)
+                                        Text("Ver lotes, imprimir pendientes/restantes y reintentar", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
                                 }
                             }
                         }
+
+                        Spacer(modifier = Modifier.height(16.dp))
                     }
 
                     // Mantenimiento
@@ -733,8 +719,7 @@ fun ConfigurationScreen(
                             pictureResolution = pictureResolution,
                             showPrintButton = showPrintButton,
                             maxPrintCount = finalMaxPrintCount,
-                            printCount = printCount,
-                            printMode = printMode
+                            printCount = printCount
                         )
                     )
                     Toast.makeText(context, "Configuración guardada", Toast.LENGTH_SHORT).show()

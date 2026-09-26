@@ -8,6 +8,5 @@ data class AppConfig(
     val pictureResolution: String? = null,
     val showPrintButton: Boolean = false,
     val maxPrintCount: Int = 0,
-    val printCount: Int = 0,
-    val printMode: String = "mode_full_width_single"
+    val printCount: Int = 0
 )

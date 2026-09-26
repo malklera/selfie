@@ -109,7 +109,14 @@ When the printing button is taped show a floating menu asking for number of copi
 just show the numbers 1 to 9 do not bother with a numeric input, make then buttons.
 Should this have a config selection??
 
-- [ ] Implement printPlan.md
+- [x] Implement printPlan.md
+
+- [x] Take out the emojis added to the "configuracion del sistema de impresion"
+
+- [x] Get ride of "modo de impresion", fold any available printing configuration
+to the template, like quality, margins, color, whatever the printer agnostic library
+exposes
+
 
 ---
 

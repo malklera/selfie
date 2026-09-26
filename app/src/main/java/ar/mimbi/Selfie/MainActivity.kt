@@ -22,14 +22,21 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.compose.ui.platform.LocalContext
 import ar.mimbi.Selfie.data.ConfigDataStore
 import ar.mimbi.Selfie.data.ErrorLogger
 import ar.mimbi.Selfie.data.UserActionTracker
+import ar.mimbi.Selfie.data.db.AppDatabase
+import ar.mimbi.Selfie.printing.printer.PrinterManager
+import ar.mimbi.Selfie.printing.queue.PrintQueueManager
+import ar.mimbi.Selfie.printing.queue.PrintQueueRepository
+import ar.mimbi.Selfie.printing.ui.owner.PrinterConfigScreen
+import ar.mimbi.Selfie.printing.ui.owner.QueueManagementScreen
+import ar.mimbi.Selfie.printing.ui.owner.TemplateConfigScreen
 import ar.mimbi.Selfie.ui.screens.CaptureScreen
 import ar.mimbi.Selfie.ui.screens.ConfigurationScreen
 import ar.mimbi.Selfie.ui.screens.ErrorHistoryScreen
 import ar.mimbi.Selfie.ui.screens.MainScreen
-import ar.mimbi.Selfie.ui.screens.PrintModeSelectionScreen
 import ar.mimbi.Selfie.ui.screens.SplashScreen
 import ar.mimbi.Selfie.ui.theme.SelfieTheme
 import kotlinx.coroutines.launch
@@ -83,10 +90,16 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun SelfieApp(configDataStore: ConfigDataStore) {
+    val context = LocalContext.current
     val navController = rememberNavController()
     val configState = configDataStore.appConfigFlow.collectAsState(initial = null)
     val config = configState.value
     val scope = rememberCoroutineScope()
+
+    val database = remember { AppDatabase.getDatabase(context) }
+    val printQueueRepository = remember { PrintQueueRepository(database) }
+    val printerManager = remember { PrinterManager() }
+    val printQueueManager = remember { PrintQueueManager(printQueueRepository, printerManager) }
     
     // Listen to navigation changes to track screen
     LaunchedEffect(navController) {
@@ -117,11 +130,9 @@ fun SelfieApp(configDataStore: ConfigDataStore) {
                             onImageReady = { isMainContentReady = true }
                         )
                     }
-                    composable("config") { backStackEntry ->
-                        val returnedPrintMode = backStackEntry.savedStateHandle.get<String>("selected_print_mode")
+                    composable("config") {
                         ConfigurationScreen(
                             initialConfig = config,
-                            selectedPrintModeOverride = returnedPrintMode,
                             onSave = { newConfig ->
                                 scope.launch {
                                     configDataStore.saveConfig(newConfig)
@@ -129,26 +140,26 @@ fun SelfieApp(configDataStore: ConfigDataStore) {
                             },
                             onClose = { navController.popBackStack() },
                             onNavigateToErrorHistory = { navController.navigate("error_history") },
-                            onNavigateToPrintModeSelection = { currentMode ->
-                                backStackEntry.savedStateHandle.set("current_print_mode", currentMode)
-                                navController.navigate("print_mode_selection")
-                            }
+                            onNavigateToPrinterConfig = { navController.navigate("printer_config") },
+                            onNavigateToTemplateConfig = { navController.navigate("template_config") },
+                            onNavigateToQueueManagement = { navController.navigate("queue_management") }
                         )
                     }
-                    composable("print_mode_selection") {
-                        val currentModeId = navController.previousBackStackEntry
-                            ?.savedStateHandle
-                            ?.get<String>("current_print_mode")
-                            ?: config.printMode
-
-                        PrintModeSelectionScreen(
-                            currentModeId = currentModeId,
-                            onSelectMode = { selectedId ->
-                                navController.previousBackStackEntry
-                                    ?.savedStateHandle
-                                    ?.set("selected_print_mode", selectedId)
-                                navController.popBackStack()
-                            },
+                    composable("printer_config") {
+                        PrinterConfigScreen(
+                            printerManager = printerManager,
+                            onBack = { navController.popBackStack() }
+                        )
+                    }
+                    composable("template_config") {
+                        TemplateConfigScreen(
+                            queueManager = printQueueManager,
+                            onBack = { navController.popBackStack() }
+                        )
+                    }
+                    composable("queue_management") {
+                        QueueManagementScreen(
+                            queueManager = printQueueManager,
                             onBack = { navController.popBackStack() }
                         )
                     }
@@ -159,8 +170,9 @@ fun SelfieApp(configDataStore: ConfigDataStore) {
                                 popUpTo("main") { inclusive = true }
                             } },
                             onNavigateToConfig = { navController.navigate("config") },
-                            onPrint = { copies ->
+                            onPrint = { photoUri, copies ->
                                 scope.launch {
+                                    printQueueManager.enqueuePhoto(context, photoUri, copies)
                                     configDataStore.incrementPrintCount(copies)
                                 }
                             }
