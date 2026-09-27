@@ -22,86 +22,112 @@ fun CopySelectorDialog(
     onDismiss: () -> Unit
 ) {
     var copyCount by remember { mutableIntStateOf(initialCopies) }
+    var showConfirmation by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
 
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = MaterialTheme.colorScheme.surface,
-            tonalElevation = 8.dp
-        ) {
-            Column(
-                modifier = Modifier
-                    .padding(24.dp)
-                    .fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = "Seleccionar Copias",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    OutlinedButton(
-                        onClick = {
-                            focusManager.clearFocus()
-                            if (copyCount > 1) copyCount--
-                        },
-                        enabled = copyCount > 1,
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Text("-", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+    if (showConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showConfirmation = false },
+            title = { Text("Confirmar impresión") },
+            text = { Text("¿Desea imprimir $copyCount ${if (copyCount == 1) "copia" else "copias"}?") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showConfirmation = false
+                        onConfirm(copyCount)
                     }
-
+                ) {
+                    Text("Confirmar")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showConfirmation = false }
+                ) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    } else {
+        Dialog(onDismissRequest = onDismiss) {
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 8.dp
+            ) {
+                Column(
+                    modifier = Modifier
+                        .padding(24.dp)
+                        .fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
                     Text(
-                        text = "$copyCount",
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 24.dp)
+                        text = "Seleccionar Copias",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
                     )
 
-                    OutlinedButton(
-                        onClick = {
-                            focusManager.clearFocus()
-                            if (maxCopies == 0 || copyCount < maxCopies) copyCount++
-                        },
-                        enabled = maxCopies == 0 || copyCount < maxCopies,
-                        shape = RoundedCornerShape(8.dp)
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("+", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                        OutlinedButton(
+                            onClick = {
+                                focusManager.clearFocus()
+                                if (copyCount > 1) copyCount--
+                            },
+                            enabled = copyCount > 1,
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text("-", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                        }
+
+                        Text(
+                            text = "$copyCount",
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 24.dp)
+                        )
+
+                        OutlinedButton(
+                            onClick = {
+                                focusManager.clearFocus()
+                                if (maxCopies == 0 || copyCount < maxCopies) copyCount++
+                            },
+                            enabled = maxCopies == 0 || copyCount < maxCopies,
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text("+", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                        }
                     }
-                }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    TextButton(onClick = {
-                        focusManager.clearFocus()
-                        onDismiss()
-                    }) {
-                        Text("Cancelar")
-                    }
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    Button(
-                        onClick = {
-                            focusManager.clearFocus()
-                            onConfirm(copyCount)
-                        },
-                        shape = RoundedCornerShape(8.dp)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
                     ) {
-                        Text("Imprimir")
+                        TextButton(onClick = {
+                            focusManager.clearFocus()
+                            onDismiss()
+                        }) {
+                            Text("Cancelar")
+                        }
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        Button(
+                            onClick = {
+                                focusManager.clearFocus()
+                                showConfirmation = true
+                            },
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text("Imprimir")
+                        }
                     }
                 }
             }

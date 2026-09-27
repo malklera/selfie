@@ -357,6 +357,8 @@ fun CaptureScreen(
                     if (config.showPrintButton) {
                         var showCopiesMenu by remember { mutableStateOf(false) }
                         var showRemainingPrintsDialog by remember { mutableStateOf(false) }
+                        var selectedCopies by remember { mutableStateOf<Int?>(null) }
+                        var showConfirmationDialog by remember { mutableStateOf(false) }
                         val remainingPrints = (config.maxPrintCount - config.printCount).coerceAtLeast(0)
 
                         if (showRemainingPrintsDialog) {
@@ -367,6 +369,47 @@ fun CaptureScreen(
                                 confirmButton = {
                                     TextButton(onClick = { showRemainingPrintsDialog = false }) {
                                         Text("Aceptar")
+                                    }
+                                }
+                            )
+                        }
+
+                        if (showConfirmationDialog && selectedCopies != null) {
+                            val copies = selectedCopies!!
+                            AlertDialog(
+                                onDismissRequest = {
+                                    showConfirmationDialog = false
+                                    selectedCopies = null
+                                    showCopiesMenu = true
+                                },
+                                title = { Text("Confirmar impresión") },
+                                text = { Text("¿Desea imprimir $copies ${if (copies == 1) "copia" else "copias"}?") },
+                                confirmButton = {
+                                    Button(
+                                        onClick = {
+                                            showConfirmationDialog = false
+                                            selectedCopies = null
+                                            UserActionTracker.trackAction("Imprimir $copies copias")
+                                            onPrint(capturedUriString ?: "", copies)
+                                            Toast.makeText(
+                                                context,
+                                                "Foto agregada a la cola de impresión ($copies ${if (copies == 1) "copia" else "copias"})",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        }
+                                    ) {
+                                        Text("Confirmar")
+                                    }
+                                },
+                                dismissButton = {
+                                    TextButton(
+                                        onClick = {
+                                            showConfirmationDialog = false
+                                            selectedCopies = null
+                                            showCopiesMenu = true
+                                        }
+                                    ) {
+                                        Text("Cancelar")
                                     }
                                 }
                             )
@@ -401,13 +444,8 @@ fun CaptureScreen(
                                                     OutlinedButton(
                                                         onClick = {
                                                             showCopiesMenu = false
-                                                            UserActionTracker.trackAction("Imprimir $copies copias")
-                                                            onPrint(capturedUriString ?: "", copies)
-                                                            Toast.makeText(
-                                                                context,
-                                                                "Foto agregada a la cola de impresión ($copies ${if (copies == 1) "copia" else "copias"})",
-                                                                Toast.LENGTH_SHORT
-                                                            ).show()
+                                                            selectedCopies = copies
+                                                            showConfirmationDialog = true
                                                         },
                                                         enabled = isEnabled,
                                                         modifier = Modifier.size(56.dp),

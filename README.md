@@ -54,7 +54,7 @@ that give you a list of apps opened currently, how do it is called?, well that
 set of buttons appear partially before disappearing, it do not happen when you 
 tap an empty place without scrolling
 
-- [ ] Add a confirmation popup when selecting the number of copies to print.
+- [x] Add a confirmation popup when selecting the number of copies to print.
 
 - [ ] In "gestion de cola de impresion", should there be a preview of the images??
 
