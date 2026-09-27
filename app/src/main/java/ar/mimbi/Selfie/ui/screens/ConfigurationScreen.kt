@@ -234,7 +234,6 @@ fun ConfigurationScreen(
                     .padding(padding)
                     .padding(16.dp)
                     .imePadding()
-                    .imeNestedScroll()
                     .verticalScroll(scrollState),
                 verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
@@ -788,6 +787,7 @@ fun ConfigurationScreen(
                     Text("Licencia: MIT", style = MaterialTheme.typography.bodyMedium)
                     Text("Autor: github.com/malklera", style = MaterialTheme.typography.bodyMedium)
                 }
+                Spacer(modifier = Modifier.height(48.dp))
             }
         }
     }

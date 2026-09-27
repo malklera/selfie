@@ -1,6 +1,8 @@
 package ar.mimbi.Selfie
 
 import android.Manifest
+import android.graphics.Rect
+import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
@@ -23,6 +25,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.view.ViewCompat
 import ar.mimbi.Selfie.data.ConfigDataStore
 import ar.mimbi.Selfie.data.ErrorLogger
 import ar.mimbi.Selfie.data.UserActionTracker
@@ -57,13 +60,29 @@ class MainActivity : ComponentActivity() {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         // Enable edge-to-edge and immersive mode
-        WindowCompat.setDecorFitsSystemWindows(window, false)
         enableEdgeToEdge()
         
         // Hide system bars
         val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
         windowInsetsController.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         windowInsetsController.hide(WindowInsetsCompat.Type.systemBars())
+
+        // Set system gesture exclusion rects to prevent transient bars from peeking during scrolling
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            ViewCompat.setOnApplyWindowInsetsListener(window.decorView) { view, windowInsets ->
+                val navBarInsets = windowInsets.getInsets(WindowInsetsCompat.Type.navigationBars())
+                val statusBarInsets = windowInsets.getInsets(WindowInsetsCompat.Type.statusBars())
+                
+                if (view.width > 0 && view.height > 0) {
+                    val exclusionRects = listOf(
+                        Rect(0, 0, view.width, statusBarInsets.top.coerceAtLeast(1)),
+                        Rect(0, view.height - navBarInsets.bottom.coerceAtLeast(1), view.width, view.height)
+                    )
+                    view.systemGestureExclusionRects = exclusionRects
+                }
+                windowInsets
+            }
+        }
         
         val requestPermissionLauncher = registerForActivityResult(
             ActivityResultContracts.RequestMultiplePermissions()

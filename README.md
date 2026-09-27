@@ -48,7 +48,7 @@ so the input field is in view above the keyboard.
 i expect that it show page printed when more than one image goes to one page, but
 it do not seems like.
 
-- [ ] there is a bug when scrolling, any time you tap->scroll(up/down)->lift 
+- [x] there is a bug when scrolling, any time you tap->scroll(up/down)->lift 
 the buttons of android that do back, main screen and apps opened?? the hamburger
 that give you a list of apps opened currently, how do it is called?, well that 
 set of buttons appear partially before disappearing, it do not happen when you 
