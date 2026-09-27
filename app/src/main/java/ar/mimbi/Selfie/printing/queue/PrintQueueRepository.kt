@@ -35,7 +35,7 @@ class PrintQueueRepository(private val database: AppDatabase) {
                 templateDao.insertOrUpdate(
                     PrintTemplateEntity(
                         id = template.id,
-                        name = template.name,
+                        description = template.description,
                         slotsJson = slotsJson,
                         version = template.version,
                         isActive = isActive,
@@ -58,7 +58,7 @@ class PrintQueueRepository(private val database: AppDatabase) {
         return parseTemplateEntity(activeEntity)
     }
 
-    suspend fun setActiveTemplate(templateId: String) {
+    suspend fun setActiveTemplate(templateId: Int) {
         templateDao.setActiveTemplate(templateId)
     }
 
@@ -68,7 +68,7 @@ class PrintQueueRepository(private val database: AppDatabase) {
         }
     }
 
-    suspend fun getTemplateById(id: String): PrintTemplate? {
+    suspend fun getTemplateById(id: Int): PrintTemplate? {
         val entity = templateDao.getTemplateById(id) ?: return null
         return parseTemplateEntity(entity)
     }
@@ -213,7 +213,7 @@ class PrintQueueRepository(private val database: AppDatabase) {
         }
         return PrintTemplate(
             id = entity.id,
-            name = entity.name,
+            description = entity.description,
             slots = slots,
             version = entity.version,
             quality = entity.quality,

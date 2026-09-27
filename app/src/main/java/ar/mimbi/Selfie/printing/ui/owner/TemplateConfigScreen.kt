@@ -128,10 +128,17 @@ private fun TemplateItemCard(
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = template.name,
+                    text = "Plantilla #${template.id}",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
+                Text(
+                    text = template.description,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Medium
+                )
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = "${template.slotCount} foto(s) por página",
                     style = MaterialTheme.typography.bodyMedium,

@@ -6,7 +6,7 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "print_batches")
 data class PrintBatchEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val templateId: String,
+    val templateId: Int,
     val templateVersion: Int,
     val createdAt: Long,
     val status: String

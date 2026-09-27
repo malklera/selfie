@@ -12,7 +12,7 @@ enum class BatchStatus {
  */
 data class PrintBatch(
     val id: Long = 0,
-    val templateId: String,
+    val templateId: Int,
     val templateVersion: Int,
     val createdAt: Long = System.currentTimeMillis(),
     val status: BatchStatus = BatchStatus.ACTIVE

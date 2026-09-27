@@ -5,8 +5,8 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "print_templates")
 data class PrintTemplateEntity(
-    @PrimaryKey val id: String,
-    val name: String,
+    @PrimaryKey val id: Int,
+    val description: String,
     val slotsJson: String,
     val version: Int,
     val isActive: Boolean = false,

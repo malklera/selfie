@@ -5,8 +5,8 @@ import ar.mimbi.Selfie.printing.model.PrintTemplate
 
 object DefaultTemplates {
     val TEMPLATE_FULL_WIDTH_SINGLE = PrintTemplate(
-        id = "template_full_width_single",
-        name = "Foto Única - Ancho Completo",
+        id = 1,
+        description = "Foto Única - Ancho Completo",
         slots = listOf(
             PhotoSlot(left = 0.0f, top = 0.0f, width = 1.0f, height = 1.0f)
         ),
@@ -19,8 +19,8 @@ object DefaultTemplates {
     )
 
     val TEMPLATE_SINGLE_MARGIN = PrintTemplate(
-        id = "template_single_margin",
-        name = "Foto Única - Con Márgenes",
+        id = 2,
+        description = "Foto Única - Con Márgenes",
         slots = listOf(
             PhotoSlot(left = 0.05f, top = 0.05f, width = 0.9f, height = 0.9f)
         ),
@@ -33,8 +33,8 @@ object DefaultTemplates {
     )
 
     val TEMPLATE_DOUBLE_STRIP = PrintTemplate(
-        id = "template_double_strip",
-        name = "Tira Doble de Fotos",
+        id = 3,
+        description = "Tira Doble de Fotos",
         slots = listOf(
             PhotoSlot(left = 0.0f, top = 0.0f, width = 1.0f, height = 0.5f),
             PhotoSlot(left = 0.0f, top = 0.5f, width = 1.0f, height = 0.5f)
@@ -48,8 +48,8 @@ object DefaultTemplates {
     )
 
     val TEMPLATE_4_PHOTOS = PrintTemplate(
-        id = "template_4_photos",
-        name = "4 Fotos por Página (Cuadrícula 2x2)",
+        id = 4,
+        description = "4 Fotos por Página (Cuadrícula 2x2)",
         slots = listOf(
             PhotoSlot(left = 0.0f, top = 0.0f, width = 0.5f, height = 0.5f),
             PhotoSlot(left = 0.5f, top = 0.0f, width = 0.5f, height = 0.5f),
@@ -71,7 +71,7 @@ object DefaultTemplates {
         TEMPLATE_4_PHOTOS
     )
 
-    fun getById(id: String?): PrintTemplate {
+    fun getById(id: Int?): PrintTemplate {
         return ALL_TEMPLATES.firstOrNull { it.id == id } ?: TEMPLATE_FULL_WIDTH_SINGLE
     }
 }

@@ -44,10 +44,6 @@ any other input field or button, or dismissing the keyboard.
 - [x] Any time the keyboard is opened for an input field, ensure to scroll the view
 so the input field is in view above the keyboard.
 
-- [ ] In "gestion de cola de impresion", the "(Lote #number)" what do it represent?
-i expect that it show page printed when more than one image goes to one page, but
-it do not seems like.
-
 - [x] there is a bug when scrolling, any time you tap->scroll(up/down)->lift 
 the buttons of android that do back, main screen and apps opened?? the hamburger
 that give you a list of apps opened currently, how do it is called?, well that 
@@ -55,6 +51,22 @@ set of buttons appear partially before disappearing, it do not happen when you
 tap an empty place without scrolling
 
 - [x] Add a confirmation popup when selecting the number of copies to print.
+
+- [x] Give a number integer as id for each template, show it in the template selection
+section.
+
+- [ ] In  "gestion de cola de impresion" instead of showing (Lote #number) show
+(Plantilla #ID)
+
+- [ ] In  "gestion de cola de impresion" there is a blank space between the total
+pending, printring and printed counters and the "imprimir restantes" button, get
+ride of that.
+
+- [ ] In  "gestion de cola de impresion" once printed visually group then if they
+where printed into the same page
+
+- [ ] In  "gestion de cola de impresion" allow me to tap into an item in the "items en cola"
+list and choose to take it out, retry, print again.
 
 - [ ] In "gestion de cola de impresion", should there be a preview of the images??
 

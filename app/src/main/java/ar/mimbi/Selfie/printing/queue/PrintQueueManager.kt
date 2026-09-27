@@ -56,7 +56,7 @@ class PrintQueueManager(
         return insertedIds
     }
 
-    suspend fun setActiveTemplate(templateId: String) {
+    suspend fun setActiveTemplate(templateId: Int) {
         repository.setActiveTemplate(templateId)
     }
 

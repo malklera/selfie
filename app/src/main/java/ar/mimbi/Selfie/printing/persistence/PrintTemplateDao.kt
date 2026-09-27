@@ -12,7 +12,7 @@ interface PrintTemplateDao {
     fun getAllTemplates(): Flow<List<PrintTemplateEntity>>
 
     @Query("SELECT * FROM print_templates WHERE id = :id LIMIT 1")
-    suspend fun getTemplateById(id: String): PrintTemplateEntity?
+    suspend fun getTemplateById(id: Int): PrintTemplateEntity?
 
     @Query("SELECT * FROM print_templates WHERE isActive = 1 LIMIT 1")
     suspend fun getActiveTemplate(): PrintTemplateEntity?
@@ -30,5 +30,5 @@ interface PrintTemplateDao {
     suspend fun clearActiveTemplates(): Int
 
     @Query("UPDATE print_templates SET isActive = CASE WHEN id = :activeId THEN 1 ELSE 0 END")
-    suspend fun setActiveTemplate(activeId: String): Int
+    suspend fun setActiveTemplate(activeId: Int): Int
 }

@@ -4,8 +4,8 @@ package ar.mimbi.Selfie.printing.model
  * Defines page layout and photo slot positions along with printing configuration (quality, dimensions, margins).
  */
 data class PrintTemplate(
-    val id: String,
-    val name: String,
+    val id: Int,
+    val description: String,
     val slots: List<PhotoSlot>,
     val version: Int = 1,
     val quality: String = "Alta (300 DPI)",
