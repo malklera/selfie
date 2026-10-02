@@ -112,7 +112,7 @@ fun QueueManagementScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "Items en Cola (${items.size})",
+                text = "Cola de impresión (${items.size})",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )

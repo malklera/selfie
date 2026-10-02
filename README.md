@@ -80,7 +80,7 @@ Maintain the current style to represent elements
 list and choose to take it out, retry, print again, if it failed, show the error
 here.
 
-- [ ] Change "Items en Cola (N)" for "Cola de impresión (N)"
+- [x] Change "Items en Cola (N)" for "Cola de impresión (N)"
 
 - [ ] In "gestion de cola de impresion", should there be a preview of the images??
 
