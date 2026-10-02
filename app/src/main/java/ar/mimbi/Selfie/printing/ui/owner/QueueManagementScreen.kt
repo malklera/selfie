@@ -23,6 +23,7 @@ import ar.mimbi.Selfie.printing.model.PrintBatch
 import ar.mimbi.Selfie.printing.model.PrintItem
 import ar.mimbi.Selfie.printing.model.PrintItemStatus
 import ar.mimbi.Selfie.printing.queue.PrintQueueManager
+import ar.mimbi.Selfie.printing.template.DefaultTemplates
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -124,8 +125,15 @@ fun QueueManagementScreen(
             ) {
                 items(items, key = { it.id }) { item ->
                     val batch = batches.find { it.id == item.batchId }
-                    val templateId = batch?.templateId ?: 0
-                    ItemRow(item, templateId)
+                    val templateId = batch?.templateId ?: 1
+                    val template = DefaultTemplates.getById(templateId)
+                    val slotCount = template.slotCount.coerceAtLeast(1)
+
+                    val batchItems = items.filter { it.batchId == item.batchId }.sortedBy { it.sequence }
+                    val itemIndex = batchItems.indexOfFirst { it.id == item.id } + 1
+                    val pageNumber = if (itemIndex > 0) (itemIndex - 1) / slotCount + 1 else 1
+
+                    ItemRow(item, templateId, pageNumber)
                 }
             }
         }
@@ -154,12 +162,19 @@ private fun StatRow(label: String, value: String) {
 }
 
 @Composable
-private fun ItemRow(item: PrintItem, templateId: Int) {
+private fun ItemRow(item: PrintItem, templateId: Int, pageNumber: Int) {
     val statusColor = when (item.status) {
         PrintItemStatus.PENDING -> MaterialTheme.colorScheme.primary
         PrintItemStatus.PRINTING -> MaterialTheme.colorScheme.tertiary
         PrintItemStatus.PRINTED -> MaterialTheme.colorScheme.outline
         PrintItemStatus.FAILED -> MaterialTheme.colorScheme.error
+    }
+
+    val statusText = when (item.status) {
+        PrintItemStatus.PENDING -> "Pendiente"
+        PrintItemStatus.PRINTING -> "Imprimiendo"
+        PrintItemStatus.PRINTED -> "Impreso"
+        PrintItemStatus.FAILED -> "Fallido"
     }
 
     Card(
@@ -174,16 +189,25 @@ private fun ItemRow(item: PrintItem, templateId: Int) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = "Item #${item.id} (Plantilla #$templateId)", fontWeight = FontWeight.Bold)
-                Text(text = item.photoUri, style = MaterialTheme.typography.bodySmall, maxLines = 1)
+                Text(
+                    text = "#${item.id} - Plantilla $templateId - Página $pageNumber",
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = item.photoUri,
+                    style = MaterialTheme.typography.bodySmall
+                )
             }
+
+            Spacer(modifier = Modifier.width(8.dp))
 
             Surface(
                 color = statusColor.copy(alpha = 0.2f),
                 shape = RoundedCornerShape(4.dp)
             ) {
                 Text(
-                    text = item.status.name,
+                    text = statusText,
                     color = statusColor,
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                     style = MaterialTheme.typography.labelMedium,

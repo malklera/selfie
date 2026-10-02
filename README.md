@@ -62,11 +62,25 @@ section.
 pending, printring and printed counters and the "imprimir restantes" button, get
 ride of that.
 
-- [ ] In  "gestion de cola de impresion" once printed visually group then if they
-where printed into the same page
+- [x] In  "gestion de cola de impresion>Items en cola" change the representation
+of elements in the list from current to
+
+`#Number-item - Plantilla Numero-plantilla - Página Numero-pagina`
+
+Wrap the text if there is not enough space.
+
+Below that put the file path.
+
+To the side of both elements put a label indicating `Pendiente`, `Imprimiendo`, `Impreso`, `Fallido`
+
+Maintain the current style to represent elements
+
 
 - [ ] In  "gestion de cola de impresion" allow me to tap into an item in the "items en cola"
-list and choose to take it out, retry, print again.
+list and choose to take it out, retry, print again, if it failed, show the error
+here.
+
+- [ ] Change "Items en Cola (N)" for "Cola de impresión (N)"
 
 - [ ] In "gestion de cola de impresion", should there be a preview of the images??
 
