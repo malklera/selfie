@@ -55,7 +55,7 @@ tap an empty place without scrolling
 - [x] Give a number integer as id for each template, show it in the template selection
 section.
 
-- [ ] In  "gestion de cola de impresion" instead of showing (Lote #number) show
+- [x] In  "gestion de cola de impresion" instead of showing (Lote #number) show
 (Plantilla #ID)
 
 - [ ] In  "gestion de cola de impresion" there is a blank space between the total

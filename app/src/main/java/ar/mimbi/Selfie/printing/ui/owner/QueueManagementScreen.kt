@@ -123,7 +123,9 @@ fun QueueManagementScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(items, key = { it.id }) { item ->
-                    ItemRow(item)
+                    val batch = batches.find { it.id == item.batchId }
+                    val templateId = batch?.templateId ?: 0
+                    ItemRow(item, templateId)
                 }
             }
         }
@@ -149,7 +151,7 @@ private fun StatCard(label: String, value: String, containerColor: Color) {
 }
 
 @Composable
-private fun ItemRow(item: PrintItem) {
+private fun ItemRow(item: PrintItem, templateId: Int) {
     val statusColor = when (item.status) {
         PrintItemStatus.PENDING -> MaterialTheme.colorScheme.primary
         PrintItemStatus.PRINTING -> MaterialTheme.colorScheme.tertiary
@@ -169,7 +171,7 @@ private fun ItemRow(item: PrintItem) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = "Item #${item.id} (Lote #${item.batchId})", fontWeight = FontWeight.Bold)
+                Text(text = "Item #${item.id} (Plantilla #$templateId)", fontWeight = FontWeight.Bold)
                 Text(text = item.photoUri, style = MaterialTheme.typography.bodySmall, maxLines = 1)
             }
 
