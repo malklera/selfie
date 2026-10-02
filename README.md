@@ -75,12 +75,15 @@ To the side of both elements put a label indicating `Pendiente`, `Imprimiendo`, 
 
 Maintain the current style to represent elements
 
+- [x] Change "Items en Cola (N)" for "Cola de impresión (N)"
+
+- [x] Implement the searching for printers through wifi capability.
+
+- [ ] Implement/fix printing.
 
 - [ ] In  "gestion de cola de impresion" allow me to tap into an item in the "items en cola"
 list and choose to take it out, retry, print again, if it failed, show the error
 here.
-
-- [x] Change "Items en Cola (N)" for "Cola de impresión (N)"
 
 - [ ] In "gestion de cola de impresion", should there be a preview of the images??
 

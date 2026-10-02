@@ -11,8 +11,12 @@ class PrinterManager(
     private val _status = MutableStateFlow<PrinterStatus>(PrinterStatus.Ready)
     val statusFlow: StateFlow<PrinterStatus> = _status.asStateFlow()
 
-    fun setPrinter(printer: Printer) {
+    private val _currentPrinterName = MutableStateFlow("Impresora de Prueba (Fake Printer)")
+    val currentPrinterName: StateFlow<String> = _currentPrinterName.asStateFlow()
+
+    fun setPrinter(printer: Printer, printerName: String = "Impresora de Prueba (Fake Printer)") {
         activePrinter = printer
+        _currentPrinterName.value = printerName
     }
 
     suspend fun connect() {
