@@ -41,4 +41,7 @@ interface PrintItemDao {
 
     @Query("UPDATE print_items SET status = 'PENDING' WHERE status = 'FAILED'")
     suspend fun resetFailedToPending(): Int
+
+    @Query("DELETE FROM print_items WHERE status = 'PRINTED'")
+    suspend fun deletePrintedItems(): Int
 }

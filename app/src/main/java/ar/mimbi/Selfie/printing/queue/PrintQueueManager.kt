@@ -73,6 +73,10 @@ class PrintQueueManager(
         }
     }
 
+    suspend fun clearPrintedItems() {
+        repository.clearPrintedItems()
+    }
+
     suspend fun processQueue(context: Context, flush: Boolean = false) {
         mutex.withLock {
             try {

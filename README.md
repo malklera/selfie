@@ -58,7 +58,7 @@ section.
 - [x] In  "gestion de cola de impresion" instead of showing (Lote #number) show
 (Plantilla #ID)
 
-- [ ] In  "gestion de cola de impresion" there is a blank space between the total
+- [x] In  "gestion de cola de impresion" there is a blank space between the total
 pending, printring and printed counters and the "imprimir restantes" button, get
 ride of that.
 

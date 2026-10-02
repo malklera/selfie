@@ -161,7 +161,8 @@ fun SelfieApp(configDataStore: ConfigDataStore) {
                             onNavigateToErrorHistory = { navController.navigate("error_history") },
                             onNavigateToPrinterConfig = { navController.navigate("printer_config") },
                             onNavigateToTemplateConfig = { navController.navigate("template_config") },
-                            onNavigateToQueueManagement = { navController.navigate("queue_management") }
+                            onNavigateToQueueManagement = { navController.navigate("queue_management") },
+                            queueManager = printQueueManager
                         )
                     }
                     composable("printer_config") {

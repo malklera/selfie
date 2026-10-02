@@ -169,6 +169,10 @@ class PrintQueueRepository(private val database: AppDatabase) {
         itemDao.resetFailedToPending()
     }
 
+    suspend fun clearPrintedItems() {
+        itemDao.deletePrintedItems()
+    }
+
     fun getAllItemsFlow(): Flow<List<PrintItem>> {
         return itemDao.getAllItemsFlow().map { list ->
             list.map {

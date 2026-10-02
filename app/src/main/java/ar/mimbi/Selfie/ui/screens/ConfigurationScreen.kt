@@ -52,6 +52,7 @@ import ar.mimbi.Selfie.data.ErrorLogger
 import ar.mimbi.Selfie.data.UserActionTracker
 import ar.mimbi.Selfie.BuildConfig
 import coil.compose.SubcomposeAsyncImage
+import ar.mimbi.Selfie.printing.queue.PrintQueueManager
 import coil.compose.AsyncImagePainter
 import coil.compose.SubcomposeAsyncImageContent
 import kotlin.math.abs
@@ -65,7 +66,8 @@ fun ConfigurationScreen(
     onNavigateToErrorHistory: () -> Unit,
     onNavigateToPrinterConfig: () -> Unit = {},
     onNavigateToTemplateConfig: () -> Unit = {},
-    onNavigateToQueueManagement: () -> Unit = {}
+    onNavigateToQueueManagement: () -> Unit = {},
+    queueManager: PrintQueueManager? = null
 ) {
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
@@ -110,6 +112,7 @@ fun ConfigurationScreen(
     var showPrintButton by remember { mutableStateOf(initialConfig.showPrintButton) }
     var maxPrintCount by remember { mutableStateOf(initialConfig.maxPrintCount.toString()) }
     var printCount by remember { mutableStateOf(initialConfig.printCount) }
+    var wasResetToZero by remember { mutableStateOf(false) }
     
     var showUnsavedDialog by remember { mutableStateOf(false) }
 
@@ -188,6 +191,12 @@ fun ConfigurationScreen(
                                 UserActionTracker.trackAction("Guardar configuración")
                                 val finalSeconds = countdownSeconds.toIntOrNull() ?: 0
                                 val finalMaxPrintCount = maxPrintCount.toIntOrNull() ?: 0
+                                if (wasResetToZero) {
+                                    coroutineScope.launch {
+                                        queueManager?.clearPrintedItems()
+                                    }
+                                    wasResetToZero = false
+                                }
                                 onSave(
                                     AppConfig(
                                         portadaPath = portadaPath,
@@ -661,6 +670,7 @@ fun ConfigurationScreen(
                                     focusManager.clearFocus()
                                     UserActionTracker.trackAction("Reiniciar contador de impresiones a 0")
                                     printCount = 0
+                                    wasResetToZero = true
                                 }
                             ) {
                                 Text("Resetear a 0")
@@ -803,6 +813,12 @@ fun ConfigurationScreen(
                     Log.d("ConfigScreen", "Dialog Save clicked")
                     val finalSeconds = countdownSeconds.toIntOrNull() ?: 0
                     val finalMaxPrintCount = maxPrintCount.toIntOrNull() ?: 0
+                    if (wasResetToZero) {
+                        coroutineScope.launch {
+                            queueManager?.clearPrintedItems()
+                        }
+                        wasResetToZero = false
+                    }
                     onSave(
                         AppConfig(
                             portadaPath = portadaPath,

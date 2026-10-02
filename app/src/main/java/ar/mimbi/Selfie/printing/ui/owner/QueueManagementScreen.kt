@@ -59,18 +59,18 @@ fun QueueManagementScreen(
                 .fillMaxSize()
                 .padding(16.dp)
         ) {
-            // Stats Row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+            // Stats
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                StatCard("Pendientes", "$pendingCount", MaterialTheme.colorScheme.primaryContainer)
-                StatCard("Imprimiendo", "$printingCount", MaterialTheme.colorScheme.tertiaryContainer)
-                StatCard("Impresos", "$printedCount", MaterialTheme.colorScheme.surfaceVariant)
-                StatCard("Fallidos", "$failedCount", MaterialTheme.colorScheme.errorContainer)
+                StatRow("Pendientes", "$pendingCount")
+                StatRow("Imprimiendo", "$printingCount")
+                StatRow("Impresos", "$printedCount")
+                StatRow("Fallidos", "$failedCount")
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
 
             // Action Buttons
             Row(
@@ -133,20 +133,23 @@ fun QueueManagementScreen(
 }
 
 @Composable
-private fun StatCard(label: String, value: String, containerColor: Color) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = containerColor),
-        shape = RoundedCornerShape(8.dp),
+private fun StatRow(label: String, value: String) {
+    Row(
         modifier = Modifier
-            .padding(4.dp)
+            .fillMaxWidth()
+            .padding(horizontal = 4.dp, vertical = 2.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Column(
-            modifier = Modifier.padding(vertical = 8.dp, horizontal = 12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(text = value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-            Text(text = label, style = MaterialTheme.typography.labelSmall)
-        }
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyLarge
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.Bold
+        )
     }
 }
 
