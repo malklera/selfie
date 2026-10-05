@@ -181,7 +181,7 @@ class PrintQueueRepository(private val database: AppDatabase) {
                     batchId = it.batchId,
                     photoUri = it.photoUri,
                     sequence = it.sequence,
-                    status = PrintItemStatus.valueOf(it.status)
+                    status = runCatching { PrintItemStatus.valueOf(it.status) }.getOrDefault(PrintItemStatus.PENDING)
                 )
             }
         }

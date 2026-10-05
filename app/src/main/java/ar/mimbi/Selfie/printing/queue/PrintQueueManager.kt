@@ -9,6 +9,7 @@ import ar.mimbi.Selfie.data.ErrorLogger
 import ar.mimbi.Selfie.printing.model.*
 import ar.mimbi.Selfie.printing.printer.PrinterManager
 import ar.mimbi.Selfie.printing.printer.PrinterStatus
+import ar.mimbi.Selfie.printing.printer.StandardAndroidPrinter
 import ar.mimbi.Selfie.printing.printer.WifiPrinter
 import ar.mimbi.Selfie.printing.printer.WifiPrinterDiscovery
 import ar.mimbi.Selfie.printing.printer.WifiPrinterInfo
@@ -45,16 +46,29 @@ class PrintQueueManager(
     }
 
     suspend fun ensurePrinterReady(context: Context) {
-        val status = printerManager.getStatus()
-        if (status is PrinterStatus.Ready) return
+        val currentStatus = printerManager.getStatus()
+        if (currentStatus is PrinterStatus.Ready) return
 
-        // 1. Try reconnecting current active printer
+        // 1. Try standard Android Print Framework first
+        val standardPrinter = StandardAndroidPrinter(context)
+        if (standardPrinter.isPrinterAvailable()) {
+            printerManager.setPrinter(
+                printer = standardPrinter,
+                printerName = "Servicio de Impresión Android (Standard)",
+                printerType = "SYSTEM_ANDROID",
+                saveToDb = false
+            )
+            printerManager.connect()
+            if (printerManager.getStatus() is PrinterStatus.Ready) return
+        }
+
+        // 2. Try reconnecting current active printer
         try {
             printerManager.connect()
             if (printerManager.getStatus() is PrinterStatus.Ready) return
         } catch (_: Exception) {}
 
-        // 2. Connection lost! Try re-connecting to last connected printer from DB
+        // 3. Connection lost! Try re-connecting to last connected printer from DB
         val savedConfig = repository.getSavedPrinterConfig()
         if (savedConfig != null && savedConfig.printerType == "WIFI") {
             try {
@@ -73,7 +87,7 @@ class PrintQueueManager(
             } catch (_: Exception) {}
         }
 
-        // 3. Search for new printers using discovery
+        // 4. Search for new printers using discovery
         val discovery = WifiPrinterDiscovery(context)
         val discovered = suspendCancellableCoroutine<List<WifiPrinterInfo>> { continuation ->
             var resumed = false
@@ -142,6 +156,13 @@ class PrintQueueManager(
 
     suspend fun processQueue(context: Context, flush: Boolean = false) {
         ensurePrinterReady(context)
+
+        // Rule: Only send to print if a printer is available, otherwise keep pending
+        if (printerManager.getStatus() !is PrinterStatus.Ready) {
+            Log.w(TAG, "No hay impresora disponible. El trabajo permanecerá PENDIENTE.")
+            return
+        }
+
         mutex.withLock {
             try {
                 val pendingBatches = repository.getAllPendingBatches()
@@ -164,7 +185,7 @@ class PrintQueueManager(
 
                         // Process this chunk
                         val chunkIds = chunk.map { it.id }
-                        repository.updateItemStatuses(chunkIds, PrintItemStatus.PRINTING)
+                        repository.updateItemStatuses(chunkIds, PrintItemStatus.QUEUED)
 
                         val loadedBitmaps = mutableListOf<Bitmap?>()
                         var loadFailed = false
@@ -194,6 +215,15 @@ class PrintQueueManager(
                             // Source bitmaps no longer needed after rendering
                             loadedBitmaps.forEach { it?.recycle() }
 
+                            // If using StandardAndroidPrinter, attach status listener to update DB state in real-time
+                            val androidPrinter = StandardAndroidPrinter(context) { itemStatus, _ ->
+                                scope.launch {
+                                    repository.updateItemStatuses(chunkIds, itemStatus)
+                                }
+                            }
+                            printerManager.setPrinter(androidPrinter, "Servicio de Impresión Android (Standard)", "SYSTEM_ANDROID", saveToDb = false)
+
+                            repository.updateItemStatuses(chunkIds, PrintItemStatus.PRINTING)
                             printerManager.printPage(renderedPage)
 
                             // Print successful

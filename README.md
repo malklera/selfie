@@ -81,13 +81,11 @@ Maintain the current style to represent elements
 
 - [x] Once i connect a printer and close the app, at opening check if the same connection is available and automatically connect if it is.
 
-- [ ] What type of responses do you get from a printer when you send a print to the queue?
-Can you know if it printed? Ask chatgpt
-
 - [ ] took a picture, printed 1 copy, nothing happen with the printer, went to queue, it show as printed, it should not
 
-- [ ] a print should only be send to print if a printer is available, oderwise keep it pending, if it is send to print and you do not get a positive response(can you get responses from the printer?) from the printer then it failed or stay pending
+- [x] a print job should only be send to print if a printer is available, otherwise keep it pending, if it is send to print and you do not get a positive response from the printer then it stays pending
 
+- [ ] Check how "imprimir restantes" works, if i want it to work that way when there is no printer.
 
 - [ ] Implement/fix printing.
 

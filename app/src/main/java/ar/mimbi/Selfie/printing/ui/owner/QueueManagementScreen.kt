@@ -1,6 +1,5 @@
 package ar.mimbi.Selfie.printing.ui.owner
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -17,9 +16,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import ar.mimbi.Selfie.printing.model.BatchStatus
-import ar.mimbi.Selfie.printing.model.PrintBatch
 import ar.mimbi.Selfie.printing.model.PrintItem
 import ar.mimbi.Selfie.printing.model.PrintItemStatus
 import ar.mimbi.Selfie.printing.queue.PrintQueueManager
@@ -38,9 +34,10 @@ fun QueueManagementScreen(
     val context = LocalContext.current
 
     val pendingCount = items.count { it.status == PrintItemStatus.PENDING }
-    val printingCount = items.count { it.status == PrintItemStatus.PRINTING }
+    val queuedCount = items.count { it.status == PrintItemStatus.QUEUED }
+    val printingCount = items.count { it.status == PrintItemStatus.PRINTING || it.status == PrintItemStatus.BLOCKED }
     val printedCount = items.count { it.status == PrintItemStatus.PRINTED }
-    val failedCount = items.count { it.status == PrintItemStatus.FAILED }
+    val failedCount = items.count { it.status == PrintItemStatus.FAILED || it.status == PrintItemStatus.CANCELED }
 
     Scaffold(
         topBar = {
@@ -67,10 +64,11 @@ fun QueueManagementScreen(
                     .padding(bottom = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                StatRow("Pendientes", "$pendingCount")
-                StatRow("Imprimiendo", "$printingCount")
-                StatRow("Impresos", "$printedCount")
-                StatRow("Fallidos", "$failedCount")
+                StatRow("Pendientes (Esperando impresora)", "$pendingCount")
+                StatRow("En cola de impresión", "$queuedCount")
+                StatRow("Imprimiendo / Bloqueados", "$printingCount")
+                StatRow("Completados", "$printedCount")
+                StatRow("Fallidos / Cancelados", "$failedCount")
             }
 
             // Action Buttons
@@ -165,16 +163,22 @@ private fun StatRow(label: String, value: String) {
 private fun ItemRow(item: PrintItem, templateId: Int, pageNumber: Int) {
     val statusColor = when (item.status) {
         PrintItemStatus.PENDING -> MaterialTheme.colorScheme.primary
+        PrintItemStatus.QUEUED -> MaterialTheme.colorScheme.secondary
         PrintItemStatus.PRINTING -> MaterialTheme.colorScheme.tertiary
+        PrintItemStatus.BLOCKED -> Color(0xFFE65100)
         PrintItemStatus.PRINTED -> MaterialTheme.colorScheme.outline
         PrintItemStatus.FAILED -> MaterialTheme.colorScheme.error
+        PrintItemStatus.CANCELED -> Color(0xFF757575)
     }
 
     val statusText = when (item.status) {
-        PrintItemStatus.PENDING -> "Pendiente"
-        PrintItemStatus.PRINTING -> "Imprimiendo"
-        PrintItemStatus.PRINTED -> "Impreso"
-        PrintItemStatus.FAILED -> "Fallido"
+        PrintItemStatus.PENDING -> "Pendiente (Esperando impresora disponible)"
+        PrintItemStatus.QUEUED -> "En cola de impresión"
+        PrintItemStatus.PRINTING -> "Imprimiendo / Enviando a la impresora"
+        PrintItemStatus.BLOCKED -> "Bloqueado (Verificar impresora / sin papel)"
+        PrintItemStatus.PRINTED -> "Completado exitosamente"
+        PrintItemStatus.FAILED -> "Fallido (Error de impresión)"
+        PrintItemStatus.CANCELED -> "Cancelado por el usuario"
     }
 
     Card(
@@ -188,30 +192,38 @@ private fun ItemRow(item: PrintItem, templateId: Int, pageNumber: Int) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(modifier = Modifier.weight(1f)) {
+            // Half 1: Job Description (50% width)
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
                 Text(
                     text = "#${item.id} - Plantilla $templateId - Página $pageNumber",
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    softWrap = true
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = item.photoUri,
-                    style = MaterialTheme.typography.bodySmall
+                    style = MaterialTheme.typography.bodySmall,
+                    softWrap = true
                 )
             }
 
             Spacer(modifier = Modifier.width(8.dp))
 
+            // Half 2: State Report Badge (50% width, wraps long status text)
             Surface(
+                modifier = Modifier.weight(1f),
                 color = statusColor.copy(alpha = 0.2f),
                 shape = RoundedCornerShape(4.dp)
             ) {
                 Text(
                     text = statusText,
                     color = statusColor,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
                     style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    softWrap = true
                 )
             }
         }

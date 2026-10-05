@@ -100,6 +100,25 @@ fun PrinterConfigScreen(
                             Text("Usar Fake")
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Button(
+                        onClick = {
+                            scope.launch {
+                                val androidPrinter = StandardAndroidPrinter(context)
+                                printerManager.setPrinter(
+                                    printer = androidPrinter,
+                                    printerName = "Servicio de Impresión Android (Standard)",
+                                    printerType = "SYSTEM_ANDROID"
+                                )
+                                printerManager.connect()
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Usar Servicio de Impresión Android (Standard)")
+                    }
                 }
             }
 
