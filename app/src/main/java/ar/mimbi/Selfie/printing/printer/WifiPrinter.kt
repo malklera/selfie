@@ -1,6 +1,8 @@
 package ar.mimbi.Selfie.printing.printer
 
 import android.graphics.Bitmap
+import android.graphics.Rect
+import android.graphics.pdf.PdfDocument
 import ar.mimbi.Selfie.printing.model.PrintablePage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -52,21 +54,28 @@ class WifiPrinter(
     }
 
     override suspend fun print(page: PrintablePage) {
+        val bitmap = page.bitmap ?: throw IllegalArgumentException("Page bitmap is null")
         if (!isConnected || socket == null || socket?.isConnected != true || socket?.isClosed == true) {
             connect()
         }
-        val bitmap = page.bitmap ?: throw IllegalArgumentException("Page bitmap is null")
         val currentSocket = socket ?: throw IllegalStateException("Socket is null")
 
         withContext(Dispatchers.IO) {
             _status.value = PrinterStatus.Printing
             try {
-                val stream = ByteArrayOutputStream()
-                bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
-                val bytes = stream.toByteArray()
+                val pdfBytes = convertBitmapToPdf(bitmap)
+
+                // Wrap PDF in PJL (Printer Job Language) commands for modern network printers (PDF interpreter)
+                val pjlStart = "@PJL JOB\n@PJL ENTER LANGUAGE = PDF\n".toByteArray(Charsets.US_ASCII)
+                val pjlEnd = "\n@PJL EOJ\n".toByteArray(Charsets.US_ASCII)
+
+                val payload = ByteArray(pjlStart.size + pdfBytes.size + pjlEnd.size)
+                System.arraycopy(pjlStart, 0, payload, 0, pjlStart.size)
+                System.arraycopy(pdfBytes, 0, payload, pjlStart.size, pdfBytes.size)
+                System.arraycopy(pjlEnd, 0, payload, pjlStart.size + pdfBytes.size, pjlEnd.size)
 
                 val outputStream = currentSocket.getOutputStream()
-                outputStream.write(bytes)
+                outputStream.write(payload)
                 outputStream.flush()
 
                 _status.value = PrinterStatus.Ready
@@ -86,5 +95,27 @@ class WifiPrinter(
             isConnected = false
             _status.value = PrinterStatus.Disconnected
         }
+    }
+
+    private fun convertBitmapToPdf(bitmap: Bitmap): ByteArray {
+        val pdfDocument = PdfDocument()
+        // Convert 300 DPI pixel dimensions to standard PDF points (1/72 inch)
+        val pdfWidth = (bitmap.width * 72) / 300
+        val pdfHeight = (bitmap.height * 72) / 300
+
+        val pageInfo = PdfDocument.PageInfo.Builder(pdfWidth, pdfHeight, 1).create()
+        val page = pdfDocument.startPage(pageInfo)
+
+        val canvas = page.canvas
+        val srcRect = Rect(0, 0, bitmap.width, bitmap.height)
+        val destRect = Rect(0, 0, pdfWidth, pdfHeight)
+        canvas.drawBitmap(bitmap, srcRect, destRect, null)
+
+        pdfDocument.finishPage(page)
+
+        val stream = ByteArrayOutputStream()
+        pdfDocument.writeTo(stream)
+        pdfDocument.close()
+        return stream.toByteArray()
     }
 }

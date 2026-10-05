@@ -8,15 +8,18 @@ import android.util.Log
 import ar.mimbi.Selfie.data.ErrorLogger
 import ar.mimbi.Selfie.printing.model.*
 import ar.mimbi.Selfie.printing.printer.PrinterManager
+import ar.mimbi.Selfie.printing.printer.PrinterStatus
+import ar.mimbi.Selfie.printing.printer.WifiPrinter
+import ar.mimbi.Selfie.printing.printer.WifiPrinterDiscovery
+import ar.mimbi.Selfie.printing.printer.WifiPrinterInfo
 import ar.mimbi.Selfie.printing.template.DefaultTemplateRenderer
 import ar.mimbi.Selfie.printing.template.DefaultTemplates
 import ar.mimbi.Selfie.printing.template.TemplateRenderer
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import org.json.JSONObject
 
 class PrintQueueManager(
     val repository: PrintQueueRepository,
@@ -41,7 +44,65 @@ class PrintQueueManager(
         }
     }
 
+    suspend fun ensurePrinterReady(context: Context) {
+        val status = printerManager.getStatus()
+        if (status is PrinterStatus.Ready) return
+
+        // 1. Try reconnecting current active printer
+        try {
+            printerManager.connect()
+            if (printerManager.getStatus() is PrinterStatus.Ready) return
+        } catch (_: Exception) {}
+
+        // 2. Connection lost! Try re-connecting to last connected printer from DB
+        val savedConfig = repository.getSavedPrinterConfig()
+        if (savedConfig != null && savedConfig.printerType == "WIFI") {
+            try {
+                val json = JSONObject(savedConfig.settingsJson)
+                val ip = json.optString("ipAddress")
+                val port = json.optInt("port", 9100)
+                val name = json.optString("printerName", "Impresora Wi-Fi")
+                if (ip.isNotBlank()) {
+                    val wifiPrinter = WifiPrinter(ip, port, timeoutMs = 2000)
+                    try {
+                        wifiPrinter.connect()
+                        printerManager.setPrinter(wifiPrinter, name, printerType = "WIFI", ipAddress = ip, port = port, saveToDb = false)
+                        if (printerManager.getStatus() is PrinterStatus.Ready) return
+                    } catch (_: Exception) {}
+                }
+            } catch (_: Exception) {}
+        }
+
+        // 3. Search for new printers using discovery
+        val discovery = WifiPrinterDiscovery(context)
+        val discovered = suspendCancellableCoroutine<List<WifiPrinterInfo>> { continuation ->
+            var resumed = false
+            discovery.startDiscovery()
+            CoroutineScope(Dispatchers.IO).launch {
+                delay(2000)
+                discovery.stopDiscovery()
+                if (!resumed) {
+                    resumed = true
+                    continuation.resume(discovery.discoveredPrinters.value) {}
+                }
+            }
+        }
+
+        val target = discovered.find { savedConfig != null && it.ipAddress == JSONObject(savedConfig.settingsJson).optString("ipAddress") }
+            ?: discovered.firstOrNull()
+
+        if (target != null) {
+            val wifiPrinter = WifiPrinter(target.ipAddress, target.port)
+            try {
+                wifiPrinter.connect()
+                printerManager.setPrinter(wifiPrinter, "${target.name} (${target.ipAddress})", printerType = "WIFI", ipAddress = target.ipAddress, port = target.port)
+            } catch (_: Exception) {}
+        }
+    }
+
     suspend fun enqueuePhoto(context: Context, photoUri: String, copies: Int): List<Long> {
+        ensurePrinterReady(context)
+
         val activeTemplate = repository.getActiveTemplate()
         val activeBatch = repository.getOrCreateActiveBatch(activeTemplate)
         val insertedIds = repository.enqueuePhotos(activeBatch.id, photoUri, copies)
@@ -62,12 +123,14 @@ class PrintQueueManager(
 
     fun printRemaining(context: Context) {
         scope.launch {
+            ensurePrinterReady(context)
             processQueue(context, flush = true)
         }
     }
 
     fun retryFailed(context: Context) {
         scope.launch {
+            ensurePrinterReady(context)
             repository.resetFailedItemsToPending()
             processQueue(context, flush = false)
         }
@@ -78,6 +141,7 @@ class PrintQueueManager(
     }
 
     suspend fun processQueue(context: Context, flush: Boolean = false) {
+        ensurePrinterReady(context)
         mutex.withLock {
             try {
                 val pendingBatches = repository.getAllPendingBatches()

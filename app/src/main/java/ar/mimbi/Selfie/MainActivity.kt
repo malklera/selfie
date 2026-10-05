@@ -117,7 +117,7 @@ fun SelfieApp(configDataStore: ConfigDataStore) {
 
     val database = remember { AppDatabase.getDatabase(context) }
     val printQueueRepository = remember { PrintQueueRepository(database) }
-    val printerManager = remember { PrinterManager() }
+    val printerManager = remember { PrinterManager(printQueueRepository) }
     val printQueueManager = remember { PrintQueueManager(printQueueRepository, printerManager) }
     
     // Listen to navigation changes to track screen

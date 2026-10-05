@@ -79,6 +79,16 @@ Maintain the current style to represent elements
 
 - [x] Implement the searching for printers through wifi capability.
 
+- [x] Once i connect a printer and close the app, at opening check if the same connection is available and automatically connect if it is.
+
+- [ ] What type of responses do you get from a printer when you send a print to the queue?
+Can you know if it printed? Ask chatgpt
+
+- [ ] took a picture, printed 1 copy, nothing happen with the printer, went to queue, it show as printed, it should not
+
+- [ ] a print should only be send to print if a printer is available, oderwise keep it pending, if it is send to print and you do not get a positive response(can you get responses from the printer?) from the printer then it failed or stay pending
+
+
 - [ ] Implement/fix printing.
 
 - [ ] In  "gestion de cola de impresion" allow me to tap into an item in the "items en cola"

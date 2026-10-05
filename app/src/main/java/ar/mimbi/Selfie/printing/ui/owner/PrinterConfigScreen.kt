@@ -91,7 +91,7 @@ fun PrinterConfigScreen(
                         OutlinedButton(
                             onClick = {
                                 scope.launch {
-                                    printerManager.setPrinter(FakePrinter(), "Impresora de Prueba (Fake Printer)")
+                                    printerManager.setPrinter(FakePrinter(), "Impresora de Prueba (Fake Printer)", printerType = "FAKE")
                                     printerManager.connect()
                                 }
                             },
@@ -193,7 +193,7 @@ fun PrinterConfigScreen(
                                         .clickable {
                                             scope.launch {
                                                 val wifiPrinter = WifiPrinter(printer.ipAddress, printer.port)
-                                                printerManager.setPrinter(wifiPrinter, "${printer.name} (${printer.ipAddress})")
+                                                printerManager.setPrinter(wifiPrinter, "${printer.name} (${printer.ipAddress})", printerType = "WIFI", ipAddress = printer.ipAddress, port = printer.port)
                                                 printerManager.connect()
                                                 wifiDiscovery.stopDiscovery()
                                                 showSearchDialog = false
@@ -240,7 +240,7 @@ fun PrinterConfigScreen(
                             if (manualIp.isNotBlank()) {
                                 scope.launch {
                                     val wifiPrinter = WifiPrinter(manualIp.trim(), portInt)
-                                    printerManager.setPrinter(wifiPrinter, "$manualName (${manualIp.trim()})")
+                                    printerManager.setPrinter(wifiPrinter, "$manualName (${manualIp.trim()})", printerType = "WIFI", ipAddress = manualIp.trim(), port = portInt)
                                     printerManager.connect()
                                     wifiDiscovery.stopDiscovery()
                                     showSearchDialog = false

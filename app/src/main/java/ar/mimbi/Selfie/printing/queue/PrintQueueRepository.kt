@@ -201,6 +201,21 @@ class PrintQueueRepository(private val database: AppDatabase) {
         }
     }
 
+    suspend fun savePrinterConfig(printerType: String, printerName: String, settingsJson: String) {
+        configDao.insertOrUpdate(
+            PrinterConfigEntity(
+                id = "default",
+                selectedPrinterId = printerName,
+                printerType = printerType,
+                settingsJson = settingsJson
+            )
+        )
+    }
+
+    suspend fun getSavedPrinterConfig(): PrinterConfigEntity? {
+        return configDao.getConfig("default")
+    }
+
     private fun parseTemplateEntity(entity: PrintTemplateEntity): PrintTemplate {
         val slots = mutableListOf<PhotoSlot>()
         val jsonArray = JSONArray(entity.slotsJson)
