@@ -51,88 +51,89 @@ fun QueueManagementScreen(
             )
         }
     ) { paddingValues ->
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .padding(paddingValues)
-                .fillMaxSize()
-                .padding(16.dp)
+                .fillMaxSize(),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Stats
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                StatRow("Pendientes (Esperando impresora)", "$pendingCount")
-                StatRow("En cola de impresión", "$queuedCount")
-                StatRow("Imprimiendo / Bloqueados", "$printingCount")
-                StatRow("Completados", "$printedCount")
-                StatRow("Fallidos / Cancelados", "$failedCount")
+            item {
+                // Stats
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    StatRow("Pendientes (Esperando impresora)", "$pendingCount")
+                    StatRow("En cola de impresión", "$queuedCount")
+                    StatRow("Imprimiendo / Bloqueados", "$printingCount")
+                    StatRow("Completados", "$printedCount")
+                    StatRow("Fallidos / Cancelados", "$failedCount")
+                }
             }
 
-            // Action Buttons
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Button(
-                    onClick = {
-                        scope.launch {
-                            queueManager.printRemaining(context)
-                        }
-                    },
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(8.dp)
+            item {
+                // Action Buttons
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Icon(Icons.Default.Print, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Imprimir Restantes")
-                }
-
-                if (failedCount > 0) {
-                    OutlinedButton(
+                    Button(
                         onClick = {
                             scope.launch {
-                                queueManager.retryFailed(context)
+                                queueManager.printRemaining(context)
                             }
                         },
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(8.dp)
                     ) {
-                        Icon(Icons.Default.Refresh, contentDescription = null)
+                        Icon(Icons.Default.Print, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Reintentar Fallidos")
+                        Text("Imprimir Restantes")
+                    }
+
+                    if (failedCount > 0) {
+                        OutlinedButton(
+                            onClick = {
+                                scope.launch {
+                                    queueManager.retryFailed(context)
+                                }
+                            },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Icon(Icons.Default.Refresh, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Reintentar Fallidos")
+                        }
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            item {
+                Text(
+                    text = "Cola de impresión (${items.size})",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)
+                )
+            }
 
-            Text(
-                text = "Cola de impresión (${items.size})",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
+            items(items, key = { it.id }) { item ->
+                val batch = batches.find { it.id == item.batchId }
+                val templateId = batch?.templateId ?: 1
+                val template = DefaultTemplates.getById(templateId)
+                val slotCount = template.slotCount.coerceAtLeast(1)
 
-            Spacer(modifier = Modifier.height(8.dp))
+                val batchItems = items.filter { it.batchId == item.batchId }.sortedBy { it.sequence }
+                val itemIndex = batchItems.indexOfFirst { it.id == item.id } + 1
+                val pageNumber = if (itemIndex > 0) (itemIndex - 1) / slotCount + 1 else 1
 
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(items, key = { it.id }) { item ->
-                    val batch = batches.find { it.id == item.batchId }
-                    val templateId = batch?.templateId ?: 1
-                    val template = DefaultTemplates.getById(templateId)
-                    val slotCount = template.slotCount.coerceAtLeast(1)
-
-                    val batchItems = items.filter { it.batchId == item.batchId }.sortedBy { it.sequence }
-                    val itemIndex = batchItems.indexOfFirst { it.id == item.id } + 1
-                    val pageNumber = if (itemIndex > 0) (itemIndex - 1) / slotCount + 1 else 1
-
-                    ItemRow(item, templateId, pageNumber)
-                }
+                ItemRow(item, templateId, pageNumber)
             }
         }
     }

@@ -32,9 +32,10 @@ The .apk file is at
 
 - [ ] If the template for printing requires more than one picture, the state in
 the printing queue when there is less pictures than required should say "Pendiente (Esperando más fotos)"
-not "Pendiente (Esperando impresora disponible)"
+not "Pendiente (Esperando impresora disponible)" the latter text should only be
+when there is not a printer connected
 
-- [ ] in the queue screen, make the whole screen scroll instead of only the queue
+- [x] in the queue screen, make the whole screen scroll instead of only the queue
 
 - [ ] Fix the style of "servicio kiosk" in printing config, use another word instead of "kiosk"
 
