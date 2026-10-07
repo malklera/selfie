@@ -26,6 +26,16 @@ The .apk file is at
 
 - [x] if there is no printer configured, do not open an android dialog to save as pdf when taping the printing button, just leave the picture in the queue as "Pendiente"
 
+- [x] in the queue screen, make the whole screen scroll instead of only the queue
+
+- [x] Make "Buscar Impresoras Wi-Fi" its own screen instead of being floating
+
+- [ ] There is a visual bug when searching for a wifi printer, while the spinner is show,
+it seems like the whole screen is zoom out, like the "Conectar por IP Manual" is not
+seen when the circular icon is static, but when it spinns it is seem
+
+- [ ] the input field for ip has to be numeric only, same for the port
+
 - [ ] Once i connect a printer and close the app, at opening check if the same connection is available and automatically connect if it is.
 
 - [ ] a print job should only be send to print if a printer is available, otherwise keep it pending, if it is send to print and you do not get a positive response from the printer then it stays pending
@@ -35,19 +45,9 @@ the printing queue when there is less pictures than required should say "Pendien
 not "Pendiente (Esperando impresora disponible)" the latter text should only be
 when there is not a printer connected
 
-- [x] in the queue screen, make the whole screen scroll instead of only the queue
-
-- [ ] Fix the style of "servicio kiosk" in printing config, use another word instead of "kiosk"
-
 - [ ] Check how "imprimir restantes" works, if i want it to work that way when there is no printer.
 
 - [ ] Implement/fix printing.
-
-- [ ] There is a visual bug when searching for a wifi printer, while the spinner is show,
-below "impresora wifi-manual" appear some empty rectangles, why is "conexion manua por ip" even there if
-there is no input field for the ip?
-
-- [ ] the input field for ip has to be numeric only, same for the port
 
 - [ ] "buscar wifi" should open a new screen, not a floating window
 

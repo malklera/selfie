@@ -36,6 +36,7 @@ import ar.mimbi.Selfie.printing.queue.PrintQueueRepository
 import ar.mimbi.Selfie.printing.ui.owner.PrinterConfigScreen
 import ar.mimbi.Selfie.printing.ui.owner.QueueManagementScreen
 import ar.mimbi.Selfie.printing.ui.owner.TemplateConfigScreen
+import ar.mimbi.Selfie.printing.ui.owner.WifiPrinterSearchScreen
 import ar.mimbi.Selfie.ui.screens.CaptureScreen
 import ar.mimbi.Selfie.ui.screens.ConfigurationScreen
 import ar.mimbi.Selfie.ui.screens.ErrorHistoryScreen
@@ -171,6 +172,13 @@ fun SelfieApp(configDataStore: ConfigDataStore) {
                     }
                     composable("printer_config") {
                         PrinterConfigScreen(
+                            printerManager = printerManager,
+                            onNavigateToWifiSearch = { navController.navigate("wifi_printer_search") },
+                            onBack = { navController.popBackStack() }
+                        )
+                    }
+                    composable("wifi_printer_search") {
+                        WifiPrinterSearchScreen(
                             printerManager = printerManager,
                             onBack = { navController.popBackStack() }
                         )
