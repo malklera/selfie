@@ -24,64 +24,11 @@ The .apk file is at
 
 ## TODO
 
-- [x] Implement printPlan.md
-
-- [x] Take out the emojis added to the "configuracion del sistema de impresion"
-
-- [x] Get ride of "modo de impresion", fold any available printing configuration
-to the template, like quality, margins, color, whatever the printer agnostic library
-exposes
-
-- [x] In any numeric input field, if it is currently "0", clear the field when opening it, so the
-user can began typing directly.
-
-- [x] Empty numeric input field is "0" not the previous value as if it was not changed.
-e.g. focus a numeric input field, delete everything and save, it should be 0 not the previous value.
-
-- [x] Ensure the user can exit all input fields by taping anywhere in the screen, 
-any other input field or button, or dismissing the keyboard.
-
-- [x] Any time the keyboard is opened for an input field, ensure to scroll the view
-so the input field is in view above the keyboard.
-
-- [x] there is a bug when scrolling, any time you tap->scroll(up/down)->lift 
-the buttons of android that do back, main screen and apps opened?? the hamburger
-that give you a list of apps opened currently, how do it is called?, well that 
-set of buttons appear partially before disappearing, it do not happen when you 
-tap an empty place without scrolling
-
-- [x] Add a confirmation popup when selecting the number of copies to print.
-
-- [x] Give a number integer as id for each template, show it in the template selection
-section.
-
-- [x] In  "gestion de cola de impresion" instead of showing (Lote #number) show
-(Plantilla #ID)
-
-- [x] In  "gestion de cola de impresion" there is a blank space between the total
-pending, printring and printed counters and the "imprimir restantes" button, get
-ride of that.
-
-- [x] In  "gestion de cola de impresion>Items en cola" change the representation
-of elements in the list from current to
-
-`#Number-item - Plantilla Numero-plantilla - Página Numero-pagina`
-
-Wrap the text if there is not enough space.
-
-Below that put the file path.
-
-To the side of both elements put a label indicating `Pendiente`, `Imprimiendo`, `Impreso`, `Fallido`
-
-Maintain the current style to represent elements
-
-- [x] Change "Items en Cola (N)" for "Cola de impresión (N)"
-
-- [x] Implement the searching for printers through wifi capability.
-
-- [x] Once i connect a printer and close the app, at opening check if the same connection is available and automatically connect if it is.
+- [ ] Once i connect a printer and close the app, at opening check if the same connection is available and automatically connect if it is.
 
 - [ ] took a picture, printed 1 copy, nothing happen with the printer, went to queue, it show as printed, it should not
+
+- [ ] if there is no printer configured, do not open an android dialog to save as pdf whe taping the printing buttom, just leave the picture in the queue as "Pendiente"
 
 - [x] a print job should only be send to print if a printer is available, otherwise keep it pending, if it is send to print and you do not get a positive response from the printer then it stays pending
 
