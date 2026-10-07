@@ -24,13 +24,11 @@ The .apk file is at
 
 ## TODO
 
+- [x] if there is no printer configured, do not open an android dialog to save as pdf when taping the printing button, just leave the picture in the queue as "Pendiente"
+
 - [ ] Once i connect a printer and close the app, at opening check if the same connection is available and automatically connect if it is.
 
-- [ ] took a picture, printed 1 copy, nothing happen with the printer, went to queue, it show as printed, it should not
-
-- [ ] if there is no printer configured, do not open an android dialog to save as pdf whe taping the printing buttom, just leave the picture in the queue as "Pendiente"
-
-- [x] a print job should only be send to print if a printer is available, otherwise keep it pending, if it is send to print and you do not get a positive response from the printer then it stays pending
+- [ ] a print job should only be send to print if a printer is available, otherwise keep it pending, if it is send to print and you do not get a positive response from the printer then it stays pending
 
 - [ ] If the template for printing requires more than one picture, the state in
 the printing queue when there is less pictures than required should say "Pendiente (Esperando más fotos)"

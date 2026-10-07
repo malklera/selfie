@@ -21,7 +21,7 @@ import java.io.FileOutputStream
  */
 class StandardAndroidPrinter(
     private val context: Context,
-    private val onJobStatusChanged: ((itemStatus: PrintItemStatus, statusInSpanish: String) -> Unit)? = null
+    var onJobStatusChanged: ((itemStatus: PrintItemStatus, statusInSpanish: String) -> Unit)? = null
 ) : Printer {
 
     private val printManager: PrintManager =

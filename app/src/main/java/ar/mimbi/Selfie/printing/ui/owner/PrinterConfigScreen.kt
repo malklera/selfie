@@ -119,6 +119,19 @@ fun PrinterConfigScreen(
                     ) {
                         Text("Usar Servicio de Impresión Android (Standard)")
                     }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    OutlinedButton(
+                        onClick = {
+                            scope.launch {
+                                printerManager.clearPrinter(clearFromDb = true)
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Quitar Impresora (Sin configurar)")
+                    }
                 }
             }
 
@@ -133,7 +146,7 @@ fun PrinterConfigScreen(
                     val statusText = when (val s = status) {
                         is PrinterStatus.Ready -> "Lista / Conectada"
                         is PrinterStatus.Printing -> "Imprimiendo..."
-                        is PrinterStatus.Disconnected -> "Desconectada"
+                        is PrinterStatus.Disconnected -> if (!printerManager.hasConfiguredPrinter()) "Sin impresora configurada" else "Desconectada"
                         is PrinterStatus.Error -> "Error: ${s.message}"
                     }
 
@@ -151,7 +164,8 @@ fun PrinterConfigScreen(
                             printerManager.connect()
                         }
                     },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    enabled = printerManager.hasConfiguredPrinter()
                 ) {
                     Text("Conectar / Verificar")
                 }
@@ -162,7 +176,8 @@ fun PrinterConfigScreen(
                             printerManager.disconnect()
                         }
                     },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    enabled = printerManager.hasConfiguredPrinter()
                 ) {
                     Text("Desconectar")
                 }

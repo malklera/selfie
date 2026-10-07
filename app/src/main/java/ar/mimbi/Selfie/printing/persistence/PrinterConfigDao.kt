@@ -16,4 +16,7 @@ interface PrinterConfigDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insertOrUpdate(config: PrinterConfigEntity)
+
+    @Query("DELETE FROM printer_configs WHERE id = :id")
+    suspend fun deleteConfig(id: String): Int
 }

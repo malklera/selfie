@@ -49,33 +49,25 @@ class PrintQueueManager(
         val currentStatus = printerManager.getStatus()
         if (currentStatus is PrinterStatus.Ready) return
 
-        // 1. Try standard Android Print Framework first
-        val standardPrinter = StandardAndroidPrinter(context)
-        if (standardPrinter.isPrinterAvailable()) {
-            printerManager.setPrinter(
-                printer = standardPrinter,
-                printerName = "Servicio de Impresión Android (Standard)",
-                printerType = "SYSTEM_ANDROID",
-                saveToDb = false
-            )
-            printerManager.connect()
-            if (printerManager.getStatus() is PrinterStatus.Ready) return
+        // If no printer is configured, do not auto-configure any printer
+        val savedConfig = repository.getSavedPrinterConfig()
+        if (savedConfig == null && !printerManager.hasConfiguredPrinter()) {
+            return
         }
 
-        // 2. Try reconnecting current active printer
+        // 1. Try reconnecting current active printer
         try {
             printerManager.connect()
             if (printerManager.getStatus() is PrinterStatus.Ready) return
         } catch (_: Exception) {}
 
-        // 3. Connection lost! Try re-connecting to last connected printer from DB
-        val savedConfig = repository.getSavedPrinterConfig()
+        // 2. If configured as WIFI, try reconnecting or discovering saved printer
         if (savedConfig != null && savedConfig.printerType == "WIFI") {
             try {
                 val json = JSONObject(savedConfig.settingsJson)
                 val ip = json.optString("ipAddress")
                 val port = json.optInt("port", 9100)
-                val name = json.optString("printerName", "Impresora Wi-Fi")
+                val name = json.optString("printerName", savedConfig.selectedPrinterId.ifBlank { "Impresora Wi-Fi" })
                 if (ip.isNotBlank()) {
                     val wifiPrinter = WifiPrinter(ip, port, timeoutMs = 2000)
                     try {
@@ -85,32 +77,46 @@ class PrintQueueManager(
                     } catch (_: Exception) {}
                 }
             } catch (_: Exception) {}
-        }
 
-        // 4. Search for new printers using discovery
-        val discovery = WifiPrinterDiscovery(context)
-        val discovered = suspendCancellableCoroutine<List<WifiPrinterInfo>> { continuation ->
-            var resumed = false
-            discovery.startDiscovery()
-            CoroutineScope(Dispatchers.IO).launch {
-                delay(2000)
-                discovery.stopDiscovery()
-                if (!resumed) {
-                    resumed = true
-                    continuation.resume(discovery.discoveredPrinters.value) {}
+            // Search for target printer using discovery
+            val discovery = WifiPrinterDiscovery(context)
+            val discovered = suspendCancellableCoroutine<List<WifiPrinterInfo>> { continuation ->
+                var resumed = false
+                discovery.startDiscovery()
+                CoroutineScope(Dispatchers.IO).launch {
+                    delay(2000)
+                    discovery.stopDiscovery()
+                    if (!resumed) {
+                        resumed = true
+                        continuation.resume(discovery.discoveredPrinters.value) {}
+                    }
                 }
             }
-        }
 
-        val target = discovered.find { savedConfig != null && it.ipAddress == JSONObject(savedConfig.settingsJson).optString("ipAddress") }
-            ?: discovered.firstOrNull()
+            val target = discovered.find { it.ipAddress == JSONObject(savedConfig.settingsJson).optString("ipAddress") }
+                ?: discovered.firstOrNull()
 
-        if (target != null) {
-            val wifiPrinter = WifiPrinter(target.ipAddress, target.port)
-            try {
-                wifiPrinter.connect()
-                printerManager.setPrinter(wifiPrinter, "${target.name} (${target.ipAddress})", printerType = "WIFI", ipAddress = target.ipAddress, port = target.port)
-            } catch (_: Exception) {}
+            if (target != null) {
+                val wifiPrinter = WifiPrinter(target.ipAddress, target.port)
+                try {
+                    wifiPrinter.connect()
+                    printerManager.setPrinter(wifiPrinter, "${target.name} (${target.ipAddress})", printerType = "WIFI", ipAddress = target.ipAddress, port = target.port)
+                } catch (_: Exception) {}
+            }
+        } else if (savedConfig != null && savedConfig.printerType == "SYSTEM_ANDROID") {
+            val json = runCatching { JSONObject(savedConfig.settingsJson) }.getOrNull()
+            if (json?.optBoolean("userConfigured", false) == true) {
+                val standardPrinter = StandardAndroidPrinter(context)
+                if (standardPrinter.isPrinterAvailable()) {
+                    printerManager.setPrinter(
+                        printer = standardPrinter,
+                        printerName = savedConfig.selectedPrinterId.ifBlank { "Servicio de Impresión Android (Standard)" },
+                        printerType = "SYSTEM_ANDROID",
+                        saveToDb = false
+                    )
+                    printerManager.connect()
+                }
+            }
         }
     }
 
@@ -216,12 +222,14 @@ class PrintQueueManager(
                             loadedBitmaps.forEach { it?.recycle() }
 
                             // If using StandardAndroidPrinter, attach status listener to update DB state in real-time
-                            val androidPrinter = StandardAndroidPrinter(context) { itemStatus, _ ->
-                                scope.launch {
-                                    repository.updateItemStatuses(chunkIds, itemStatus)
+                            val currentPrinter = printerManager.getActivePrinter()
+                            if (currentPrinter is StandardAndroidPrinter) {
+                                currentPrinter.onJobStatusChanged = { itemStatus, _ ->
+                                    scope.launch {
+                                        repository.updateItemStatuses(chunkIds, itemStatus)
+                                    }
                                 }
                             }
-                            printerManager.setPrinter(androidPrinter, "Servicio de Impresión Android (Standard)", "SYSTEM_ANDROID", saveToDb = false)
 
                             repository.updateItemStatuses(chunkIds, PrintItemStatus.PRINTING)
                             printerManager.printPage(renderedPage)

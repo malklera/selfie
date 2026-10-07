@@ -216,6 +216,10 @@ class PrintQueueRepository(private val database: AppDatabase) {
         return configDao.getConfig("default")
     }
 
+    suspend fun clearPrinterConfig() {
+        configDao.deleteConfig("default")
+    }
+
     private fun parseTemplateEntity(entity: PrintTemplateEntity): PrintTemplate {
         val slots = mutableListOf<PhotoSlot>()
         val jsonArray = JSONArray(entity.slotsJson)
