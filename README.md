@@ -34,7 +34,8 @@ The .apk file is at
 it seems like the whole screen is zoom out, like the "Conectar por IP Manual" is not
 seen when the circular icon is static, but when it spinns it is seem
 
-- [ ] the input field for ip has to be numeric only, same for the port
+- [x] the input field for ip and port has to be numeric only, do it the same way as
+is currently in "Cuenta regresiva"
 
 - [ ] Once i connect a printer and close the app, at opening check if the same connection is available and automatically connect if it is.
 

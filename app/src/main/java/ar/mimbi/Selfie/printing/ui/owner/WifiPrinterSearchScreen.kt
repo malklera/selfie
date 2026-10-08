@@ -16,6 +16,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import ar.mimbi.Selfie.printing.printer.PrinterManager
 import ar.mimbi.Selfie.printing.printer.WifiPrinter
@@ -213,15 +215,21 @@ fun WifiPrinterSearchScreen(
                     ) {
                         OutlinedTextField(
                             value = manualIp,
-                            onValueChange = { manualIp = it },
+                            onValueChange = {
+                                if (it.all { char -> char.isDigit() || char == '.' }) manualIp = it
+                            },
                             label = { Text("IP (ej. 192.168.1.50)") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.weight(2f),
                             singleLine = true
                         )
                         OutlinedTextField(
                             value = manualPort,
-                            onValueChange = { manualPort = it },
+                            onValueChange = {
+                                if (it.all { char -> char.isDigit() }) manualPort = it
+                            },
                             label = { Text("Puerto") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.weight(1f),
                             singleLine = true
                         )
