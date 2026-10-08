@@ -30,7 +30,7 @@ The .apk file is at
 
 - [x] Make "Buscar Impresoras Wi-Fi" its own screen instead of being floating
 
-- [ ] There is a visual bug when searching for a wifi printer, while the spinner is show,
+- [x] There is a visual bug when searching for a wifi printer, while the spinner is show,
 it seems like the whole screen is zoom out, like the "Conectar por IP Manual" is not
 seen when the circular icon is static, but when it spinns it is seem
 
@@ -75,6 +75,13 @@ changes be discarded
 - [ ] In  "gestion de cola de impresion" allow me to tap into an item in the "items en cola"
 list and choose to take it out, retry, print again, if it failed, show the error
 here.
+
+- [ ] The input field for max number of printings, when the current number is
+show, center it, make the space big enough only for 2 digits, or maybe a square(i think it will be 3 digits)
+so it looks better
+
+- [ ] "Cuenta regresiva" put the input field besides the text, make the input field square,
+only really need 1 digit
 
 - [ ] In "gestion de cola de impresion", should there be a preview of the images??
 

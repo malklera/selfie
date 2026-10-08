@@ -1,10 +1,11 @@
 package ar.mimbi.Selfie.printing.ui.owner
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Refresh
@@ -53,199 +54,202 @@ fun WifiPrinterSearchScreen(
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
                     }
-                },
-                actions = {
-                    if (isSearching) {
-                        CircularProgressIndicator(
-                            modifier = Modifier
-                                .padding(end = 16.dp)
-                                .size(24.dp),
-                            strokeWidth = 2.dp
-                        )
-                    } else {
-                        IconButton(onClick = { wifiDiscovery.startDiscovery() }) {
-                            Icon(Icons.Default.Refresh, contentDescription = "Buscar nuevamente")
-                        }
-                    }
                 }
             )
         }
     ) { paddingValues ->
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .padding(paddingValues)
-                .fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Status Card
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp)
+            // Card 1: Búsqueda en Red Local
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
+                        modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Icon(Icons.Default.Wifi, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                            Column {
-                                Text(
-                                    text = if (isSearching) "Buscando en la red local..." else "Búsqueda finalizada",
-                                    fontWeight = FontWeight.Bold,
-                                    style = MaterialTheme.typography.titleSmall
-                                )
-                                Text(
-                                    text = if (isSearching) "Detectando impresoras disponibles" else "${discoveredPrinters.size} impresora(s) encontrada(s)",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+                            Icon(
+                                Icons.Default.Wifi,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                "Búsqueda en Red Local",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        if (isSearching) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            IconButton(
+                                onClick = { wifiDiscovery.startDiscovery() },
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(Icons.Default.Refresh, contentDescription = "Buscar nuevamente")
+                            }
+                        }
+                    }
+
+                    Text(
+                        text = when {
+                            isSearching -> "Buscando impresoras en la red..."
+                            discoveredPrinters.isEmpty() -> "No se encontraron impresoras automáticas."
+                            else -> "${discoveredPrinters.size} impresora(s) encontrada(s):"
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    if (discoveredPrinters.isNotEmpty()) {
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier.padding(top = 4.dp)
+                        ) {
+                            discoveredPrinters.forEach { printer ->
+                                Card(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            scope.launch {
+                                                val wifiPrinter = WifiPrinter(printer.ipAddress, printer.port)
+                                                printerManager.setPrinter(
+                                                    wifiPrinter,
+                                                    "${printer.name} (${printer.ipAddress})",
+                                                    printerType = "WIFI",
+                                                    ipAddress = printer.ipAddress,
+                                                    port = printer.port
+                                                )
+                                                printerManager.connect()
+                                                wifiDiscovery.stopDiscovery()
+                                                onBack()
+                                            }
+                                        },
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                                    ),
+                                    shape = RoundedCornerShape(8.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(12.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                printer.name,
+                                                fontWeight = FontWeight.Bold,
+                                                style = MaterialTheme.typography.bodyMedium
+                                            )
+                                            Text(
+                                                "IP: ${printer.ipAddress}:${printer.port}",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                        Text(
+                                            "Conectar",
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = MaterialTheme.colorScheme.primary,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
                 }
             }
 
-            // Discovered printers header
-            item {
-                Text(
-                    text = "Impresoras detectadas",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-            }
+            // Card 2: Conexión Manual por IP
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Text(
+                        text = "Conexión Manual por IP",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
 
-            if (discoveredPrinters.isEmpty()) {
-                item {
-                    Card(
+                    OutlinedTextField(
+                        value = manualName,
+                        onValueChange = { manualName = it },
+                        label = { Text("Nombre") },
                         modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
-                        shape = RoundedCornerShape(8.dp)
+                        singleLine = true
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(24.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = if (isSearching) "Escaneando red..." else "No se encontraron impresoras automáticamente.\nPuede conectar una manualmente por IP a continuación.",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
+                        OutlinedTextField(
+                            value = manualIp,
+                            onValueChange = { manualIp = it },
+                            label = { Text("IP (ej. 192.168.1.50)") },
+                            modifier = Modifier.weight(2f),
+                            singleLine = true
+                        )
+                        OutlinedTextField(
+                            value = manualPort,
+                            onValueChange = { manualPort = it },
+                            label = { Text("Puerto") },
+                            modifier = Modifier.weight(1f),
+                            singleLine = true
+                        )
                     }
-                }
-            } else {
-                items(discoveredPrinters) { printer ->
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
+
+                    Button(
+                        onClick = {
+                            val portInt = manualPort.toIntOrNull() ?: 9100
+                            if (manualIp.isNotBlank()) {
                                 scope.launch {
-                                    val wifiPrinter = WifiPrinter(printer.ipAddress, printer.port)
+                                    val wifiPrinter = WifiPrinter(manualIp.trim(), portInt)
                                     printerManager.setPrinter(
                                         wifiPrinter,
-                                        "${printer.name} (${printer.ipAddress})",
+                                        "$manualName (${manualIp.trim()})",
                                         printerType = "WIFI",
-                                        ipAddress = printer.ipAddress,
-                                        port = printer.port
+                                        ipAddress = manualIp.trim(),
+                                        port = portInt
                                     )
                                     printerManager.connect()
                                     wifiDiscovery.stopDiscovery()
                                     onBack()
                                 }
-                            },
-                        shape = RoundedCornerShape(12.dp)
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = manualIp.isNotBlank()
                     ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Text(printer.name, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text("IP: ${printer.ipAddress}:${printer.port}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                    }
-                }
-            }
-
-            item {
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-            }
-
-            // Manual Connection Card
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Text(
-                            text = "Conexión Manual por IP",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-
-                        OutlinedTextField(
-                            value = manualName,
-                            onValueChange = { manualName = it },
-                            label = { Text("Nombre") },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true
-                        )
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            OutlinedTextField(
-                                value = manualIp,
-                                onValueChange = { manualIp = it },
-                                label = { Text("IP (ej. 192.168.1.50)") },
-                                modifier = Modifier.weight(2f),
-                                singleLine = true
-                            )
-                            OutlinedTextField(
-                                value = manualPort,
-                                onValueChange = { manualPort = it },
-                                label = { Text("Puerto") },
-                                modifier = Modifier.weight(1f),
-                                singleLine = true
-                            )
-                        }
-
-                        Button(
-                            onClick = {
-                                val portInt = manualPort.toIntOrNull() ?: 9100
-                                if (manualIp.isNotBlank()) {
-                                    scope.launch {
-                                        val wifiPrinter = WifiPrinter(manualIp.trim(), portInt)
-                                        printerManager.setPrinter(
-                                            wifiPrinter,
-                                            "$manualName (${manualIp.trim()})",
-                                            printerType = "WIFI",
-                                            ipAddress = manualIp.trim(),
-                                            port = portInt
-                                        )
-                                        printerManager.connect()
-                                        wifiDiscovery.stopDiscovery()
-                                        onBack()
-                                    }
-                                }
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            enabled = manualIp.isNotBlank()
-                        ) {
-                            Text("Conectar por IP Manual")
-                        }
+                        Text("Conectar por IP Manual")
                     }
                 }
             }
