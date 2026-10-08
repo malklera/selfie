@@ -68,14 +68,19 @@ when there is not a printer connected
 
 - [ ] Implement/fix printing.
 
-- [ ] in "gestion de cola de impresion"  the buttons that have icon+text, if the
+- [x] in "gestion de cola de impresion"  the buttons that have icon+text, if the
 screen is too small to properly wrap the text without cutting the words like
 `imprimi
 r`
 do not show text, show only the icons
+or move the buttons to be one above the other instead of besides each other,
+what looks better?
+
+- [ ] If there is no printer connected and the user tap "Reintentar Fallidos" there
+should be a popup indicating the lack of printer and do nothing else, ensure
+only the ones labeled as failures are retry, not the ones that say "pendiente"
 
 - [ ] when is a good moment to clean the queue?
-
 
 - [ ] In  "gestion de cola de impresion" allow me to tap into an item in the "items en cola"
 list and choose to take it out, retry, print again, if it failed, show the error

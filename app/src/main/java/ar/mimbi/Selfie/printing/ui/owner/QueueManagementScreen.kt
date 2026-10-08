@@ -76,11 +76,11 @@ fun QueueManagementScreen(
 
             item {
                 // Action Buttons
-                Row(
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Button(
                         onClick = {
@@ -88,12 +88,12 @@ fun QueueManagementScreen(
                                 queueManager.printRemaining(context)
                             }
                         },
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(8.dp)
                     ) {
                         Icon(Icons.Default.Print, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Imprimir Restantes")
+                        Text("Imprimir Restantes", maxLines = 1)
                     }
 
                     if (failedCount > 0) {
@@ -103,12 +103,12 @@ fun QueueManagementScreen(
                                     queueManager.retryFailed(context)
                                 }
                             },
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(8.dp)
                         ) {
                             Icon(Icons.Default.Refresh, contentDescription = null)
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Reintentar Fallidos")
+                            Text("Reintentar Fallidos", maxLines = 1)
                         }
                     }
                 }
