@@ -9,6 +9,7 @@ import android.widget.Toast
 import android.provider.DocumentsContract
 import android.provider.MediaStore
 import android.provider.OpenableColumns
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -27,6 +28,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
@@ -94,10 +96,10 @@ fun ConfigurationScreen(
             maxPrintFocusRequester.bringIntoView()
         }
     }
-    var portadaPath by remember { mutableStateOf(initialConfig.portadaPath) }
-    var captureBoxPath by remember { mutableStateOf(initialConfig.captureBoxPath) }
-    var countdownSeconds by remember { mutableStateOf(initialConfig.countdownSeconds.toString()) }
-    var destinationPath by remember { mutableStateOf(initialConfig.destinationPath) }
+    var portadaPath by rememberSaveable { mutableStateOf(initialConfig.portadaPath) }
+    var captureBoxPath by rememberSaveable { mutableStateOf(initialConfig.captureBoxPath) }
+    var countdownSeconds by rememberSaveable { mutableStateOf(initialConfig.countdownSeconds.toString()) }
+    var destinationPath by rememberSaveable { mutableStateOf(initialConfig.destinationPath) }
 
     val resolutionsPair = remember { CameraResolutionHelper.getSupportedResolutions(context) }
     val supported9_16 = resolutionsPair.first
@@ -105,16 +107,16 @@ fun ConfigurationScreen(
     val defaultResKey = remember {
         CameraResolutionHelper.getDefaultResolution(context)?.key
     }
-    var pictureResolution by remember {
+    var pictureResolution by rememberSaveable {
         mutableStateOf(initialConfig.pictureResolution ?: defaultResKey)
     }
 
-    var showPrintButton by remember { mutableStateOf(initialConfig.showPrintButton) }
-    var maxPrintCount by remember { mutableStateOf(initialConfig.maxPrintCount.toString()) }
-    var printCount by remember { mutableStateOf(initialConfig.printCount) }
-    var wasResetToZero by remember { mutableStateOf(false) }
+    var showPrintButton by rememberSaveable { mutableStateOf(initialConfig.showPrintButton) }
+    var maxPrintCount by rememberSaveable { mutableStateOf(initialConfig.maxPrintCount.toString()) }
+    var printCount by rememberSaveable { mutableIntStateOf(initialConfig.printCount) }
+    var wasResetToZero by rememberSaveable { mutableStateOf(false) }
     
-    var showUnsavedDialog by remember { mutableStateOf(false) }
+    var showUnsavedDialog by rememberSaveable { mutableStateOf(false) }
 
     val hasChanges = portadaPath != initialConfig.portadaPath ||
             captureBoxPath != initialConfig.captureBoxPath ||
@@ -124,6 +126,12 @@ fun ConfigurationScreen(
             showPrintButton != initialConfig.showPrintButton ||
             maxPrintCount != initialConfig.maxPrintCount.toString() ||
             printCount != initialConfig.printCount
+
+    BackHandler(enabled = hasChanges) {
+        focusManager.clearFocus()
+        UserActionTracker.trackAction("Cerrar configuración (atrás físico/gesto)")
+        showUnsavedDialog = true
+    }
 
     val imagePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()

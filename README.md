@@ -65,7 +65,7 @@ do not show text, show only the icons
 
 - [ ] when is a good moment to clean the queue?
 
-- [ ] When pressing "Resetear a 0" in configuration screen, then entering to some other screen like "configuracion de impresora"
+- [x] When pressing "Resetear a 0" in configuration screen, then entering to some other screen like "configuracion de impresora"
 and going back, the counter goes back to before reseting, check all fields in the main
 configuration screen to keep a temporary state of the changes if the user goes to another screen,
 when coming back it should be the same unsaved state, only when exiting the configuration
