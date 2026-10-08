@@ -37,6 +37,8 @@ seen when the circular icon is static, but when it spinns it is seem
 - [x] the input field for ip and port has to be numeric only, do it the same way as
 is currently in "Cuenta regresiva"
 
+- [x] get ride of the "usar modo fake" for the printing output
+
 - [ ] Once i connect a printer and close the app, at opening check if the same connection is available and automatically connect if it is.
 
 - [ ] a print job should only be send to print if a printer is available, otherwise keep it pending, if it is send to print and you do not get a positive response from the printer then it stays pending
@@ -50,9 +52,6 @@ when there is not a printer connected
 
 - [ ] Implement/fix printing.
 
-- [ ] "buscar wifi" should open a new screen, not a floating window
-
-- [ ] get ride of the "usar modo fake" for the printing output
 
 - [ ] in "gestion de cola de impresion" align all the numbers acording to the largest text,
 currently the "pendientes" get wrapped in a small screen(this is good) but the number

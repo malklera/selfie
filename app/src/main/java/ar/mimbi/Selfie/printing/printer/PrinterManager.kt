@@ -67,10 +67,6 @@ class PrinterManager(
                                     clearPrinter(clearFromDb = false)
                                 }
                             }
-                            "FAKE" -> {
-                                setPrinter(FakePrinter(), saved.selectedPrinterId.ifBlank { "Impresora de Prueba (Fake Printer)" }, printerType = "FAKE", saveToDb = false)
-                                connect()
-                            }
                             else -> {
                                 clearPrinter(clearFromDb = false)
                             }
@@ -92,7 +88,6 @@ class PrinterManager(
         printerType: String? = when (printer) {
             is StandardAndroidPrinter -> "SYSTEM_ANDROID"
             is WifiPrinter -> "WIFI"
-            is FakePrinter -> "FAKE"
             else -> null
         },
         ipAddress: String? = null,

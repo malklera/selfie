@@ -2,7 +2,7 @@ package ar.mimbi.Selfie.printing
 
 import ar.mimbi.Selfie.printing.model.PageSize
 import ar.mimbi.Selfie.printing.model.PrintablePage
-import ar.mimbi.Selfie.printing.printer.FakePrinter
+import ar.mimbi.Selfie.printing.printer.Printer
 import ar.mimbi.Selfie.printing.printer.PrinterManager
 import ar.mimbi.Selfie.printing.printer.PrinterStatus
 import kotlinx.coroutines.runBlocking
@@ -13,6 +13,13 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class PrinterManagerTest {
+
+    private fun createTestPrinter(): Printer = object : Printer {
+        override suspend fun connect() {}
+        override suspend fun getStatus(): PrinterStatus = PrinterStatus.Ready
+        override suspend fun print(page: PrintablePage) {}
+        override suspend fun disconnect() {}
+    }
 
     @Test
     fun testDefaultPrinterManagerHasNoConfiguredPrinter() = runBlocking {
@@ -32,9 +39,9 @@ class PrinterManagerTest {
     @Test
     fun testSetPrinterAndClearPrinter() = runBlocking {
         val manager = PrinterManager()
-        val fake = FakePrinter()
+        val testPrinter = createTestPrinter()
 
-        manager.setPrinter(fake, "Mi Impresora", printerType = "FAKE", saveToDb = false)
+        manager.setPrinter(testPrinter, "Mi Impresora", printerType = "TEST", saveToDb = false)
         assertTrue(manager.hasConfiguredPrinter())
         assertEquals("Mi Impresora", manager.currentPrinterName.value)
 

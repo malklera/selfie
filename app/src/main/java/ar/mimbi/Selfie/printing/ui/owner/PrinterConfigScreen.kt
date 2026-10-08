@@ -54,29 +54,13 @@ fun PrinterConfigScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(text = printerName, style = MaterialTheme.typography.bodyMedium)
                     Spacer(modifier = Modifier.height(12.dp))
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    Button(
+                        onClick = onNavigateToWifiSearch,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Button(
-                            onClick = onNavigateToWifiSearch,
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Icon(Icons.Default.Wifi, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Buscar Wi-Fi")
-                        }
-                        OutlinedButton(
-                            onClick = {
-                                scope.launch {
-                                    printerManager.setPrinter(FakePrinter(), "Impresora de Prueba (Fake Printer)", printerType = "FAKE")
-                                    printerManager.connect()
-                                }
-                            },
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text("Usar Fake")
-                        }
+                        Icon(Icons.Default.Wifi, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Buscar Wi-Fi")
                     }
 
                     Spacer(modifier = Modifier.height(8.dp))
