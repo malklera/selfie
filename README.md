@@ -52,8 +52,8 @@ when there is not a printer connected
 
 - [ ] Implement/fix printing.
 
-
-- [ ] in "gestion de cola de impresion" align all the numbers acording to the largest text,
+- [x] in "gestion de cola de impresion", the first part with text+counters, 
+align all the numbers according to the largest text,
 currently the "pendientes" get wrapped in a small screen(this is good) but the number
 is not aligned with the rest
 
