@@ -55,6 +55,18 @@ is not aligned with the rest
 show, center it, make the space big enough only for 2 digits, or maybe a square(i think it will be 3 digits)
 so it looks better
 
+- [x] in "gestion de cola de impresion"  the buttons that have icon+text, if the
+screen is too small to properly wrap the text without cutting the words like
+`imprimi
+r`
+do not show text, show only the icons
+or move the buttons to be one above the other instead of besides each other,
+what looks better?
+
+- [ ] If there is no printer connected and the user tap "Reintentar Fallidos" there
+should be a popup indicating the lack of printer and do nothing else, ensure
+only the ones labeled as failures are retry, not the ones that say "pendiente"
+
 - [ ] Once i connect a printer and close the app, at opening check if the same connection is available and automatically connect if it is.
 
 - [ ] a print job should only be send to print if a printer is available, otherwise keep it pending, if it is send to print and you do not get a positive response from the printer then it stays pending
@@ -67,18 +79,6 @@ when there is not a printer connected
 - [ ] Check how "imprimir restantes" works, if i want it to work that way when there is no printer.
 
 - [ ] Implement/fix printing.
-
-- [x] in "gestion de cola de impresion"  the buttons that have icon+text, if the
-screen is too small to properly wrap the text without cutting the words like
-`imprimi
-r`
-do not show text, show only the icons
-or move the buttons to be one above the other instead of besides each other,
-what looks better?
-
-- [ ] If there is no printer connected and the user tap "Reintentar Fallidos" there
-should be a popup indicating the lack of printer and do nothing else, ensure
-only the ones labeled as failures are retry, not the ones that say "pendiente"
 
 - [ ] when is a good moment to clean the queue?
 
