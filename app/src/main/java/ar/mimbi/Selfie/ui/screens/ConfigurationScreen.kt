@@ -40,6 +40,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ar.mimbi.Selfie.data.AppConfig
@@ -376,18 +377,28 @@ fun ConfigurationScreen(
                     }
 
                     // Cuenta regresiva
-                    Column {
-                        Text("Cuenta regresiva", style = MaterialTheme.typography.titleLarge)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        TextField(
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "Cuenta regresiva",
+                            style = MaterialTheme.typography.titleLarge,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        OutlinedTextField(
                             value = countdownSeconds,
                             onValueChange = {
                                 if (it.all { char -> char.isDigit() }) countdownSeconds =
                                     it
                             },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            singleLine = true,
+                            textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Center),
                             modifier = Modifier
-                                .fillMaxWidth()
+                                .width(80.dp)
                                 .bringIntoViewRequester(countdownFocusRequester)
                                 .onFocusChanged { focusState ->
                                     countdownFocused = focusState.isFocused
@@ -640,8 +651,9 @@ fun ConfigurationScreen(
                                 },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                 singleLine = true,
+                                textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Center),
                                 modifier = Modifier
-                                    .width(100.dp)
+                                    .width(80.dp)
                                     .bringIntoViewRequester(maxPrintFocusRequester)
                                     .onFocusChanged { focusState ->
                                         maxPrintFocused = focusState.isFocused
