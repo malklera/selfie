@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
@@ -45,6 +46,7 @@ fun QueueManagementScreen(
     val failedCount = items.count { it.status == PrintItemStatus.FAILED || it.status == PrintItemStatus.CANCELED }
 
     var showNoPrinterDialog by remember { mutableStateOf(false) }
+    var showClearQueueConfirmation by remember { mutableStateOf(false) }
 
     if (showNoPrinterDialog) {
         AlertDialog(
@@ -54,6 +56,31 @@ fun QueueManagementScreen(
             confirmButton = {
                 TextButton(onClick = { showNoPrinterDialog = false }) {
                     Text("Aceptar")
+                }
+            }
+        )
+    }
+
+    if (showClearQueueConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showClearQueueConfirmation = false },
+            title = { Text("Vaciar cola de impresión") },
+            text = { Text("¿Está seguro de que desea eliminar todos los elementos de la cola de impresión? Las imágenes no se borrarán del dispositivo.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showClearQueueConfirmation = false
+                        scope.launch {
+                            queueManager.clearQueue()
+                        }
+                    }
+                ) {
+                    Text("Vaciar", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showClearQueueConfirmation = false }) {
+                    Text("Cancelar")
                 }
             }
         )
@@ -136,6 +163,22 @@ fun QueueManagementScreen(
                             Spacer(modifier = Modifier.width(8.dp))
                             Text("Reintentar Fallidos", maxLines = 1)
                         }
+                    }
+
+                    OutlinedButton(
+                        onClick = {
+                            showClearQueueConfirmation = true
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = items.isNotEmpty(),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error
+                        )
+                    ) {
+                        Icon(Icons.Default.Delete, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Vaciar Cola", maxLines = 1)
                     }
                 }
             }

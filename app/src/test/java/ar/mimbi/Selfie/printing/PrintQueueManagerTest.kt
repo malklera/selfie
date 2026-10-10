@@ -15,7 +15,7 @@ import org.junit.Test
 
 class PrintQueueManagerTest {
 
-    private class FakeRepository : PrintQueueRepository(null) {
+    private open class FakeRepository : PrintQueueRepository(null) {
         val failedItemsList = mutableListOf<PrintItem>()
         val resetIdsCalled = mutableListOf<Long>()
 
@@ -113,5 +113,24 @@ class PrintQueueManagerTest {
         val result = queueManager.printRemaining()
 
         assertTrue(result)
+    }
+
+    @Test
+    fun testClearQueueDelegatesToRepository() = runBlocking {
+        var clearQueueCalled = false
+        val fakeRepo = object : FakeRepository() {
+            override suspend fun clearQueue() {
+                clearQueueCalled = true
+            }
+        }
+        val printerManager = PrinterManager()
+        val queueManager = PrintQueueManager(
+            repository = fakeRepo,
+            printerManager = printerManager
+        )
+
+        queueManager.clearQueue()
+
+        assertTrue(clearQueueCalled)
     }
 }

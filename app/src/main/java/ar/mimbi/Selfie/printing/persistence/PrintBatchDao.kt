@@ -26,4 +26,7 @@ interface PrintBatchDao {
 
     @Query("UPDATE print_batches SET status = :status WHERE id = :id")
     suspend fun updateBatchStatus(id: Long, status: String): Int
+
+    @Query("DELETE FROM print_batches")
+    suspend fun deleteAllBatches(): Int
 }

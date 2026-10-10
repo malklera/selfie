@@ -44,4 +44,7 @@ interface PrintItemDao {
 
     @Query("DELETE FROM print_items WHERE status = 'PRINTED'")
     suspend fun deletePrintedItems(): Int
+
+    @Query("DELETE FROM print_items")
+    suspend fun deleteAllItems(): Int
 }

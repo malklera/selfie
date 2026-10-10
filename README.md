@@ -75,14 +75,22 @@ when there is not a printer connected
 - [x] When opening "Configuracion de plantillas" screen, ensure the selected template
 is in view by manipulating the scroll
 
+- [x] Add a button to clear the queue, this will erase all elements from the queue,
+just the queue elements, not the file themselves, put it below what is there and above the list
+add a confirmation popup
+
+- [ ] What is better as UX/UI? Using the same style of "Vaciar Cola" for when an
+action is not possible, the style of "Imprimir Restantes" by showing the button, leaving
+it active and showing a popup indicating why you cant, or the one from "Reintentar Fallidos"
+of directly not showing the button, do not make changes before discussing it with me to
+decide
+
 - [ ] Once i connect a printer and close the app, at opening check if the same connection is available and automatically connect if it is.
 Check with actual printer, it works with the android selection
 
 - [ ] Check how "imprimir restantes" works, if i want it to work that way when there is no printer.
 
 - [ ] Implement/fix printing.
-
-- [ ] when is a good moment to clean the queue?
 
 - [ ] In  "gestion de cola de impresion" allow me to tap into an item in the "items en cola"
 list and choose to take it out, retry, print again, if it failed, show the error

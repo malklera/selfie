@@ -176,6 +176,10 @@ class PrintQueueManager(
         repository.clearPrintedItems()
     }
 
+    suspend fun clearQueue() {
+        repository.clearQueue()
+    }
+
     suspend fun processQueue(context: Context? = null, flush: Boolean = false, targetItemIds: List<Long>? = null) {
         ensurePrinterReady(context)
 

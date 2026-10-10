@@ -198,6 +198,11 @@ open class PrintQueueRepository(private val database: AppDatabase? = null) {
         itemDao?.deletePrintedItems()
     }
 
+    open suspend fun clearQueue() {
+        itemDao?.deleteAllItems()
+        batchDao?.deleteAllBatches()
+    }
+
     open fun getAllItemsFlow(): Flow<List<PrintItem>> {
         val dao = itemDao ?: return kotlinx.coroutines.flow.flowOf(emptyList())
         return dao.getAllItemsFlow().map { list ->
