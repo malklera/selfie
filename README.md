@@ -24,66 +24,7 @@ The .apk file is at
 
 ## TODO
 
-- [x] if there is no printer configured, do not open an android dialog to save as pdf when taping the printing button, just leave the picture in the queue as "Pendiente"
-
-- [x] in the queue screen, make the whole screen scroll instead of only the queue
-
-- [x] Make "Buscar Impresoras Wi-Fi" its own screen instead of being floating
-
-- [x] There is a visual bug when searching for a wifi printer, while the spinner is show,
-it seems like the whole screen is zoom out, like the "Conectar por IP Manual" is not
-seen when the circular icon is static, but when it spinns it is seem
-
-- [x] the input field for ip and port has to be numeric only, do it the same way as
-is currently in "Cuenta regresiva"
-
-- [x] get ride of the "usar modo fake" for the printing output
-
-- [x] When pressing "Resetear a 0" in configuration screen, then entering to some other screen like "configuracion de impresora"
-and going back, the counter goes back to before reseting, check all fields in the main
-configuration screen to keep a temporary state of the changes if the user goes to another screen,
-when coming back it should be the same unsaved state, only when exiting the configuration
-screen by presing the "x" to close it and discarding the changes should the unsaved
-changes be discarded
-
-- [x] in "gestion de cola de impresion", the first part with text+counters, 
-align all the numbers according to the largest text,
-currently the "pendientes" get wrapped in a small screen(this is good) but the number
-is not aligned with the rest
-
-- [x] The input field for max number of printings, when the current number is
-show, center it, make the space big enough only for 2 digits, or maybe a square(i think it will be 3 digits)
-so it looks better
-
-- [x] in "gestion de cola de impresion"  the buttons that have icon+text, if the
-screen is too small to properly wrap the text without cutting the words like
-`imprimi
-r`
-do not show text, show only the icons
-or move the buttons to be one above the other instead of besides each other,
-what looks better?
-
-- [x] If there is no printer connected and the user tap "Reintentar Fallidos" there
-should be a popup indicating the lack of printer and do nothing else, ensure
-only the ones labeled as failures are retry, not the ones that say "pendiente"
-
-- [x] If the template for printing requires more than one picture, the state in
-the printing queue when there is less pictures than required should say "Pendiente (Esperando más fotos)"
-not "Pendiente (Esperando impresora disponible)" the latter text should only be
-when there is not a printer connected
-
-- [x] When opening "Configuracion de plantillas" screen, ensure the selected template
-is in view by manipulating the scroll
-
-- [x] Add a button to clear the queue, this will erase all elements from the queue,
-just the queue elements, not the file themselves, put it below what is there and above the list
-add a confirmation popup
-
-- [x] What is better as UX/UI? Using the same style of "Vaciar Cola" for when an
-action is not possible, the style of "Imprimir Restantes" by showing the button, leaving
-it active and showing a popup indicating why you cant, or the one from "Reintentar Fallidos"
-of directly not showing the button, do not make changes before discussing it with me to
-decide
+- [ ] check connection to printer
 
 - [ ] Once i connect a printer and close the app, at opening check if the same connection is available and automatically connect if it is.
 Check with actual printer, it works with the android selection
@@ -101,6 +42,8 @@ here.
 - [ ] Add support for use of frontal camera.
 
 - [ ] Probably should update the color theme, think about this.
+
+- [ ] Support for connecting a printer with bluethooth
 
 
 ## Made for use of
