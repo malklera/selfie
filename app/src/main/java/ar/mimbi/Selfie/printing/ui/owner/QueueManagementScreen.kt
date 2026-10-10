@@ -30,8 +30,13 @@ fun QueueManagementScreen(
 ) {
     val items by queueManager.allItemsFlow.collectAsState(initial = emptyList())
     val batches by queueManager.allBatchesFlow.collectAsState(initial = emptyList())
+    val activeTemplate by queueManager.activeTemplateFlow.collectAsState(initial = DefaultTemplates.TEMPLATE_FULL_WIDTH_SINGLE)
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+
+    LaunchedEffect(Unit) {
+        queueManager.ensurePrinterReady(context)
+    }
 
     val pendingCount = items.count { it.status == PrintItemStatus.PENDING }
     val queuedCount = items.count { it.status == PrintItemStatus.QUEUED }
@@ -81,7 +86,7 @@ fun QueueManagementScreen(
                         .padding(bottom = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    StatRow("Pendientes (Esperando impresora)", "$pendingCount")
+                    StatRow("Pendientes", "$pendingCount")
                     StatRow("En cola de impresión", "$queuedCount")
                     StatRow("Imprimiendo / Bloqueados", "$printingCount")
                     StatRow("Completados", "$printedCount")
@@ -146,15 +151,26 @@ fun QueueManagementScreen(
 
             items(items, key = { it.id }) { item ->
                 val batch = batches.find { it.id == item.batchId }
-                val templateId = batch?.templateId ?: 1
-                val template = DefaultTemplates.getById(templateId)
+                val template = if (batch != null) DefaultTemplates.getById(batch.templateId) else activeTemplate
+                val templateId = template.id
                 val slotCount = template.slotCount.coerceAtLeast(1)
 
                 val batchItems = items.filter { it.batchId == item.batchId }.sortedBy { it.sequence }
                 val itemIndex = batchItems.indexOfFirst { it.id == item.id } + 1
                 val pageNumber = if (itemIndex > 0) (itemIndex - 1) / slotCount + 1 else 1
 
-                ItemRow(item, templateId, pageNumber)
+                val batchPendingItems = batchItems.filter { it.status == PrintItemStatus.PENDING }
+                val pendingChunks = batchPendingItems.chunked(slotCount)
+                val itemChunk = pendingChunks.find { chunk -> chunk.any { it.id == item.id } }
+                val pendingInChunk = itemChunk?.size ?: batchPendingItems.size
+
+                ItemRow(
+                    item = item,
+                    templateId = templateId,
+                    pageNumber = pageNumber,
+                    slotCount = slotCount,
+                    pendingInChunk = pendingInChunk
+                )
             }
         }
     }
@@ -184,7 +200,13 @@ private fun StatRow(label: String, value: String) {
 }
 
 @Composable
-private fun ItemRow(item: PrintItem, templateId: Int, pageNumber: Int) {
+private fun ItemRow(
+    item: PrintItem,
+    templateId: Int,
+    pageNumber: Int,
+    slotCount: Int,
+    pendingInChunk: Int
+) {
     val statusColor = when (item.status) {
         PrintItemStatus.PENDING -> MaterialTheme.colorScheme.primary
         PrintItemStatus.QUEUED -> MaterialTheme.colorScheme.secondary
@@ -196,7 +218,13 @@ private fun ItemRow(item: PrintItem, templateId: Int, pageNumber: Int) {
     }
 
     val statusText = when (item.status) {
-        PrintItemStatus.PENDING -> "Pendiente (Esperando impresora disponible)"
+        PrintItemStatus.PENDING -> {
+            if (slotCount > 1 && pendingInChunk < slotCount) {
+                "Pendiente (Esperando más fotos)"
+            } else {
+                "Pendiente (Esperando impresora disponible)"
+            }
+        }
         PrintItemStatus.QUEUED -> "En cola de impresión"
         PrintItemStatus.PRINTING -> "Imprimiendo / Enviando a la impresora"
         PrintItemStatus.BLOCKED -> "Bloqueado (Verificar impresora / sin papel)"

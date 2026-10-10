@@ -67,16 +67,18 @@ what looks better?
 should be a popup indicating the lack of printer and do nothing else, ensure
 only the ones labeled as failures are retry, not the ones that say "pendiente"
 
-- [ ] Once i connect a printer and close the app, at opening check if the same connection is available and automatically connect if it is.
-
-- [ ] a print job should only be send to print if a printer is available, otherwise keep it pending, if it is send to print and you do not get a positive response from the printer then it stays pending
-
-- [ ] If the template for printing requires more than one picture, the state in
+- [x] If the template for printing requires more than one picture, the state in
 the printing queue when there is less pictures than required should say "Pendiente (Esperando más fotos)"
 not "Pendiente (Esperando impresora disponible)" the latter text should only be
 when there is not a printer connected
 
-- [x] Check how "imprimir restantes" works, if i want it to work that way when there is no printer.
+- [ ] When opening "Configuracion de plantillas" screen, ensure the selected template
+is in view by manipulating the scroll
+
+- [ ] Once i connect a printer and close the app, at opening check if the same connection is available and automatically connect if it is.
+Check with actual printer, it works with the android selection
+
+- [ ] Check how "imprimir restantes" works, if i want it to work that way when there is no printer.
 
 - [ ] Implement/fix printing.
 
