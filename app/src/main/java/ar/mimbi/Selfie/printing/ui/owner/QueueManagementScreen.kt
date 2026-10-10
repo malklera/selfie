@@ -52,7 +52,7 @@ fun QueueManagementScreen(
         AlertDialog(
             onDismissRequest = { showNoPrinterDialog = false },
             title = { Text("Sin impresora conectada") },
-            text = { Text("No hay ninguna impresora conectada para reintentar los trabajos fallidos. Por favor, conecte una impresora e intente nuevamente.") },
+            text = { Text("No hay ninguna impresora conectada para procesar los trabajos. Por favor, conecte una impresora e intente nuevamente.") },
             confirmButton = {
                 TextButton(onClick = { showNoPrinterDialog = false }) {
                     Text("Aceptar")
@@ -138,6 +138,7 @@ fun QueueManagementScreen(
                                 }
                             }
                         },
+                        enabled = pendingCount > 0,
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(8.dp)
                     ) {
@@ -146,23 +147,22 @@ fun QueueManagementScreen(
                         Text("Imprimir Restantes", maxLines = 1)
                     }
 
-                    if (failedCount > 0) {
-                        OutlinedButton(
-                            onClick = {
-                                scope.launch {
-                                    val success = queueManager.retryFailed(context)
-                                    if (!success) {
-                                        showNoPrinterDialog = true
-                                    }
+                    OutlinedButton(
+                        onClick = {
+                            scope.launch {
+                                val success = queueManager.retryFailed(context)
+                                if (!success) {
+                                    showNoPrinterDialog = true
                                 }
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Icon(Icons.Default.Refresh, contentDescription = null)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Reintentar Fallidos", maxLines = 1)
-                        }
+                            }
+                        },
+                        enabled = failedCount > 0,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Icon(Icons.Default.Refresh, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Reintentar Fallidos ($failedCount)", maxLines = 1)
                     }
 
                     OutlinedButton(

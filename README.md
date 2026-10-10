@@ -79,7 +79,7 @@ is in view by manipulating the scroll
 just the queue elements, not the file themselves, put it below what is there and above the list
 add a confirmation popup
 
-- [ ] What is better as UX/UI? Using the same style of "Vaciar Cola" for when an
+- [x] What is better as UX/UI? Using the same style of "Vaciar Cola" for when an
 action is not possible, the style of "Imprimir Restantes" by showing the button, leaving
 it active and showing a popup indicating why you cant, or the one from "Reintentar Fallidos"
 of directly not showing the button, do not make changes before discussing it with me to
