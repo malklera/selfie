@@ -45,9 +45,10 @@ class PrintQueueManager(
         }
     }
 
-    suspend fun ensurePrinterReady(context: Context) {
+    suspend fun ensurePrinterReady(context: Context?) {
         val currentStatus = printerManager.getStatus()
         if (currentStatus is PrinterStatus.Ready) return
+        if (context == null) return
 
         // If no printer is configured, do not auto-configure any printer
         val savedConfig = repository.getSavedPrinterConfig()
@@ -141,30 +142,45 @@ class PrintQueueManager(
         repository.setActiveTemplate(templateId)
     }
 
-    fun printRemaining(context: Context) {
-        scope.launch {
-            ensurePrinterReady(context)
-            processQueue(context, flush = true)
+    suspend fun printRemaining(context: Context? = null): Boolean {
+        ensurePrinterReady(context)
+        val status = printerManager.getStatus()
+        if (status !is PrinterStatus.Ready && status !is PrinterStatus.Printing) {
+            Log.w(TAG, "No hay impresora disponible. El trabajo permanecerá PENDIENTE.")
+            return false
         }
+        processQueue(context, flush = true)
+        return true
     }
 
-    fun retryFailed(context: Context) {
-        scope.launch {
-            ensurePrinterReady(context)
-            repository.resetFailedItemsToPending()
-            processQueue(context, flush = false)
+    suspend fun retryFailed(context: Context? = null): Boolean {
+        ensurePrinterReady(context)
+        val status = printerManager.getStatus()
+        if (status !is PrinterStatus.Ready && status !is PrinterStatus.Printing) {
+            Log.w(TAG, "No hay impresora disponible. El trabajo permanecerá en estado fallido.")
+            return false
         }
+
+        val failedItems = repository.getFailedItems()
+        if (failedItems.isEmpty()) {
+            return true
+        }
+
+        val failedIds = failedItems.map { it.id }
+        repository.resetFailedItemsToPendingForIds(failedIds)
+        processQueue(context, flush = true, targetItemIds = failedIds)
+        return true
     }
 
     suspend fun clearPrintedItems() {
         repository.clearPrintedItems()
     }
 
-    suspend fun processQueue(context: Context, flush: Boolean = false) {
+    suspend fun processQueue(context: Context? = null, flush: Boolean = false, targetItemIds: List<Long>? = null) {
         ensurePrinterReady(context)
 
         // Rule: Only send to print if a printer is available, otherwise keep pending
-        if (printerManager.getStatus() !is PrinterStatus.Ready) {
+        if (printerManager.getStatus() !is PrinterStatus.Ready && printerManager.getStatus() !is PrinterStatus.Printing) {
             Log.w(TAG, "No hay impresora disponible. El trabajo permanecerá PENDIENTE.")
             return
         }
@@ -176,7 +192,10 @@ class PrintQueueManager(
                     val template = repository.getTemplateById(batch.templateId)
                         ?: DefaultTemplates.getById(batch.templateId)
 
-                    val pendingItems = repository.getPendingItemsForBatch(batch.id)
+                    var pendingItems = repository.getPendingItemsForBatch(batch.id)
+                    if (targetItemIds != null) {
+                        pendingItems = pendingItems.filter { it.id in targetItemIds }
+                    }
                     if (pendingItems.isEmpty()) continue
 
                     val slotCount = template.slotCount
@@ -197,7 +216,7 @@ class PrintQueueManager(
                         var loadFailed = false
 
                         for (item in chunk) {
-                            val bitmap = decodeBitmapFromUri(context, item.photoUri, PageSize().widthPx, PageSize().heightPx)
+                            val bitmap = if (context != null) decodeBitmapFromUri(context, item.photoUri, PageSize().widthPx, PageSize().heightPx) else null
                             if (bitmap == null) {
                                 Log.e(TAG, "Failed to load image from URI: ${item.photoUri}")
                                 ErrorLogger.log("Failed to load image from URI: ${item.photoUri}")

@@ -63,7 +63,7 @@ do not show text, show only the icons
 or move the buttons to be one above the other instead of besides each other,
 what looks better?
 
-- [ ] If there is no printer connected and the user tap "Reintentar Fallidos" there
+- [x] If there is no printer connected and the user tap "Reintentar Fallidos" there
 should be a popup indicating the lack of printer and do nothing else, ensure
 only the ones labeled as failures are retry, not the ones that say "pendiente"
 
@@ -76,7 +76,7 @@ the printing queue when there is less pictures than required should say "Pendien
 not "Pendiente (Esperando impresora disponible)" the latter text should only be
 when there is not a printer connected
 
-- [ ] Check how "imprimir restantes" works, if i want it to work that way when there is no printer.
+- [x] Check how "imprimir restantes" works, if i want it to work that way when there is no printer.
 
 - [ ] Implement/fix printing.
 

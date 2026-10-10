@@ -9,16 +9,17 @@ import kotlinx.coroutines.flow.map
 import org.json.JSONArray
 import org.json.JSONObject
 
-class PrintQueueRepository(private val database: AppDatabase) {
+open class PrintQueueRepository(private val database: AppDatabase? = null) {
 
-    private val templateDao = database.printTemplateDao()
-    private val batchDao = database.printBatchDao()
-    private val itemDao = database.printItemDao()
-    private val configDao = database.printerConfigDao()
+    private val templateDao get() = database?.printTemplateDao()
+    private val batchDao get() = database?.printBatchDao()
+    private val itemDao get() = database?.printItemDao()
+    private val configDao get() = database?.printerConfigDao()
 
-    suspend fun initDefaultTemplates() {
+    open suspend fun initDefaultTemplates() {
+        val dao = templateDao ?: return
         DefaultTemplates.ALL_TEMPLATES.forEach { template ->
-            val existing = templateDao.getTemplateById(template.id)
+            val existing = dao.getTemplateById(template.id)
             if (existing == null) {
                 val slotsJson = JSONArray().apply {
                     template.slots.forEach { slot ->
@@ -32,7 +33,7 @@ class PrintQueueRepository(private val database: AppDatabase) {
                 }.toString()
 
                 val isActive = template.id == DefaultTemplates.TEMPLATE_FULL_WIDTH_SINGLE.id
-                templateDao.insertOrUpdate(
+                dao.insertOrUpdate(
                     PrintTemplateEntity(
                         id = template.id,
                         description = template.description,
@@ -50,31 +51,34 @@ class PrintQueueRepository(private val database: AppDatabase) {
         }
     }
 
-    suspend fun getActiveTemplate(): PrintTemplate {
+    open suspend fun getActiveTemplate(): PrintTemplate {
         initDefaultTemplates()
-        val activeEntity = templateDao.getActiveTemplate()
+        val dao = templateDao ?: return DefaultTemplates.TEMPLATE_FULL_WIDTH_SINGLE
+        val activeEntity = dao.getActiveTemplate()
             ?: return DefaultTemplates.TEMPLATE_FULL_WIDTH_SINGLE
 
         return parseTemplateEntity(activeEntity)
     }
 
-    suspend fun setActiveTemplate(templateId: Int) {
-        templateDao.setActiveTemplate(templateId)
+    open suspend fun setActiveTemplate(templateId: Int) {
+        templateDao?.setActiveTemplate(templateId)
     }
 
-    fun getActiveTemplateFlow(): Flow<PrintTemplate> {
-        return templateDao.getActiveTemplateFlow().map { entity ->
+    open fun getActiveTemplateFlow(): Flow<PrintTemplate> {
+        val dao = templateDao ?: return kotlinx.coroutines.flow.flowOf(DefaultTemplates.TEMPLATE_FULL_WIDTH_SINGLE)
+        return dao.getActiveTemplateFlow().map { entity ->
             if (entity == null) DefaultTemplates.TEMPLATE_FULL_WIDTH_SINGLE else parseTemplateEntity(entity)
         }
     }
 
-    suspend fun getTemplateById(id: Int): PrintTemplate? {
-        val entity = templateDao.getTemplateById(id) ?: return null
+    open suspend fun getTemplateById(id: Int): PrintTemplate? {
+        val entity = templateDao?.getTemplateById(id) ?: return null
         return parseTemplateEntity(entity)
     }
 
-    suspend fun getOrCreateActiveBatch(template: PrintTemplate): PrintBatch {
-        val activeEntity = batchDao.getActiveBatch(BatchStatus.ACTIVE.name)
+    open suspend fun getOrCreateActiveBatch(template: PrintTemplate): PrintBatch {
+        val dao = batchDao ?: return PrintBatch(0, template.id, template.version, System.currentTimeMillis(), BatchStatus.ACTIVE)
+        val activeEntity = dao.getActiveBatch(BatchStatus.ACTIVE.name)
         if (activeEntity != null && activeEntity.templateId == template.id && activeEntity.templateVersion == template.version) {
             return PrintBatch(
                 id = activeEntity.id,
@@ -87,7 +91,7 @@ class PrintQueueRepository(private val database: AppDatabase) {
 
         // If an existing active batch uses a different template/version, finalize it
         if (activeEntity != null) {
-            batchDao.updateBatchStatus(activeEntity.id, BatchStatus.COMPLETED.name)
+            dao.updateBatchStatus(activeEntity.id, BatchStatus.COMPLETED.name)
         }
 
         val newBatchEntity = PrintBatchEntity(
@@ -96,7 +100,7 @@ class PrintQueueRepository(private val database: AppDatabase) {
             createdAt = System.currentTimeMillis(),
             status = BatchStatus.ACTIVE.name
         )
-        val newId = batchDao.insertBatch(newBatchEntity)
+        val newId = dao.insertBatch(newBatchEntity)
         return PrintBatch(
             id = newId,
             templateId = template.id,
@@ -106,8 +110,9 @@ class PrintQueueRepository(private val database: AppDatabase) {
         )
     }
 
-    suspend fun enqueuePhotos(batchId: Long, photoUri: String, copies: Int): List<Long> {
-        val lastItem = itemDao.getLastItem()
+    open suspend fun enqueuePhotos(batchId: Long, photoUri: String, copies: Int): List<Long> {
+        val dao = itemDao ?: return emptyList()
+        val lastItem = dao.getLastItem()
         var currentSeq = (lastItem?.sequence ?: 0) + 1
 
         val entities = mutableListOf<PrintItemEntity>()
@@ -121,11 +126,11 @@ class PrintQueueRepository(private val database: AppDatabase) {
                 )
             )
         }
-        return itemDao.insertItems(entities)
+        return dao.insertItems(entities)
     }
 
-    suspend fun getPendingItemsForBatch(batchId: Long): List<PrintItem> {
-        return itemDao.getItemsByBatchAndStatus(batchId, PrintItemStatus.PENDING.name).map {
+    open suspend fun getPendingItemsForBatch(batchId: Long): List<PrintItem> {
+        return itemDao?.getItemsByBatchAndStatus(batchId, PrintItemStatus.PENDING.name)?.map {
             PrintItem(
                 id = it.id,
                 batchId = it.batchId,
@@ -133,14 +138,16 @@ class PrintQueueRepository(private val database: AppDatabase) {
                 sequence = it.sequence,
                 status = PrintItemStatus.valueOf(it.status)
             )
-        }
+        } ?: emptyList()
     }
 
-    suspend fun getAllPendingBatches(): List<PrintBatch> {
-        val allPendingItems = itemDao.getAllPendingItems()
+    open suspend fun getAllPendingBatches(): List<PrintBatch> {
+        val dao = itemDao ?: return emptyList()
+        val bDao = batchDao ?: return emptyList()
+        val allPendingItems = dao.getAllPendingItems()
         val batchIds = allPendingItems.map { it.batchId }.distinct()
         return batchIds.mapNotNull { id ->
-            val entity = batchDao.getBatchById(id)
+            val entity = bDao.getBatchById(id)
             if (entity != null) {
                 PrintBatch(
                     id = entity.id,
@@ -153,28 +160,47 @@ class PrintQueueRepository(private val database: AppDatabase) {
         }
     }
 
-    suspend fun updateItemStatuses(ids: List<Long>, status: PrintItemStatus) {
-        itemDao.updateItemStatuses(ids, status.name)
+    open suspend fun updateItemStatuses(ids: List<Long>, status: PrintItemStatus) {
+        itemDao?.updateItemStatuses(ids, status.name)
     }
 
-    suspend fun updateBatchStatus(batchId: Long, status: BatchStatus) {
-        batchDao.updateBatchStatus(batchId, status.name)
+    open suspend fun updateBatchStatus(batchId: Long, status: BatchStatus) {
+        batchDao?.updateBatchStatus(batchId, status.name)
     }
 
-    suspend fun resetPrintingItemsToPending() {
-        itemDao.resetPrintingToPending()
+    open suspend fun resetPrintingItemsToPending() {
+        itemDao?.resetPrintingToPending()
     }
 
-    suspend fun resetFailedItemsToPending() {
-        itemDao.resetFailedToPending()
+    open suspend fun resetFailedItemsToPending() {
+        itemDao?.resetFailedToPending()
     }
 
-    suspend fun clearPrintedItems() {
-        itemDao.deletePrintedItems()
+    open suspend fun getFailedItems(): List<PrintItem> {
+        return itemDao?.getAllFailedItems()?.map {
+            PrintItem(
+                id = it.id,
+                batchId = it.batchId,
+                photoUri = it.photoUri,
+                sequence = it.sequence,
+                status = runCatching { PrintItemStatus.valueOf(it.status) }.getOrDefault(PrintItemStatus.FAILED)
+            )
+        } ?: emptyList()
     }
 
-    fun getAllItemsFlow(): Flow<List<PrintItem>> {
-        return itemDao.getAllItemsFlow().map { list ->
+    open suspend fun resetFailedItemsToPendingForIds(ids: List<Long>) {
+        if (ids.isNotEmpty()) {
+            itemDao?.updateItemStatuses(ids, PrintItemStatus.PENDING.name)
+        }
+    }
+
+    open suspend fun clearPrintedItems() {
+        itemDao?.deletePrintedItems()
+    }
+
+    open fun getAllItemsFlow(): Flow<List<PrintItem>> {
+        val dao = itemDao ?: return kotlinx.coroutines.flow.flowOf(emptyList())
+        return dao.getAllItemsFlow().map { list ->
             list.map {
                 PrintItem(
                     id = it.id,
@@ -187,8 +213,9 @@ class PrintQueueRepository(private val database: AppDatabase) {
         }
     }
 
-    fun getAllBatchesFlow(): Flow<List<PrintBatch>> {
-        return batchDao.getAllBatchesFlow().map { list ->
+    open fun getAllBatchesFlow(): Flow<List<PrintBatch>> {
+        val dao = batchDao ?: return kotlinx.coroutines.flow.flowOf(emptyList())
+        return dao.getAllBatchesFlow().map { list ->
             list.map {
                 PrintBatch(
                     id = it.id,
@@ -201,8 +228,8 @@ class PrintQueueRepository(private val database: AppDatabase) {
         }
     }
 
-    suspend fun savePrinterConfig(printerType: String, printerName: String, settingsJson: String) {
-        configDao.insertOrUpdate(
+    open suspend fun savePrinterConfig(printerType: String, printerName: String, settingsJson: String) {
+        configDao?.insertOrUpdate(
             PrinterConfigEntity(
                 id = "default",
                 selectedPrinterId = printerName,
@@ -212,12 +239,12 @@ class PrintQueueRepository(private val database: AppDatabase) {
         )
     }
 
-    suspend fun getSavedPrinterConfig(): PrinterConfigEntity? {
-        return configDao.getConfig("default")
+    open suspend fun getSavedPrinterConfig(): PrinterConfigEntity? {
+        return configDao?.getConfig("default")
     }
 
-    suspend fun clearPrinterConfig() {
-        configDao.deleteConfig("default")
+    open suspend fun clearPrinterConfig() {
+        configDao?.deleteConfig("default")
     }
 
     private fun parseTemplateEntity(entity: PrintTemplateEntity): PrintTemplate {

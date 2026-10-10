@@ -39,6 +39,21 @@ fun QueueManagementScreen(
     val printedCount = items.count { it.status == PrintItemStatus.PRINTED }
     val failedCount = items.count { it.status == PrintItemStatus.FAILED || it.status == PrintItemStatus.CANCELED }
 
+    var showNoPrinterDialog by remember { mutableStateOf(false) }
+
+    if (showNoPrinterDialog) {
+        AlertDialog(
+            onDismissRequest = { showNoPrinterDialog = false },
+            title = { Text("Sin impresora conectada") },
+            text = { Text("No hay ninguna impresora conectada para reintentar los trabajos fallidos. Por favor, conecte una impresora e intente nuevamente.") },
+            confirmButton = {
+                TextButton(onClick = { showNoPrinterDialog = false }) {
+                    Text("Aceptar")
+                }
+            }
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -85,7 +100,10 @@ fun QueueManagementScreen(
                     Button(
                         onClick = {
                             scope.launch {
-                                queueManager.printRemaining(context)
+                                val success = queueManager.printRemaining(context)
+                                if (!success) {
+                                    showNoPrinterDialog = true
+                                }
                             }
                         },
                         modifier = Modifier.fillMaxWidth(),
@@ -100,7 +118,10 @@ fun QueueManagementScreen(
                         OutlinedButton(
                             onClick = {
                                 scope.launch {
-                                    queueManager.retryFailed(context)
+                                    val success = queueManager.retryFailed(context)
+                                    if (!success) {
+                                        showNoPrinterDialog = true
+                                    }
                                 }
                             },
                             modifier = Modifier.fillMaxWidth(),

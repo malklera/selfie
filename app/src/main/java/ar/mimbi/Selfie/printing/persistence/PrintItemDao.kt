@@ -15,7 +15,7 @@ interface PrintItemDao {
     @Query("SELECT * FROM print_items WHERE status = 'PENDING' ORDER BY sequence ASC")
     suspend fun getAllPendingItems(): List<PrintItemEntity>
 
-    @Query("SELECT * FROM print_items WHERE status = 'FAILED' ORDER BY sequence ASC")
+    @Query("SELECT * FROM print_items WHERE status = 'FAILED' OR status = 'CANCELED' ORDER BY sequence ASC")
     suspend fun getAllFailedItems(): List<PrintItemEntity>
 
     @Query("SELECT * FROM print_items ORDER BY sequence DESC LIMIT 1")
@@ -39,7 +39,7 @@ interface PrintItemDao {
     @Query("UPDATE print_items SET status = 'PENDING' WHERE status = 'PRINTING'")
     suspend fun resetPrintingToPending(): Int
 
-    @Query("UPDATE print_items SET status = 'PENDING' WHERE status = 'FAILED'")
+    @Query("UPDATE print_items SET status = 'PENDING' WHERE status = 'FAILED' OR status = 'CANCELED'")
     suspend fun resetFailedToPending(): Int
 
     @Query("DELETE FROM print_items WHERE status = 'PRINTED'")
