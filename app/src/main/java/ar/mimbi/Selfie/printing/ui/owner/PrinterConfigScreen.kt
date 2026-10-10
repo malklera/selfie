@@ -90,6 +90,7 @@ fun PrinterConfigScreen(
                                 printerManager.clearPrinter(clearFromDb = true)
                             }
                         },
+                        enabled = printerManager.hasConfiguredPrinter(),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text("Quitar Impresora (Sin configurar)")

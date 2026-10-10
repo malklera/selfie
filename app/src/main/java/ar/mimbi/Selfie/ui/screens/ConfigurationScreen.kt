@@ -691,7 +691,8 @@ fun ConfigurationScreen(
                                     UserActionTracker.trackAction("Reiniciar contador de impresiones a 0")
                                     printCount = 0
                                     wasResetToZero = true
-                                }
+                                },
+                                enabled = printCount > 0
                             ) {
                                 Text("Resetear a 0")
                             }
