@@ -72,7 +72,7 @@ the printing queue when there is less pictures than required should say "Pendien
 not "Pendiente (Esperando impresora disponible)" the latter text should only be
 when there is not a printer connected
 
-- [ ] When opening "Configuracion de plantillas" screen, ensure the selected template
+- [x] When opening "Configuracion de plantillas" screen, ensure the selected template
 is in view by manipulating the scroll
 
 - [ ] Once i connect a printer and close the app, at opening check if the same connection is available and automatically connect if it is.

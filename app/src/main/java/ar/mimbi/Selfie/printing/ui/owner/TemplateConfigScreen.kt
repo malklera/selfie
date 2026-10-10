@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -33,6 +34,17 @@ fun TemplateConfigScreen(
 ) {
     val activeTemplate by queueManager.activeTemplateFlow.collectAsState(initial = DefaultTemplates.TEMPLATE_FULL_WIDTH_SINGLE)
     val scope = rememberCoroutineScope()
+    val listState = rememberLazyListState()
+
+    val selectedIndex = remember(activeTemplate.id) {
+        DefaultTemplates.ALL_TEMPLATES.indexOfFirst { it.id == activeTemplate.id }.coerceAtLeast(0)
+    }
+
+    LaunchedEffect(selectedIndex) {
+        if (selectedIndex >= 0) {
+            listState.scrollToItem(selectedIndex)
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -60,9 +72,10 @@ fun TemplateConfigScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             LazyColumn(
+                state = listState,
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                items(DefaultTemplates.ALL_TEMPLATES) { template ->
+                items(DefaultTemplates.ALL_TEMPLATES, key = { it.id }) { template ->
                     TemplateItemCard(
                         template = template,
                         isSelected = template.id == activeTemplate.id,
