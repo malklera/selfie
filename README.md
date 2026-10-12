@@ -46,9 +46,9 @@ with the same strategy as "Desconectar"
 once the printer is connected, do it actually check the connection? if so, show a popup
 indicating the result of the check
 
-- [ ] Get ride of "Impresora Seleccionada" and the "Ninguna (Sin configurar)", when
+- [x] Get ride of "Impresora Seleccionada" and the "Ninguna (Sin configurar)", when
 there is a printer selected, show it in "Estado de la impresora" with its name like it is
-currently show in "Impresora Seleccionada" and below/besides its state
+currently show in "Impresora Seleccionada" and below its state
 
 - [ ] check connection to printer
 

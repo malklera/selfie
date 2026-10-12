@@ -18,8 +18,8 @@ class PrinterManager(
     private val _status = MutableStateFlow<PrinterStatus>(PrinterStatus.Disconnected)
     val statusFlow: StateFlow<PrinterStatus> = _status.asStateFlow()
 
-    private val _currentPrinterName = MutableStateFlow("Ninguna (Sin configurar)")
-    val currentPrinterName: StateFlow<String> = _currentPrinterName.asStateFlow()
+    private val _currentPrinterName = MutableStateFlow<String?>(null)
+    val currentPrinterName: StateFlow<String?> = _currentPrinterName.asStateFlow()
 
     private var currentPrinterType: String? = null
 
@@ -84,7 +84,7 @@ class PrinterManager(
 
     fun setPrinter(
         printer: Printer?,
-        printerName: String = "Ninguna (Sin configurar)",
+        printerName: String? = null,
         printerType: String? = when (printer) {
             is StandardAndroidPrinter -> "SYSTEM_ANDROID"
             is WifiPrinter -> "WIFI"
@@ -103,7 +103,7 @@ class PrinterManager(
         if (saveToDb && repository != null) {
             CoroutineScope(Dispatchers.IO).launch {
                 try {
-                    if (printer == null || printerType == null) {
+                    if (printer == null || printerType == null || printerName == null) {
                         repository.clearPrinterConfig()
                     } else {
                         val json = JSONObject().apply {
@@ -127,7 +127,7 @@ class PrinterManager(
         } catch (_: Exception) {}
         activePrinter = null
         currentPrinterType = null
-        _currentPrinterName.value = "Ninguna (Sin configurar)"
+        _currentPrinterName.value = null
         _status.value = PrinterStatus.Disconnected
         if (clearFromDb && repository != null) {
             try {

@@ -27,7 +27,7 @@ class PrinterManagerTest {
         assertFalse(manager.hasConfiguredPrinter())
         assertNull(manager.getActivePrinter())
         assertEquals(PrinterStatus.Disconnected, manager.getStatus())
-        assertEquals("Ninguna (Sin configurar)", manager.currentPrinterName.value)
+        assertNull(manager.currentPrinterName.value)
     }
 
     @Test(expected = IllegalStateException::class)
@@ -52,7 +52,7 @@ class PrinterManagerTest {
         assertFalse(manager.hasConfiguredPrinter())
         assertNull(manager.getActivePrinter())
         assertEquals(PrinterStatus.Disconnected, manager.getStatus())
-        assertEquals("Ninguna (Sin configurar)", manager.currentPrinterName.value)
+        assertNull(manager.currentPrinterName.value)
     }
 
     @Test

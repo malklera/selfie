@@ -25,7 +25,7 @@ fun PrinterConfigScreen(
     val context = LocalContext.current
     val status by printerManager.statusFlow.collectAsState()
     val printerName by printerManager.currentPrinterName.collectAsState()
-    val hasPrinterSelected = printerName != "Ninguna (Sin configurar)"
+    val hasPrinterSelected = !printerName.isNullOrBlank()
     val scope = rememberCoroutineScope()
 
     Scaffold(
@@ -52,10 +52,6 @@ fun PrinterConfigScreen(
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text(text = "Impresora Seleccionada", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(text = printerName, style = MaterialTheme.typography.bodyMedium)
-                    Spacer(modifier = Modifier.height(12.dp))
                     Button(
                         onClick = onNavigateToWifiSearch,
                         modifier = Modifier.fillMaxWidth()
@@ -95,7 +91,7 @@ fun PrinterConfigScreen(
                         enabled = hasPrinterSelected,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Quitar Impresora (Sin configurar)")
+                        Text("Quitar Impresora")
                     }
                 }
             }
@@ -108,14 +104,22 @@ fun PrinterConfigScreen(
                     Text(text = "Estado de la Impresora", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    val statusText = when (val s = status) {
-                        is PrinterStatus.Ready -> "Lista / Conectada"
-                        is PrinterStatus.Printing -> "Imprimiendo..."
-                        is PrinterStatus.Disconnected -> if (!hasPrinterSelected) "Sin impresora configurada" else "Desconectada"
-                        is PrinterStatus.Error -> "Error: ${s.message}"
-                    }
+                    val currentName = printerName
+                    if (hasPrinterSelected && currentName != null) {
+                        Text(text = currentName, style = MaterialTheme.typography.bodyMedium)
+                        Spacer(modifier = Modifier.height(4.dp))
 
-                    Text(text = statusText, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
+                        val statusText = when (val s = status) {
+                            is PrinterStatus.Ready -> "Lista"
+                            is PrinterStatus.Printing -> "Imprimiendo..."
+                            is PrinterStatus.Disconnected -> "Desconectada"
+                            is PrinterStatus.Error -> "Error: ${s.message}"
+                        }
+
+                        Text(text = statusText, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
+                    } else {
+                        Text(text = "Sin impresora configurada", style = MaterialTheme.typography.bodyMedium)
+                    }
                 }
             }
 
