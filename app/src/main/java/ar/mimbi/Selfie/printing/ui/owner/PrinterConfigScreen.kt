@@ -24,6 +24,7 @@ fun PrinterConfigScreen(
     val context = LocalContext.current
     val status by printerManager.statusFlow.collectAsState()
     val printerName by printerManager.currentPrinterName.collectAsState()
+    val hasPrinterSelected = printerName != "Ninguna (Sin configurar)"
     val scope = rememberCoroutineScope()
 
     Scaffold(
@@ -90,7 +91,7 @@ fun PrinterConfigScreen(
                                 printerManager.clearPrinter(clearFromDb = true)
                             }
                         },
-                        enabled = printerManager.hasConfiguredPrinter(),
+                        enabled = hasPrinterSelected,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text("Quitar Impresora (Sin configurar)")
@@ -109,7 +110,7 @@ fun PrinterConfigScreen(
                     val statusText = when (val s = status) {
                         is PrinterStatus.Ready -> "Lista / Conectada"
                         is PrinterStatus.Printing -> "Imprimiendo..."
-                        is PrinterStatus.Disconnected -> if (!printerManager.hasConfiguredPrinter()) "Sin impresora configurada" else "Desconectada"
+                        is PrinterStatus.Disconnected -> if (!hasPrinterSelected) "Sin impresora configurada" else "Desconectada"
                         is PrinterStatus.Error -> "Error: ${s.message}"
                     }
 
@@ -128,12 +129,12 @@ fun PrinterConfigScreen(
                         }
                     },
                     modifier = Modifier.weight(1f),
-                    enabled = printerManager.hasConfiguredPrinter()
+                    enabled = hasPrinterSelected
                 ) {
                     Text("Conectar / Verificar")
                 }
 
-                OutlinedButton(
+                Button(
                     onClick = {
                         scope.launch {
                             printerManager.disconnect()

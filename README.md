@@ -39,7 +39,7 @@ when the keyboard is opened
 - [x] When there is no printer connected disable the "Desconectar" button with the
 same strategy as the "Resetear a 0" button
 
-- [ ] When there is no printer selected, disable the button "Conectar/Verificar"
+- [x] When there is no printer selected, disable the button "Conectar/Verificar"
 with the same strategy as "Desconectar"
 
 - [ ] In "buscar impresoras wifi" "Conectar/Verificar" do not seems to do anything
