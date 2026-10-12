@@ -2,6 +2,7 @@ package ar.mimbi.Selfie.printing.ui.owner
 
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -14,7 +15,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
@@ -24,7 +28,7 @@ import ar.mimbi.Selfie.printing.printer.WifiPrinter
 import ar.mimbi.Selfie.printing.printer.WifiPrinterDiscovery
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun WifiPrinterSearchScreen(
     printerManager: PrinterManager,
@@ -32,6 +36,14 @@ fun WifiPrinterSearchScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val focusManager = LocalFocusManager.current
+    val density = LocalDensity.current
+    val isKeyboardVisible = WindowInsets.ime.getBottom(density) > 0
+    LaunchedEffect(isKeyboardVisible) {
+        if (!isKeyboardVisible) {
+            focusManager.clearFocus()
+        }
+    }
 
     val wifiDiscovery = remember { WifiPrinterDiscovery(context) }
     val discoveredPrinters by wifiDiscovery.discoveredPrinters.collectAsState()
@@ -53,7 +65,10 @@ fun WifiPrinterSearchScreen(
             TopAppBar(
                 title = { Text("Buscar Impresoras Wi-Fi") },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = {
+                        focusManager.clearFocus()
+                        onBack()
+                    }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
                     }
                 }
@@ -64,6 +79,14 @@ fun WifiPrinterSearchScreen(
             modifier = Modifier
                 .padding(paddingValues)
                 .fillMaxSize()
+                .pointerInput(Unit) {
+                    detectTapGestures(
+                        onTap = {
+                            focusManager.clearFocus()
+                        }
+                    )
+                }
+                .imePadding()
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -106,7 +129,10 @@ fun WifiPrinterSearchScreen(
                             )
                         } else {
                             IconButton(
-                                onClick = { wifiDiscovery.startDiscovery() },
+                                onClick = {
+                                    focusManager.clearFocus()
+                                    wifiDiscovery.startDiscovery()
+                                },
                                 modifier = Modifier.size(32.dp)
                             ) {
                                 Icon(Icons.Default.Refresh, contentDescription = "Buscar nuevamente")
@@ -134,6 +160,7 @@ fun WifiPrinterSearchScreen(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .clickable {
+                                            focusManager.clearFocus()
                                             scope.launch {
                                                 val wifiPrinter = WifiPrinter(printer.ipAddress, printer.port)
                                                 printerManager.setPrinter(
@@ -224,6 +251,7 @@ fun WifiPrinterSearchScreen(
 
                     Button(
                         onClick = {
+                            focusManager.clearFocus()
                             val portInt = manualPort.toIntOrNull() ?: 9100
                             if (manualIp.isNotBlank()) {
                                 scope.launch {

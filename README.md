@@ -31,7 +31,7 @@ make the whole item clickable with the default behaviour to connect
 as "Puerto" and "Nombre", and use "IPv4" as the label
 
 - [ ] Check all input fields, ensure you can exist it by taping any other button,
-empty space or closing the keyboard
+empty space or closing the keyboard, good behaviour "Cuenta regresiva", bad behaviour "IPv4"
 
 - [ ] In "buscar impresoras wifi" Ensure all input fields are completily in view
 when the keyboard is opened
@@ -50,8 +50,6 @@ indicating the state
 there is a printer selected, show it in "Estado de la impresora" with its name like it is
 currently show in "Impresora Seleccionada" and below/besides its state
 
-- [ ] 
-
 - [ ] check connection to printer
 
 - [ ] Check how "imprimir restantes" works, if i want it to work that way when there is no printer.
@@ -61,6 +59,9 @@ currently show in "Impresora Seleccionada" and below/besides its state
 - [ ] In  "gestion de cola de impresion" allow me to tap into an item in the "items en cola"
 list and choose to take it out, retry, print again, if it failed, show the error
 here.
+
+- [ ] "Configuracion de impresora" do not show "Impresora seleccionada" and "Estado the la Impresora"
+with a grey background, they seem like items in a list and they are not
 
 - [ ] In "gestion de cola de impresion", should there be a preview of the images??
 
