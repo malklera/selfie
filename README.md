@@ -42,9 +42,9 @@ same strategy as the "Resetear a 0" button
 - [x] When there is no printer selected, disable the button "Conectar/Verificar"
 with the same strategy as "Desconectar"
 
-- [ ] In "buscar impresoras wifi" "Conectar/Verificar" do not seems to do anything
+- [x] In "buscar impresoras wifi" "Conectar/Verificar" do not seems to do anything
 once the printer is connected, do it actually check the connection? if so, show a popup
-indicating the state
+indicating the result of the check
 
 - [ ] Get ride of "Impresora Seleccionada" and the "Ninguna (Sin configurar)", when
 there is a printer selected, show it in "Estado de la impresora" with its name like it is

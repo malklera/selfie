@@ -136,17 +136,20 @@ class PrinterManager(
         }
     }
 
-    suspend fun connect() {
+    suspend fun connect(): Boolean {
         val printer = activePrinter
         if (printer == null) {
             _status.value = PrinterStatus.Disconnected
-            return
+            return false
         }
-        try {
+        return try {
             printer.connect()
-            _status.value = printer.getStatus()
+            val st = printer.getStatus()
+            _status.value = st
+            st is PrinterStatus.Ready
         } catch (e: Exception) {
             _status.value = PrinterStatus.Error(e.message ?: "Conexión fallida")
+            false
         }
     }
 

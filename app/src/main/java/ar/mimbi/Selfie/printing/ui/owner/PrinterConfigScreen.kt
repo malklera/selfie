@@ -1,5 +1,6 @@
 package ar.mimbi.Selfie.printing.ui.owner
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -125,7 +126,13 @@ fun PrinterConfigScreen(
                 Button(
                     onClick = {
                         scope.launch {
-                            printerManager.connect()
+                            val success = printerManager.connect()
+                            if (success) {
+                                Toast.makeText(context, "Impresora conectada y verificada exitosamente", Toast.LENGTH_SHORT).show()
+                            } else {
+                                val errorMsg = (printerManager.getStatus() as? PrinterStatus.Error)?.message ?: "Error de conexión"
+                                Toast.makeText(context, "Error al conectar/verificar: $errorMsg", Toast.LENGTH_LONG).show()
+                            }
                         }
                     },
                     modifier = Modifier.weight(1f),

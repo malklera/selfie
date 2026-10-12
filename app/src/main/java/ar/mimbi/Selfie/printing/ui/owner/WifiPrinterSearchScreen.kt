@@ -1,6 +1,6 @@
 package ar.mimbi.Selfie.printing.ui.owner
 
-import androidx.compose.animation.animateContentSize
+import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
@@ -170,9 +170,15 @@ fun WifiPrinterSearchScreen(
                                                     ipAddress = printer.ipAddress,
                                                     port = printer.port
                                                 )
-                                                printerManager.connect()
-                                                wifiDiscovery.stopDiscovery()
-                                                onBack()
+                                                val success = printerManager.connect()
+                                                if (success) {
+                                                    Toast.makeText(context, "Conectado y verificado exitosamente a ${printer.name}", Toast.LENGTH_SHORT).show()
+                                                    wifiDiscovery.stopDiscovery()
+                                                    onBack()
+                                                } else {
+                                                    val errorMsg = (printerManager.getStatus() as? ar.mimbi.Selfie.printing.printer.PrinterStatus.Error)?.message ?: "Error de conexión"
+                                                    Toast.makeText(context, "Error al conectar con ${printer.ipAddress}:${printer.port}: $errorMsg", Toast.LENGTH_LONG).show()
+                                                }
                                             }
                                         },
                                     colors = CardDefaults.cardColors(
@@ -268,9 +274,15 @@ fun WifiPrinterSearchScreen(
                                         ipAddress = manualIp.trim(),
                                         port = portInt
                                     )
-                                    printerManager.connect()
-                                    wifiDiscovery.stopDiscovery()
-                                    onBack()
+                                    val success = printerManager.connect()
+                                    if (success) {
+                                        Toast.makeText(context, "Conectado y verificado exitosamente a $printerName", Toast.LENGTH_SHORT).show()
+                                        wifiDiscovery.stopDiscovery()
+                                        onBack()
+                                    } else {
+                                        val errorMsg = (printerManager.getStatus() as? ar.mimbi.Selfie.printing.printer.PrinterStatus.Error)?.message ?: "Error de conexión"
+                                        Toast.makeText(context, "Error al conectar con ${manualIp.trim()}:$portInt: $errorMsg", Toast.LENGTH_LONG).show()
+                                    }
                                 }
                             }
                         },
