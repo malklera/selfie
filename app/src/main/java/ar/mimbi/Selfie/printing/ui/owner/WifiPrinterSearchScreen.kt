@@ -38,8 +38,8 @@ fun WifiPrinterSearchScreen(
     val isSearching by wifiDiscovery.isSearching.collectAsState()
 
     var manualIp by remember { mutableStateOf("") }
-    var manualPort by remember { mutableStateOf("9100") }
-    var manualName by remember { mutableStateOf("Impresora Wi-Fi Manual") }
+    var manualPort by remember { mutableStateOf("") }
+    var manualName by remember { mutableStateOf("") }
 
     DisposableEffect(Unit) {
         wifiDiscovery.startDiscovery()
@@ -200,31 +200,27 @@ fun WifiPrinterSearchScreen(
                         singleLine = true
                     )
 
-                    Row(
+                    OutlinedTextField(
+                        value = manualIp,
+                        onValueChange = {
+                            if (it.all { char -> char.isDigit() || char == '.' }) manualIp = it
+                        },
+                        label = { Text("IPv4") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        OutlinedTextField(
-                            value = manualIp,
-                            onValueChange = {
-                                if (it.all { char -> char.isDigit() || char == '.' }) manualIp = it
-                            },
-                            label = { Text("IP (ej. 192.168.1.50)") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            modifier = Modifier.weight(2f),
-                            singleLine = true
-                        )
-                        OutlinedTextField(
-                            value = manualPort,
-                            onValueChange = {
-                                if (it.all { char -> char.isDigit() }) manualPort = it
-                            },
-                            label = { Text("Puerto") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            modifier = Modifier.weight(1f),
-                            singleLine = true
-                        )
-                    }
+                        singleLine = true
+                    )
+
+                    OutlinedTextField(
+                        value = manualPort,
+                        onValueChange = {
+                            if (it.all { char -> char.isDigit() }) manualPort = it
+                        },
+                        label = { Text("Puerto") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
 
                     Button(
                         onClick = {
@@ -232,9 +228,14 @@ fun WifiPrinterSearchScreen(
                             if (manualIp.isNotBlank()) {
                                 scope.launch {
                                     val wifiPrinter = WifiPrinter(manualIp.trim(), portInt)
+                                    val printerName = if (manualName.isNotBlank()) {
+                                        "$manualName (${manualIp.trim()})"
+                                    } else {
+                                        "Impresora Wi-Fi (${manualIp.trim()})"
+                                    }
                                     printerManager.setPrinter(
                                         wifiPrinter,
-                                        "$manualName (${manualIp.trim()})",
+                                        printerName,
                                         printerType = "WIFI",
                                         ipAddress = manualIp.trim(),
                                         port = portInt

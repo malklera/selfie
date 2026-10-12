@@ -27,8 +27,11 @@ The .apk file is at
 - [x] In "buscar impresoras wifi" in the list of found printers, get ride of the "Conectar" button
 make the whole item clickable with the default behaviour to connect
 
-- [ ] In "buscar impresoras wifi" fix the IP input field, use the same style of labeling
+- [x] In "buscar impresoras wifi" fix the IP input field, use the same style of labeling
 as "Puerto" and "Nombre", and use "IPv4" as the label
+
+- [ ] Check all input fields, ensure you can exist it by taping any other button,
+empty space or closing the keyboard
 
 - [ ] In "buscar impresoras wifi" Ensure all input fields are completily in view
 when the keyboard is opened
