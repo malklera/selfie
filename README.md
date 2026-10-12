@@ -50,11 +50,9 @@ indicating the result of the check
 there is a printer selected, show it in "Estado de la impresora" with its name like it is
 currently show in "Impresora Seleccionada" and below its state
 
-- [ ] check connection to printer
+- [ ] fix printing, currently it print plain text like @PJL JOB ....
 
 - [ ] Check how "imprimir restantes" works, if i want it to work that way when there is no printer.
-
-- [ ] Implement/fix printing.
 
 - [ ] In  "gestion de cola de impresion" allow me to tap into an item in the "items en cola"
 list and choose to take it out, retry, print again, if it failed, show the error
