@@ -30,13 +30,13 @@ make the whole item clickable with the default behaviour to connect
 - [x] In "buscar impresoras wifi" fix the IP input field, use the same style of labeling
 as "Puerto" and "Nombre", and use "IPv4" as the label
 
-- [ ] Check all input fields, ensure you can exist it by taping any other button,
+- [x] Check all input fields, ensure you can exist it by taping any other button,
 empty space or closing the keyboard, good behaviour "Cuenta regresiva", bad behaviour "IPv4"
 
-- [ ] In "buscar impresoras wifi" Ensure all input fields are completily in view
+- [x] In "buscar impresoras wifi" Ensure all input fields are completily in view
 when the keyboard is opened
 
-- [ ] When there is no printer connected disable the "Desconectar" button with the
+- [x] When there is no printer connected disable the "Desconectar" button with the
 same strategy as the "Resetear a 0" button
 
 - [ ] When there is no printer selected, disable the button "Conectar/Verificar"

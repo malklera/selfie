@@ -140,7 +140,7 @@ fun PrinterConfigScreen(
                         }
                     },
                     modifier = Modifier.weight(1f),
-                    enabled = printerManager.hasConfiguredPrinter()
+                    enabled = status is PrinterStatus.Ready || status is PrinterStatus.Printing
                 ) {
                     Text("Desconectar")
                 }
