@@ -24,10 +24,24 @@ The .apk file is at
 
 ## TODO
 
-- [ ] check connection to printer
+- [ ] In "buscar impresoras wifi" in the list of found printers, get ride of the "Conectar" button
+make the whole item clickable with the default behaviour to connect
 
-- [ ] Once i connect a printer and close the app, at opening check if the same connection is available and automatically connect if it is.
-Check with actual printer, it works with the android selection
+- [ ] When there is no printer connected disable the "Desconectar" button with the
+same strategy as the "Resetear a 0" button
+
+- [ ] When there is no printer selected, disable the button "Conectar/Verificar"
+with the same strategy as "Desconectar"
+
+- [ ] In "buscar impresoras wifi" "Conectar/Verificar" do not seems to do anything
+once the printer is connected, do it actually check the connection? if so, show a popup
+indicating the state
+
+- [ ] Get ride of "Impresora Seleccionada" and the "Ninguna (Sin configurar)", when
+there is a printer selected, show it in "Estado de la impresora" with its name like it is
+currently show in "Impresora Seleccionada" and below/besides its state
+
+- [ ] check connection to printer
 
 - [ ] Check how "imprimir restantes" works, if i want it to work that way when there is no printer.
 
