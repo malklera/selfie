@@ -24,8 +24,14 @@ The .apk file is at
 
 ## TODO
 
-- [ ] In "buscar impresoras wifi" in the list of found printers, get ride of the "Conectar" button
+- [x] In "buscar impresoras wifi" in the list of found printers, get ride of the "Conectar" button
 make the whole item clickable with the default behaviour to connect
+
+- [ ] In "buscar impresoras wifi" fix the IP input field, use the same style of labeling
+as "Puerto" and "Nombre", and use "IPv4" as the label
+
+- [ ] In "buscar impresoras wifi" Ensure all input fields are completily in view
+when the keyboard is opened
 
 - [ ] When there is no printer connected disable the "Desconectar" button with the
 same strategy as the "Resetear a 0" button
@@ -40,6 +46,8 @@ indicating the state
 - [ ] Get ride of "Impresora Seleccionada" and the "Ninguna (Sin configurar)", when
 there is a printer selected, show it in "Estado de la impresora" with its name like it is
 currently show in "Impresora Seleccionada" and below/besides its state
+
+- [ ] 
 
 - [ ] check connection to printer
 
