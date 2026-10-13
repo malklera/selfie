@@ -50,7 +50,18 @@ indicating the result of the check
 there is a printer selected, show it in "Estado de la impresora" with its name like it is
 currently show in "Impresora Seleccionada" and below its state
 
-- [ ] fix printing, currently it print plain text like @PJL JOB ....
+- [ ] fix printing, currently it print plain text like @PJL JOB ....,
+what i want is to use the template to arrange the taken pictures inside a a4 pdf color
+and send that to be printed, the printer selection only happens in the config screen like is
+now, the jobs are send automatically like now, where posible use android frameworks to
+send the jobs to the printer, so it can be the most general and compatible
+
+- [ ] Rerouted Wi-Fi Printers to Android Print Framework: Updated WifiPrinter so that while it still performs connection/reachability checks against network printers, all actual print jobs (print()) now delegate to StandardAndroidPrinter (PrintManager & PrintedPdfDocument).
+
+Why dont you use the android print framework to search and connect to printers?
+
+- [ ] If the error is long enough i need to be able to scroll the "configuracion de impresora" screen,
+add a button to copy the error
 
 - [ ] Check how "imprimir restantes" works, if i want it to work that way when there is no printer.
 
