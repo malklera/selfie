@@ -13,7 +13,6 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
@@ -67,9 +66,7 @@ fun ConfigurationScreen(
     onSave: (AppConfig) -> Unit,
     onClose: () -> Unit,
     onNavigateToErrorHistory: () -> Unit,
-    onNavigateToPrinterConfig: () -> Unit = {},
-    onNavigateToTemplateConfig: () -> Unit = {},
-    onNavigateToQueueManagement: () -> Unit = {},
+    onNavigateToPrinting: () -> Unit = {},
     queueManager: PrintQueueManager? = null
 ) {
     val context = LocalContext.current
@@ -90,13 +87,6 @@ fun ConfigurationScreen(
         }
     }
 
-    val maxPrintFocusRequester = remember { BringIntoViewRequester() }
-    var maxPrintFocused by remember { mutableStateOf(false) }
-    LaunchedEffect(isKeyboardVisible, maxPrintFocused) {
-        if (isKeyboardVisible && maxPrintFocused) {
-            maxPrintFocusRequester.bringIntoView()
-        }
-    }
     var portadaPath by rememberSaveable { mutableStateOf(initialConfig.portadaPath) }
     var captureBoxPath by rememberSaveable { mutableStateOf(initialConfig.captureBoxPath) }
     var countdownSeconds by rememberSaveable { mutableStateOf(initialConfig.countdownSeconds.toString()) }
@@ -113,9 +103,6 @@ fun ConfigurationScreen(
     }
 
     var showPrintButton by rememberSaveable { mutableStateOf(initialConfig.showPrintButton) }
-    var maxPrintCount by rememberSaveable { mutableStateOf(initialConfig.maxPrintCount.toString()) }
-    var printCount by rememberSaveable { mutableIntStateOf(initialConfig.printCount) }
-    var wasResetToZero by rememberSaveable { mutableStateOf(false) }
     
     var showUnsavedDialog by rememberSaveable { mutableStateOf(false) }
 
@@ -124,9 +111,7 @@ fun ConfigurationScreen(
             countdownSeconds != initialConfig.countdownSeconds.toString() ||
             destinationPath != initialConfig.destinationPath ||
             pictureResolution != (initialConfig.pictureResolution ?: defaultResKey) ||
-            showPrintButton != initialConfig.showPrintButton ||
-            maxPrintCount != initialConfig.maxPrintCount.toString() ||
-            printCount != initialConfig.printCount
+            showPrintButton != initialConfig.showPrintButton
 
     BackHandler(enabled = hasChanges) {
         focusManager.clearFocus()
@@ -199,13 +184,6 @@ fun ConfigurationScreen(
                                 focusManager.clearFocus()
                                 UserActionTracker.trackAction("Guardar configuración")
                                 val finalSeconds = countdownSeconds.toIntOrNull() ?: 0
-                                val finalMaxPrintCount = maxPrintCount.toIntOrNull() ?: 0
-                                if (wasResetToZero) {
-                                    coroutineScope.launch {
-                                        queueManager?.clearPrintedItems()
-                                    }
-                                    wasResetToZero = false
-                                }
                                 onSave(
                                     AppConfig(
                                         portadaPath = portadaPath,
@@ -214,8 +192,8 @@ fun ConfigurationScreen(
                                         destinationPath = destinationPath,
                                         pictureResolution = pictureResolution,
                                         showPrintButton = showPrintButton,
-                                        maxPrintCount = finalMaxPrintCount,
-                                        printCount = printCount
+                                        maxPrintCount = initialConfig.maxPrintCount,
+                                        printCount = initialConfig.printCount
                                     )
                                 )
                                 Toast.makeText(context, "Configuración guardada", Toast.LENGTH_SHORT).show()
@@ -609,16 +587,19 @@ fun ConfigurationScreen(
                     Column {
                         HorizontalDivider()
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Impresión", style = MaterialTheme.typography.titleLarge)
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        // Switch: Mostrar botón
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text("Mostrar botón", style = MaterialTheme.typography.bodyLarge)
+                            Button(
+                                onClick = {
+                                    focusManager.clearFocus()
+                                    onNavigateToPrinting()
+                                }
+                            ) {
+                                Text("Impresión", style = MaterialTheme.typography.titleMedium)
+                            }
                             Switch(
                                 checked = showPrintButton,
                                 onCheckedChange = {
@@ -627,155 +608,6 @@ fun ConfigurationScreen(
                                 }
                             )
                         }
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        // Máximo número de impresiones
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                text = "Máximo número de impresiones",
-                                style = MaterialTheme.typography.bodyLarge,
-                                modifier = Modifier.weight(1f)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            OutlinedTextField(
-                                value = maxPrintCount,
-                                onValueChange = { text ->
-                                    if (text.all { char -> char.isDigit() }) {
-                                        maxPrintCount = text
-                                    }
-                                },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                singleLine = true,
-                                textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Center),
-                                modifier = Modifier
-                                    .width(80.dp)
-                                    .bringIntoViewRequester(maxPrintFocusRequester)
-                                    .onFocusChanged { focusState ->
-                                        maxPrintFocused = focusState.isFocused
-                                        if (focusState.isFocused) {
-                                            coroutineScope.launch {
-                                                maxPrintFocusRequester.bringIntoView()
-                                            }
-                                            if (maxPrintCount == "0") {
-                                                maxPrintCount = ""
-                                            }
-                                        }
-                                    }
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        // Impresos + Botón para resetear a 0
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text("Impresos", style = MaterialTheme.typography.bodyLarge)
-                                Text(
-                                    "Cantidad realizada: $printCount",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            Button(
-                                onClick = {
-                                    focusManager.clearFocus()
-                                    UserActionTracker.trackAction("Reiniciar contador de impresiones a 0")
-                                    printCount = 0
-                                    wasResetToZero = true
-                                },
-                                enabled = printCount > 0
-                            ) {
-                                Text("Resetear a 0")
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        // Sistema de Impresión
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text(
-                                "Configuración del Sistema de Impresión",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-
-                            OutlinedCard(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        focusManager.clearFocus()
-                                        onNavigateToPrinterConfig()
-                                    }
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .padding(12.dp)
-                                        .fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Column {
-                                        Text("Configuración de Impresora", fontWeight = FontWeight.Bold)
-                                        Text("Estado, conexión y adaptador de impresora", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    }
-                                }
-                            }
-
-                            OutlinedCard(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        focusManager.clearFocus()
-                                        onNavigateToTemplateConfig()
-                                    }
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .padding(12.dp)
-                                        .fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Column {
-                                        Text("Plantillas de Impresión", fontWeight = FontWeight.Bold)
-                                        Text("Configurar distribución de fotos por página (1, 2, 4 fotos)", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    }
-                                }
-                            }
-
-                            OutlinedCard(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        focusManager.clearFocus()
-                                        onNavigateToQueueManagement()
-                                    }
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .padding(12.dp)
-                                        .fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Column {
-                                        Text("Gestión de Cola de Impresión", fontWeight = FontWeight.Bold)
-                                        Text("Ver lotes, imprimir pendientes/restantes y reintentar", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    }
-                                }
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(16.dp))
                     }
 
                     // Mantenimiento
@@ -833,13 +665,6 @@ fun ConfigurationScreen(
                     focusManager.clearFocus()
                     Log.d("ConfigScreen", "Dialog Save clicked")
                     val finalSeconds = countdownSeconds.toIntOrNull() ?: 0
-                    val finalMaxPrintCount = maxPrintCount.toIntOrNull() ?: 0
-                    if (wasResetToZero) {
-                        coroutineScope.launch {
-                            queueManager?.clearPrintedItems()
-                        }
-                        wasResetToZero = false
-                    }
                     onSave(
                         AppConfig(
                             portadaPath = portadaPath,
@@ -848,8 +673,8 @@ fun ConfigurationScreen(
                             destinationPath = destinationPath,
                             pictureResolution = pictureResolution,
                             showPrintButton = showPrintButton,
-                            maxPrintCount = finalMaxPrintCount,
-                            printCount = printCount
+                            maxPrintCount = initialConfig.maxPrintCount,
+                            printCount = initialConfig.printCount
                         )
                     )
                     Toast.makeText(context, "Configuración guardada", Toast.LENGTH_SHORT).show()

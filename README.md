@@ -24,44 +24,7 @@ The .apk file is at
 
 ## TODO
 
-- [x] In "buscar impresoras wifi" in the list of found printers, get ride of the "Conectar" button
-make the whole item clickable with the default behaviour to connect
-
-- [x] In "buscar impresoras wifi" fix the IP input field, use the same style of labeling
-as "Puerto" and "Nombre", and use "IPv4" as the label
-
-- [x] Check all input fields, ensure you can exist it by taping any other button,
-empty space or closing the keyboard, good behaviour "Cuenta regresiva", bad behaviour "IPv4"
-
-- [x] In "buscar impresoras wifi" Ensure all input fields are completily in view
-when the keyboard is opened
-
-- [x] When there is no printer connected disable the "Desconectar" button with the
-same strategy as the "Resetear a 0" button
-
-- [x] When there is no printer selected, disable the button "Conectar/Verificar"
-with the same strategy as "Desconectar"
-
-- [x] In "buscar impresoras wifi" "Conectar/Verificar" do not seems to do anything
-once the printer is connected, do it actually check the connection? if so, show a popup
-indicating the result of the check
-
-- [x] Get ride of "Impresora Seleccionada" and the "Ninguna (Sin configurar)", when
-there is a printer selected, show it in "Estado de la impresora" with its name like it is
-currently show in "Impresora Seleccionada" and below its state
-
-- [ ] fix printing, currently it print plain text like @PJL JOB ....,
-what i want is to use the template to arrange the taken pictures inside a a4 pdf color
-and send that to be printed, the printer selection only happens in the config screen like is
-now, the jobs are send automatically like now, where posible use android frameworks to
-send the jobs to the printer, so it can be the most general and compatible
-
-- [ ] Rerouted Wi-Fi Printers to Android Print Framework: Updated WifiPrinter so that while it still performs connection/reachability checks against network printers, all actual print jobs (print()) now delegate to StandardAndroidPrinter (PrintManager & PrintedPdfDocument).
-
-Why dont you use the android print framework to search and connect to printers?
-
-- [ ] If the error is long enough i need to be able to scroll the "configuracion de impresora" screen,
-add a button to copy the error
+- [x] Move "Maximo numero de impresiones", "Impresos", and the whole section of "Configuracion del sistema de impresion" to a new printing screen, delete the "Mostrar boton" text and but the togle besides "Impresion", make "impresion" a button that take you to the printing screen 
 
 - [ ] Check how "imprimir restantes" works, if i want it to work that way when there is no printer.
 
@@ -79,6 +42,10 @@ with a grey background, they seem like items in a list and they are not
 - [ ] Probably should update the color theme, think about this.
 
 - [ ] Support for connecting a printer with bluethooth
+
+- [ ] Add toggle for accessing config screen with a pasword, numbers only, ensure there is a way of resetting it.
+
+- [ ] Allow to change the number of taps to enter the config screen, minimal 1.
 
 
 ## Made for use of
