@@ -36,24 +36,6 @@ class PrinterManager(
                     val saved = repo.getSavedPrinterConfig()
                     if (saved != null) {
                         when (saved.printerType) {
-                            "SYSTEM_ANDROID" -> {
-                                val json = runCatching { JSONObject(saved.settingsJson) }.getOrNull()
-                                val isUserConfigured = json?.optBoolean("userConfigured", false) ?: false
-                                if (isUserConfigured) {
-                                    val androidPrinter = StandardAndroidPrinter(context)
-                                    setPrinter(
-                                        printer = androidPrinter,
-                                        printerName = saved.selectedPrinterId.ifBlank { "Servicio de Impresión Android (Standard)" },
-                                        printerType = "SYSTEM_ANDROID",
-                                        saveToDb = false
-                                    )
-                                    connect()
-                                } else {
-                                    // Remove legacy auto-saved SYSTEM_ANDROID config
-                                    repo.clearPrinterConfig()
-                                    clearPrinter(clearFromDb = false)
-                                }
-                            }
                             "WIFI" -> {
                                 val json = JSONObject(saved.settingsJson)
                                 val ip = json.optString("ipAddress")
@@ -64,15 +46,40 @@ class PrinterManager(
                                     setPrinter(wifiPrinter, name, printerType = "WIFI", ipAddress = ip, port = port, saveToDb = false)
                                     connect()
                                 } else {
-                                    clearPrinter(clearFromDb = false)
+                                    clearPrinter(clearFromDb = true)
+                                }
+                            }
+                            "USB" -> {
+                                val json = JSONObject(saved.settingsJson)
+                                val deviceName = json.optString("deviceName")
+                                val name = json.optString("printerName", saved.selectedPrinterId.ifBlank { "Impresora USB" })
+                                if (deviceName.isNotBlank()) {
+                                    val usbPrinter = UsbPrinter(context, deviceName)
+                                    setPrinter(usbPrinter, name, printerType = "USB", deviceIdentifier = deviceName, saveToDb = false)
+                                    connect()
+                                } else {
+                                    clearPrinter(clearFromDb = true)
+                                }
+                            }
+                            "BLUETOOTH" -> {
+                                val json = JSONObject(saved.settingsJson)
+                                val macAddress = json.optString("macAddress")
+                                val name = json.optString("printerName", saved.selectedPrinterId.ifBlank { "Impresora Bluetooth" })
+                                if (macAddress.isNotBlank()) {
+                                    val btPrinter = BluetoothPrinter(macAddress, name)
+                                    setPrinter(btPrinter, name, printerType = "BLUETOOTH", deviceIdentifier = macAddress, saveToDb = false)
+                                    connect()
+                                } else {
+                                    clearPrinter(clearFromDb = true)
                                 }
                             }
                             else -> {
+                                // Clear legacy / unsupported printer configurations
+                                repo.clearPrinterConfig()
                                 clearPrinter(clearFromDb = false)
                             }
                         }
                     } else {
-                        // No printer configured
                         clearPrinter(clearFromDb = false)
                     }
                 } catch (_: Exception) {
@@ -86,12 +93,15 @@ class PrinterManager(
         printer: Printer?,
         printerName: String? = null,
         printerType: String? = when (printer) {
-            is StandardAndroidPrinter -> "SYSTEM_ANDROID"
             is WifiPrinter -> "WIFI"
+            is UsbPrinter -> "USB"
+            is BluetoothPrinter -> "BLUETOOTH"
+            is StandardAndroidPrinter -> "SYSTEM_ANDROID"
             else -> null
         },
         ipAddress: String? = null,
         port: Int? = null,
+        deviceIdentifier: String? = null,
         saveToDb: Boolean = true
     ) {
         activePrinter = printer
@@ -110,9 +120,8 @@ class PrinterManager(
                             put("printerName", printerName)
                             put("ipAddress", ipAddress ?: "")
                             put("port", port ?: 9100)
-                            if (printerType == "SYSTEM_ANDROID") {
-                                put("userConfigured", true)
-                            }
+                            put("deviceName", deviceIdentifier ?: "")
+                            put("macAddress", deviceIdentifier ?: "")
                         }.toString()
                         repository.savePrinterConfig(printerType, printerName, json)
                     }

@@ -5,7 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Wifi
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -25,6 +25,7 @@ fun PrinterConfigScreen(
     val context = LocalContext.current
     val status by printerManager.statusFlow.collectAsState()
     val printerName by printerManager.currentPrinterName.collectAsState()
+    val printerType = printerManager.getPrinterType()
     val hasPrinterSelected = !printerName.isNullOrBlank()
     val scope = rememberCoroutineScope()
 
@@ -56,31 +57,12 @@ fun PrinterConfigScreen(
                         onClick = onNavigateToWifiSearch,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Icon(Icons.Default.Wifi, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Default.Search, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Buscar Wi-Fi")
+                        Text("Buscar Impresoras")
                     }
 
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Button(
-                        onClick = {
-                            scope.launch {
-                                val androidPrinter = StandardAndroidPrinter(context)
-                                printerManager.setPrinter(
-                                    printer = androidPrinter,
-                                    printerName = "Servicio de Impresión Android (Standard)",
-                                    printerType = "SYSTEM_ANDROID"
-                                )
-                                printerManager.connect()
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Usar Servicio de Impresión Android (Standard)")
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
                     OutlinedButton(
                         onClick = {
@@ -106,8 +88,25 @@ fun PrinterConfigScreen(
 
                     val currentName = printerName
                     if (hasPrinterSelected && currentName != null) {
-                        Text(text = currentName, style = MaterialTheme.typography.bodyMedium)
-                        Spacer(modifier = Modifier.height(4.dp))
+                        val typeLabel = when (printerType) {
+                            "WIFI" -> "Wi-Fi"
+                            "BLUETOOTH" -> "Bluetooth"
+                            "USB" -> "USB"
+                            "SYSTEM_ANDROID" -> "Sistema Android"
+                            else -> "Desconocido"
+                        }
+
+                        Text(
+                            text = currentName,
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "Tipo de Conexión: $typeLabel",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
 
                         val statusText = when (val s = status) {
                             is PrinterStatus.Ready -> "Lista"
@@ -116,7 +115,11 @@ fun PrinterConfigScreen(
                             is PrinterStatus.Error -> "Error: ${s.message}"
                         }
 
-                        Text(text = statusText, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
+                        Text(
+                            text = "Estado: $statusText",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.SemiBold
+                        )
                     } else {
                         Text(text = "Sin impresora configurada", style = MaterialTheme.typography.bodyMedium)
                     }

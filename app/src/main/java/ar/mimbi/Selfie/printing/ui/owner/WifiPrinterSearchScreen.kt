@@ -6,11 +6,12 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Wifi
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -20,15 +21,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import ar.mimbi.Selfie.printing.printer.PrinterManager
-import ar.mimbi.Selfie.printing.printer.WifiPrinter
-import ar.mimbi.Selfie.printing.printer.WifiPrinterDiscovery
+import ar.mimbi.Selfie.printing.printer.*
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WifiPrinterSearchScreen(
     printerManager: PrinterManager,
@@ -45,25 +44,25 @@ fun WifiPrinterSearchScreen(
         }
     }
 
-    val wifiDiscovery = remember { WifiPrinterDiscovery(context) }
-    val discoveredPrinters by wifiDiscovery.discoveredPrinters.collectAsState()
-    val isSearching by wifiDiscovery.isSearching.collectAsState()
+    val unifiedDiscovery = remember { UnifiedPrinterDiscovery(context) }
+    val discoveredPrinters by unifiedDiscovery.discoveredPrinters.collectAsState()
+    val isSearching by unifiedDiscovery.isSearching.collectAsState()
 
     var manualIp by remember { mutableStateOf("") }
     var manualPort by remember { mutableStateOf("") }
     var manualName by remember { mutableStateOf("") }
 
     DisposableEffect(Unit) {
-        wifiDiscovery.startDiscovery()
+        unifiedDiscovery.startDiscovery()
         onDispose {
-            wifiDiscovery.stopDiscovery()
+            unifiedDiscovery.stopDiscovery()
         }
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Buscar Impresoras Wi-Fi") },
+                title = { Text("Buscar Impresoras") },
                 navigationIcon = {
                     IconButton(onClick = {
                         focusManager.clearFocus()
@@ -91,15 +90,14 @@ fun WifiPrinterSearchScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Card 1: Búsqueda en Red Local
+            // Card 1: Búsqueda Automática
             Card(
-                modifier = Modifier
-                    .fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -111,12 +109,12 @@ fun WifiPrinterSearchScreen(
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Icon(
-                                Icons.Default.Wifi,
+                                Icons.Default.Search,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary
                             )
                             Text(
-                                "Búsqueda en Red Local",
+                                "Impresoras Encontradas",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold
                             )
@@ -131,7 +129,7 @@ fun WifiPrinterSearchScreen(
                             IconButton(
                                 onClick = {
                                     focusManager.clearFocus()
-                                    wifiDiscovery.startDiscovery()
+                                    unifiedDiscovery.startDiscovery()
                                 },
                                 modifier = Modifier.size(32.dp)
                             ) {
@@ -142,9 +140,9 @@ fun WifiPrinterSearchScreen(
 
                     Text(
                         text = when {
-                            isSearching -> "Buscando impresoras en la red..."
-                            discoveredPrinters.isEmpty() -> "No se encontraron impresoras automáticas."
-                            else -> "${discoveredPrinters.size} impresora(s) encontrada(s):"
+                            isSearching -> "Buscando impresoras por Wi-Fi, Bluetooth y USB..."
+                            discoveredPrinters.isEmpty() -> "No se encontraron impresoras activas por Wi-Fi, Bluetooth o USB."
+                            else -> "Se encontraron ${discoveredPrinters.size} impresora(s):"
                         },
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -152,58 +150,70 @@ fun WifiPrinterSearchScreen(
 
                     if (discoveredPrinters.isNotEmpty()) {
                         Column(
-                            verticalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp),
                             modifier = Modifier.padding(top = 4.dp)
                         ) {
                             discoveredPrinters.forEach { printer ->
-                                Card(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable {
-                                            focusManager.clearFocus()
-                                            scope.launch {
-                                                val wifiPrinter = WifiPrinter(printer.ipAddress, printer.port)
-                                                printerManager.setPrinter(
-                                                    wifiPrinter,
-                                                    "${printer.name} (${printer.ipAddress})",
-                                                    printerType = "WIFI",
-                                                    ipAddress = printer.ipAddress,
-                                                    port = printer.port
-                                                )
-                                                val success = printerManager.connect()
-                                                if (success) {
-                                                    Toast.makeText(context, "Conectado y verificado exitosamente a ${printer.name}", Toast.LENGTH_SHORT).show()
-                                                    wifiDiscovery.stopDiscovery()
-                                                    onBack()
-                                                } else {
-                                                    val errorMsg = (printerManager.getStatus() as? ar.mimbi.Selfie.printing.printer.PrinterStatus.Error)?.message ?: "Error de conexión"
-                                                    Toast.makeText(context, "Error al conectar con ${printer.ipAddress}:${printer.port}: $errorMsg", Toast.LENGTH_LONG).show()
+                                DiscoveredPrinterCard(
+                                    printer = printer,
+                                    onClick = {
+                                        focusManager.clearFocus()
+                                        scope.launch {
+                                            when (printer.connectionType) {
+                                                PrinterConnectionType.WIFI_MDNS, PrinterConnectionType.WIFI_SUBNET, PrinterConnectionType.WIFI_DIRECT -> {
+                                                    val ip = printer.ipAddress ?: return@launch
+                                                    val port = printer.port ?: 9100
+                                                    val wifiPrinter = WifiPrinter(ip, port)
+                                                    printerManager.setPrinter(
+                                                        printer = wifiPrinter,
+                                                        printerName = "${printer.name} ($ip)",
+                                                        printerType = "WIFI",
+                                                        ipAddress = ip,
+                                                        port = port
+                                                    )
+                                                }
+                                                PrinterConnectionType.USB_HOST -> {
+                                                    val devName = printer.usbDevice?.deviceName ?: printer.name
+                                                    val usbPrinter = UsbPrinter(context, devName)
+                                                    printerManager.setPrinter(
+                                                        printer = usbPrinter,
+                                                        printerName = printer.name,
+                                                        printerType = "USB",
+                                                        deviceIdentifier = devName
+                                                    )
+                                                }
+                                                PrinterConnectionType.BLUETOOTH -> {
+                                                    val mac = printer.bluetoothAddress ?: return@launch
+                                                    val btPrinter = BluetoothPrinter(mac, printer.name)
+                                                    printerManager.setPrinter(
+                                                        printer = btPrinter,
+                                                        printerName = printer.name,
+                                                        printerType = "BLUETOOTH",
+                                                        deviceIdentifier = mac
+                                                    )
+                                                }
+                                                PrinterConnectionType.SYSTEM_ANDROID -> {
+                                                    val androidPrinter = StandardAndroidPrinter(context)
+                                                    printerManager.setPrinter(
+                                                        printer = androidPrinter,
+                                                        printerName = "Servicio de Impresión Android (Standard)",
+                                                        printerType = "SYSTEM_ANDROID"
+                                                    )
                                                 }
                                             }
-                                        },
-                                    colors = CardDefaults.cardColors(
-                                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                                    ),
-                                    shape = RoundedCornerShape(8.dp)
-                                ) {
-                                    Column(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(12.dp),
-                                        verticalArrangement = Arrangement.spacedBy(2.dp)
-                                    ) {
-                                        Text(
-                                            printer.name,
-                                            fontWeight = FontWeight.Bold,
-                                            style = MaterialTheme.typography.bodyMedium
-                                        )
-                                        Text(
-                                            "IP: ${printer.ipAddress}:${printer.port}",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
+
+                                            val success = printerManager.connect()
+                                            if (success) {
+                                                Toast.makeText(context, "Conectado y verificado exitosamente a ${printer.name}", Toast.LENGTH_SHORT).show()
+                                                unifiedDiscovery.stopDiscovery()
+                                                onBack()
+                                            } else {
+                                                val errorMsg = (printerManager.getStatus() as? PrinterStatus.Error)?.message ?: "Error de conexión"
+                                                Toast.makeText(context, "Error al conectar con ${printer.name}: $errorMsg", Toast.LENGTH_LONG).show()
+                                            }
+                                        }
                                     }
-                                }
+                                )
                             }
                         }
                     }
@@ -220,7 +230,7 @@ fun WifiPrinterSearchScreen(
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Text(
-                        text = "Conexión Manual por IP",
+                        text = "Conexión Manual por IP Wi-Fi",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -249,7 +259,7 @@ fun WifiPrinterSearchScreen(
                         onValueChange = {
                             if (it.all { char -> char.isDigit() }) manualPort = it
                         },
-                        label = { Text("Puerto") },
+                        label = { Text("Puerto (por defecto 9100)") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
@@ -268,8 +278,8 @@ fun WifiPrinterSearchScreen(
                                         "Impresora Wi-Fi (${manualIp.trim()})"
                                     }
                                     printerManager.setPrinter(
-                                        wifiPrinter,
-                                        printerName,
+                                        printer = wifiPrinter,
+                                        printerName = printerName,
                                         printerType = "WIFI",
                                         ipAddress = manualIp.trim(),
                                         port = portInt
@@ -277,10 +287,10 @@ fun WifiPrinterSearchScreen(
                                     val success = printerManager.connect()
                                     if (success) {
                                         Toast.makeText(context, "Conectado y verificado exitosamente a $printerName", Toast.LENGTH_SHORT).show()
-                                        wifiDiscovery.stopDiscovery()
+                                        unifiedDiscovery.stopDiscovery()
                                         onBack()
                                     } else {
-                                        val errorMsg = (printerManager.getStatus() as? ar.mimbi.Selfie.printing.printer.PrinterStatus.Error)?.message ?: "Error de conexión"
+                                        val errorMsg = (printerManager.getStatus() as? PrinterStatus.Error)?.message ?: "Error de conexión"
                                         Toast.makeText(context, "Error al conectar con ${manualIp.trim()}:$portInt: $errorMsg", Toast.LENGTH_LONG).show()
                                     }
                                 }
@@ -293,6 +303,56 @@ fun WifiPrinterSearchScreen(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun DiscoveredPrinterCard(
+    printer: DiscoveredPrinter,
+    onClick: () -> Unit
+) {
+    val connectionLabel = when (printer.connectionType) {
+        PrinterConnectionType.WIFI_MDNS, PrinterConnectionType.WIFI_SUBNET, PrinterConnectionType.WIFI_DIRECT -> "Wi-Fi"
+        PrinterConnectionType.BLUETOOTH -> "Bluetooth"
+        PrinterConnectionType.USB_HOST -> "USB"
+        PrinterConnectionType.SYSTEM_ANDROID -> "Sistema Android"
+    }
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        ),
+        shape = RoundedCornerShape(10.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            // Main Printer Name as Card Title
+            Text(
+                text = printer.name,
+                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            // Connection type + Address/Details
+            Text(
+                text = "Conexión: $connectionLabel • ${printer.details}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }

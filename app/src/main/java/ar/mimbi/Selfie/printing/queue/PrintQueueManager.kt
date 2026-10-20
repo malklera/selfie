@@ -104,20 +104,6 @@ class PrintQueueManager(
                     printerManager.setPrinter(wifiPrinter, "${target.name} (${target.ipAddress})", printerType = "WIFI", ipAddress = target.ipAddress, port = target.port)
                 } catch (_: Exception) {}
             }
-        } else if (savedConfig != null && savedConfig.printerType == "SYSTEM_ANDROID") {
-            val json = runCatching { JSONObject(savedConfig.settingsJson) }.getOrNull()
-            if (json?.optBoolean("userConfigured", false) == true) {
-                val standardPrinter = StandardAndroidPrinter(context)
-                if (standardPrinter.isPrinterAvailable()) {
-                    printerManager.setPrinter(
-                        printer = standardPrinter,
-                        printerName = savedConfig.selectedPrinterId.ifBlank { "Servicio de Impresión Android (Standard)" },
-                        printerType = "SYSTEM_ANDROID",
-                        saveToDb = false
-                    )
-                    printerManager.connect()
-                }
-            }
         }
     }
 
