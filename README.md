@@ -26,6 +26,8 @@ The .apk file is at
 
 - [x] Move "Maximo numero de impresiones", "Impresos", and the whole section of "Configuracion del sistema de impresion" to a new printing screen, delete the "Mostrar boton" text and but the togle besides "Impresion", make "impresion" a button that take you to the printing screen 
 
+- [ ] Check current implementation regarding connecting to a printer. Use if there is an android/kotlin library/framework to query for a printer, i suposse there should be checked the network, usb, bluetooth, there is something else? checking for printer search all methods, then list the results, specifying the printer name and type of connection
+
 - [ ] Check how "imprimir restantes" works, if i want it to work that way when there is no printer.
 
 - [ ] In  "gestion de cola de impresion" allow me to tap into an item in the "items en cola"
