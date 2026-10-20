@@ -2,6 +2,7 @@ package ar.mimbi.Selfie.ui.screens
 
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import android.net.Uri
 import android.widget.Toast
 import android.provider.DocumentsContract
@@ -42,6 +43,7 @@ import coil.compose.AsyncImagePainter
 import coil.compose.SubcomposeAsyncImageContent
 import kotlin.math.abs
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ConfigurationScreen(
     initialConfig: AppConfig,

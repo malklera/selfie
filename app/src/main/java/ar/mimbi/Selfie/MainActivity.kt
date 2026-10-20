@@ -48,8 +48,14 @@ class MainActivity : ComponentActivity() {
         // Keep screen on
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
-        // COMPLETELY DISABLE ALL FULLSCREEN/IMMERSIVE MODES FOR DEBUGGING
-        // Standard window behavior ruled out to find the touch issue source
+        // Enable edge-to-edge and immersive mode
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        enableEdgeToEdge()
+        
+        // Hide system bars
+        val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
+        windowInsetsController.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        windowInsetsController.hide(WindowInsetsCompat.Type.systemBars())
         
         val requestPermissionLauncher = registerForActivityResult(
             androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions()
