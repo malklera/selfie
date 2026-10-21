@@ -367,8 +367,7 @@ fun CaptureScreen(
                             text = "📸 OTRA FOTO",
                             color = Color.White,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                            fontSize = 18.sp
                         )
                     }
                 }
