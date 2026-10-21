@@ -86,7 +86,7 @@ fun MainScreen(
             SecretSettingsButton(
                 onNavigateToConfig = onNavigateToConfig,
                 modifier = Modifier
-                    .align(Alignment.BottomEnd)
+                    .align(Alignment.TopStart)
                     .padding(16.dp)
                     .size(58.dp)
             )
