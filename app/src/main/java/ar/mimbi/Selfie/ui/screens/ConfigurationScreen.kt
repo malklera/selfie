@@ -139,7 +139,7 @@ fun ConfigurationScreen(
                         actions = {
                             IconButton(onClick = {
                                 UserActionTracker.trackAction("Guardar configuración")
-                                val finalSeconds = countdownSeconds.toIntOrNull() ?: 3
+                                val finalSeconds = countdownSeconds.toIntOrNull() ?: 0
                                 onSave(
                                     AppConfig(
                                         portadaPath,
@@ -572,7 +572,7 @@ fun ConfigurationScreen(
             confirmButton = {
                 TextButton(onClick = {
                     Log.d("ConfigScreen", "Dialog Save clicked")
-                    val finalSeconds = countdownSeconds.toIntOrNull() ?: 3
+                    val finalSeconds = countdownSeconds.toIntOrNull() ?: 0
                     onSave(AppConfig(portadaPath, captureBoxPath, finalSeconds, destinationPath, pictureResolution))
                     Toast.makeText(context, "Configuración guardada", Toast.LENGTH_SHORT).show()
                     showUnsavedDialog = false
