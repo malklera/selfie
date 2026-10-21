@@ -32,6 +32,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.focus.onFocusChanged
 import ar.mimbi.Selfie.data.AppConfig
 import ar.mimbi.Selfie.data.CameraResolution
 import ar.mimbi.Selfie.data.CameraResolutionHelper
@@ -66,7 +67,7 @@ fun ConfigurationScreen(
     var pictureResolution by remember {
         mutableStateOf(initialConfig.pictureResolution ?: defaultResKey)
     }
-    
+
     var showUnsavedDialog by remember { mutableStateOf(false) }
 
     val hasChanges = portadaPath != initialConfig.portadaPath ||
@@ -139,7 +140,15 @@ fun ConfigurationScreen(
                             IconButton(onClick = {
                                 UserActionTracker.trackAction("Guardar configuración")
                                 val finalSeconds = countdownSeconds.toIntOrNull() ?: 3
-                                onSave(AppConfig(portadaPath, captureBoxPath, finalSeconds, destinationPath, pictureResolution))
+                                onSave(
+                                    AppConfig(
+                                        portadaPath,
+                                        captureBoxPath,
+                                        finalSeconds,
+                                        destinationPath,
+                                        pictureResolution
+                                    )
+                                )
                                 Toast.makeText(context, "Configuración guardada", Toast.LENGTH_SHORT).show()
                             }) {
                                 Icon(Icons.Default.Save, contentDescription = "Guardar")
@@ -173,11 +182,15 @@ fun ConfigurationScreen(
                         Text("Portada", style = MaterialTheme.typography.titleLarge)
                         Spacer(modifier = Modifier.height(8.dp))
                         portadaPath?.let { path ->
-                            Text("Ruta: ${formatPathForDisplay(context, path)}", style = MaterialTheme.typography.bodySmall)
+                            Text(
+                                "Ruta: ${formatPathForDisplay(context, path)}",
+                                style = MaterialTheme.typography.bodySmall
+                            )
                             Spacer(modifier = Modifier.height(8.dp))
-                            
+
                             val displayMetrics = context.resources.displayMetrics
-                            val screenAspect = displayMetrics.widthPixels.toFloat() / displayMetrics.heightPixels.toFloat()
+                            val screenAspect =
+                                displayMetrics.widthPixels.toFloat() / displayMetrics.heightPixels.toFloat()
                             var imageAspect by remember { mutableStateOf<Float?>(null) }
 
                             SubcomposeAsyncImage(
@@ -196,7 +209,7 @@ fun ConfigurationScreen(
                                         imageAspect = size.width / size.height
                                     }
                                 }
-                                
+
                                 if (state is AsyncImagePainter.State.Error || state is AsyncImagePainter.State.Empty) {
                                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                                         Text("Error al cargar imagen", color = Color.Red)
@@ -205,7 +218,7 @@ fun ConfigurationScreen(
                                     SubcomposeAsyncImageContent()
                                 }
                             }
-                            
+
                             imageAspect?.let { aspect ->
                                 val diff = kotlin.math.abs(aspect - screenAspect)
                                 if (diff > 0.01f) {
@@ -230,11 +243,15 @@ fun ConfigurationScreen(
                         Text("Cuadro de captura", style = MaterialTheme.typography.titleLarge)
                         Spacer(modifier = Modifier.height(8.dp))
                         captureBoxPath?.let { path ->
-                            Text("Ruta: ${formatPathForDisplay(context, path)}", style = MaterialTheme.typography.bodySmall)
+                            Text(
+                                "Ruta: ${formatPathForDisplay(context, path)}",
+                                style = MaterialTheme.typography.bodySmall
+                            )
                             Spacer(modifier = Modifier.height(8.dp))
 
                             val displayMetrics = context.resources.displayMetrics
-                            val screenAspect = displayMetrics.widthPixels.toFloat() / displayMetrics.heightPixels.toFloat()
+                            val screenAspect =
+                                displayMetrics.widthPixels.toFloat() / displayMetrics.heightPixels.toFloat()
                             var imageAspect by remember { mutableStateOf<Float?>(null) }
 
                             SubcomposeAsyncImage(
@@ -293,7 +310,13 @@ fun ConfigurationScreen(
                                     it
                             },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .onFocusChanged { focusState ->
+                                    if (focusState.isFocused && countdownSeconds == "0") {
+                                        countdownSeconds = ""
+                                    }
+                                }
                         )
                     }
 
@@ -342,10 +365,15 @@ fun ConfigurationScreen(
                                         index9_16 >= 0 -> {
                                             (headerHeight + index9_16 * itemHeight - paddingOffset).coerceAtLeast(0f)
                                         }
+
                                         index3_4 >= 0 -> {
-                                            val prevHeight = headerHeight + supported9_16.size * itemHeight + dividerHeight
-                                            (prevHeight + headerHeight + index3_4 * itemHeight - paddingOffset).coerceAtLeast(0f)
+                                            val prevHeight =
+                                                headerHeight + supported9_16.size * itemHeight + dividerHeight
+                                            (prevHeight + headerHeight + index3_4 * itemHeight - paddingOffset).coerceAtLeast(
+                                                0f
+                                            )
                                         }
+
                                         else -> 0f
                                     }
                                 }
@@ -410,7 +438,11 @@ fun ConfigurationScreen(
                                                     }
                                                 },
                                                 modifier = if (isSelected) {
-                                                    Modifier.background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f))
+                                                    Modifier.background(
+                                                        MaterialTheme.colorScheme.primaryContainer.copy(
+                                                            alpha = 0.4f
+                                                        )
+                                                    )
                                                 } else Modifier,
                                                 onClick = {
                                                     UserActionTracker.trackAction("Seleccionar resolución ${res.displayText} (9:16)")
@@ -451,7 +483,11 @@ fun ConfigurationScreen(
                                                     }
                                                 },
                                                 modifier = if (isSelected) {
-                                                    Modifier.background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f))
+                                                    Modifier.background(
+                                                        MaterialTheme.colorScheme.primaryContainer.copy(
+                                                            alpha = 0.4f
+                                                        )
+                                                    )
                                                 } else Modifier,
                                                 onClick = {
                                                     UserActionTracker.trackAction("Seleccionar resolución ${res.displayText} (3:4)")
@@ -475,7 +511,7 @@ fun ConfigurationScreen(
                         val displayMetrics = context.resources.displayMetrics
                         val w = displayMetrics.widthPixels
                         val h = displayMetrics.heightPixels
-                        
+
                         fun calculateGcd(a: Int, b: Int): Int = if (b == 0) a else calculateGcd(b, a % b)
                         val common = calculateGcd(w, h)
                         val aspectW = w / common
@@ -510,7 +546,7 @@ fun ConfigurationScreen(
                         Spacer(modifier = Modifier.height(8.dp))
                     }
                 }
-                
+
                 Column {
                     val versionText = if (BuildConfig.GIT_TAG.isNotEmpty()) {
                         "${BuildConfig.GIT_TAG} (${BuildConfig.GIT_COMMIT})"
@@ -582,7 +618,7 @@ private fun formatPathForDisplay(context: Context, uriString: String?): String {
         val uri = Uri.parse(uriString)
         if (uri.scheme == "content") {
             var resolvedUri = uri
-            
+
             // 1. Resolve SAF Media Documents to real MediaStore URIs to get path info
             if (DocumentsContract.isDocumentUri(context, uri)) {
                 if ("com.android.providers.media.documents" == uri.authority) {
@@ -614,12 +650,12 @@ private fun formatPathForDisplay(context: Context, uriString: String?): String {
                     if (cursor.moveToFirst()) {
                         val name = cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME))
                         var path: String? = null
-                        
+
                         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
                             val relPathIndex = cursor.getColumnIndex(MediaStore.MediaColumns.RELATIVE_PATH)
                             if (relPathIndex != -1) path = cursor.getString(relPathIndex)
                         }
-                        
+
                         if (path.isNullOrEmpty()) {
                             val dataIndex = cursor.getColumnIndex(MediaStore.MediaColumns.DATA)
                             if (dataIndex != -1) {
@@ -639,7 +675,8 @@ private fun formatPathForDisplay(context: Context, uriString: String?): String {
                         }
                     }
                 }
-            } catch (e: Exception) { /* Ignore */ }
+            } catch (e: Exception) { /* Ignore */
+            }
 
             // 3. SAF Tree/Document Manual Parsing (for File Manager picks)
             var docId: String? = null
@@ -647,9 +684,14 @@ private fun formatPathForDisplay(context: Context, uriString: String?): String {
                 if (DocumentsContract.isDocumentUri(context, uri)) {
                     docId = DocumentsContract.getDocumentId(uri)
                 } else {
-                    docId = try { DocumentsContract.getTreeDocumentId(uri) } catch (e: Exception) { null }
+                    docId = try {
+                        DocumentsContract.getTreeDocumentId(uri)
+                    } catch (e: Exception) {
+                        null
+                    }
                 }
-            } catch (e: Exception) { /* Ignore */ }
+            } catch (e: Exception) { /* Ignore */
+            }
 
             if (docId == null) {
                 val decodedUri = Uri.decode(uriString)
@@ -675,13 +717,15 @@ private fun formatPathForDisplay(context: Context, uriString: String?): String {
 
             // 4. Last resort: Filename from OpenableColumns or URI segments
             try {
-                context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
-                    if (cursor.moveToFirst()) {
-                        val name = cursor.getString(0)
-                        if (!name.isNullOrEmpty()) return name
+                context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
+                    ?.use { cursor ->
+                        if (cursor.moveToFirst()) {
+                            val name = cursor.getString(0)
+                            if (!name.isNullOrEmpty()) return name
+                        }
                     }
-                }
-            } catch (e: Exception) { /* Ignore */ }
+            } catch (e: Exception) { /* Ignore */
+            }
 
             val decoded = Uri.decode(uriString)
             val segments = decoded.split("/").filter { it.isNotEmpty() }
@@ -702,7 +746,8 @@ private fun formatPathForDisplay(context: Context, uriString: String?): String {
                 return path
             }
         }
-    } catch (e: Exception) { /* Ignore */ }
+    } catch (e: Exception) { /* Ignore */
+    }
 
     return Uri.decode(uriString)
 }
