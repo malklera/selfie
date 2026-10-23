@@ -13,6 +13,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -27,11 +29,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -56,6 +60,14 @@ fun ConfigurationScreen(
     onNavigateToErrorHistory: () -> Unit
 ) {
     val context = LocalContext.current
+    val focusManager = LocalFocusManager.current
+    val density = LocalDensity.current
+    val isKeyboardVisible = WindowInsets.ime.getBottom(density) > 0
+    LaunchedEffect(isKeyboardVisible) {
+        if (!isKeyboardVisible) {
+            focusManager.clearFocus()
+        }
+    }
     var portadaPath by remember { mutableStateOf(initialConfig.portadaPath) }
     var captureBoxPath by remember { mutableStateOf(initialConfig.captureBoxPath) }
     var countdownSeconds by remember { mutableStateOf(initialConfig.countdownSeconds.toString()) }
@@ -141,6 +153,7 @@ fun ConfigurationScreen(
                         title = { Text("Configuración") },
                         actions = {
                             IconButton(onClick = {
+                                focusManager.clearFocus()
                                 UserActionTracker.trackAction("Guardar configuración")
                                 val finalSeconds = countdownSeconds.toIntOrNull() ?: 0
                                 onSave(
@@ -157,6 +170,7 @@ fun ConfigurationScreen(
                                 Icon(Icons.Default.Save, contentDescription = "Guardar")
                             }
                             IconButton(onClick = {
+                                focusManager.clearFocus()
                                 UserActionTracker.trackAction("Cerrar configuración")
                                 if (hasChanges) {
                                     showUnsavedDialog = true
@@ -173,8 +187,15 @@ fun ConfigurationScreen(
         ) { padding ->
             Column(
                 modifier = Modifier
-                    .padding(padding)
                     .fillMaxSize()
+                    .pointerInput(Unit) {
+                        detectTapGestures(
+                            onTap = {
+                                focusManager.clearFocus()
+                            }
+                        )
+                    }
+                    .padding(padding)
                     .padding(16.dp)
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(24.dp)
@@ -185,10 +206,7 @@ fun ConfigurationScreen(
                         Text("Portada", style = MaterialTheme.typography.titleLarge)
                         Spacer(modifier = Modifier.height(8.dp))
                         portadaPath?.let { path ->
-                            Text(
-                                "Ruta: ${formatPathForDisplay(context, path)}",
-                                style = MaterialTheme.typography.bodySmall
-                            )
+                            Text("Ruta: ${formatPathForDisplay(context, path)}", style = MaterialTheme.typography.bodySmall)
                             Spacer(modifier = Modifier.height(8.dp))
                             
                             val displayMetrics = context.resources.displayMetrics
@@ -235,7 +253,10 @@ fun ConfigurationScreen(
                             Spacer(modifier = Modifier.height(8.dp))
                         } ?: Text("Ninguna imagen seleccionada")
 
-                        Button(onClick = { imagePicker.launch(arrayOf("image/*")) }) {
+                        Button(onClick = {
+                            focusManager.clearFocus()
+                            imagePicker.launch(arrayOf("image/*"))
+                        }) {
                             Text("Seleccionar Imagen")
                         }
                     }
@@ -245,10 +266,7 @@ fun ConfigurationScreen(
                         Text("Cuadro de captura", style = MaterialTheme.typography.titleLarge)
                         Spacer(modifier = Modifier.height(8.dp))
                         captureBoxPath?.let { path ->
-                            Text(
-                                "Ruta: ${formatPathForDisplay(context, path)}",
-                                style = MaterialTheme.typography.bodySmall
-                            )
+                            Text("Ruta: ${formatPathForDisplay(context, path)}", style = MaterialTheme.typography.bodySmall)
                             Spacer(modifier = Modifier.height(8.dp))
 
                             val displayMetrics = context.resources.displayMetrics
@@ -295,7 +313,10 @@ fun ConfigurationScreen(
                             Spacer(modifier = Modifier.height(8.dp))
                         } ?: Text("Ninguna imagen seleccionada")
 
-                        Button(onClick = { captureBoxPicker.launch(arrayOf("image/*")) }) {
+                        Button(onClick = {
+                            focusManager.clearFocus()
+                            captureBoxPicker.launch(arrayOf("image/*"))
+                        }) {
                             Text("Seleccionar Imagen")
                         }
                     }
@@ -326,7 +347,10 @@ fun ConfigurationScreen(
                         Text("Destino", style = MaterialTheme.typography.titleLarge)
                         Spacer(modifier = Modifier.height(8.dp))
                         Text("Ruta: ${formatPathForDisplay(context, destinationPath)}")
-                        Button(onClick = { directoryPicker.launch(null) }) {
+                        Button(onClick = {
+                            focusManager.clearFocus()
+                            directoryPicker.launch(null)
+                        }) {
                             Text("Seleccionar Carpeta")
                         }
                     }
@@ -517,6 +541,7 @@ fun ConfigurationScreen(
                         Spacer(modifier = Modifier.height(8.dp))
                         Button(
                             onClick = {
+                                focusManager.clearFocus()
                                 UserActionTracker.trackAction("Ver historial de errores")
                                 onNavigateToErrorHistory()
                             },
@@ -559,6 +584,7 @@ fun ConfigurationScreen(
             text = { Text("Tiene cambios sin guardar. ¿Qué desea hacer?") },
             confirmButton = {
                 TextButton(onClick = {
+                    focusManager.clearFocus()
                     Log.d("ConfigScreen", "Dialog Save clicked")
                     val finalSeconds = countdownSeconds.toIntOrNull() ?: 0
                     onSave(
@@ -580,13 +606,17 @@ fun ConfigurationScreen(
             dismissButton = {
                 Row {
                     TextButton(onClick = {
+                        focusManager.clearFocus()
                         Log.d("ConfigScreen", "Dialog Discard clicked")
                         showUnsavedDialog = false
                         onClose()
                     }) {
                         Text("Descartar")
                     }
-                    TextButton(onClick = { showUnsavedDialog = false }) {
+                    TextButton(onClick = {
+                        focusManager.clearFocus()
+                        showUnsavedDialog = false
+                    }) {
                         Text("Cancelar")
                     }
                 }
