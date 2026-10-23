@@ -22,9 +22,11 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.compose.ui.platform.LocalContext
 import ar.mimbi.Selfie.data.ConfigDataStore
 import ar.mimbi.Selfie.data.ErrorLogger
 import ar.mimbi.Selfie.data.UserActionTracker
+import ar.mimbi.Selfie.data.db.AppDatabase
 import ar.mimbi.Selfie.ui.screens.CaptureScreen
 import ar.mimbi.Selfie.ui.screens.ConfigurationScreen
 import ar.mimbi.Selfie.ui.screens.ErrorHistoryScreen
@@ -58,7 +60,7 @@ class MainActivity : ComponentActivity() {
         windowInsetsController.hide(WindowInsetsCompat.Type.systemBars())
         
         val requestPermissionLauncher = registerForActivityResult(
-            androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions()
+            ActivityResultContracts.RequestMultiplePermissions()
         ) { _ -> }
         
         requestPermissionLauncher.launch(arrayOf(
@@ -82,10 +84,13 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun SelfieApp(configDataStore: ConfigDataStore) {
+    val context = LocalContext.current
     val navController = rememberNavController()
     val configState = configDataStore.appConfigFlow.collectAsState(initial = null)
     val config = configState.value
     val scope = rememberCoroutineScope()
+
+    val database = remember { AppDatabase.getDatabase(context) }
     
     // Listen to navigation changes to track screen
     LaunchedEffect(navController) {
