@@ -2,6 +2,7 @@ package ar.mimbi.Selfie
 
 import android.Manifest
 import android.os.Bundle
+import androidx.core.view.ViewCompat
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -13,6 +14,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
+import android.os.Build
+import android.graphics.Rect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
@@ -43,7 +46,7 @@ class MainActivity : ComponentActivity() {
             setKeepOnScreenCondition { false }
         }
         super.onCreate(savedInstanceState)
-        
+
         ErrorLogger.init(applicationContext)
         configDataStore = ConfigDataStore(applicationContext)
 
@@ -51,23 +54,41 @@ class MainActivity : ComponentActivity() {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         // Enable edge-to-edge and immersive mode
-        WindowCompat.setDecorFitsSystemWindows(window, false)
         enableEdgeToEdge()
-        
+
         // Hide system bars
         val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
         windowInsetsController.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         windowInsetsController.hide(WindowInsetsCompat.Type.systemBars())
-        
+
+        // Set system gesture exclusion rects to prevent transient bars from peeking during scrolling
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            ViewCompat.setOnApplyWindowInsetsListener(window.decorView) { view, windowInsets ->
+                val navBarInsets = windowInsets.getInsets(WindowInsetsCompat.Type.navigationBars())
+                val statusBarInsets = windowInsets.getInsets(WindowInsetsCompat.Type.statusBars())
+
+                if (view.width > 0 && view.height > 0) {
+                    val exclusionRects = listOf(
+                        Rect(0, 0, view.width, statusBarInsets.top.coerceAtLeast(1)),
+                        Rect(0, view.height - navBarInsets.bottom.coerceAtLeast(1), view.width, view.height)
+                    )
+                    view.systemGestureExclusionRects = exclusionRects
+                }
+                windowInsets
+            }
+        }
+
         val requestPermissionLauncher = registerForActivityResult(
             ActivityResultContracts.RequestMultiplePermissions()
         ) { _ -> }
-        
-        requestPermissionLauncher.launch(arrayOf(
-            Manifest.permission.CAMERA,
-            Manifest.permission.READ_EXTERNAL_STORAGE,
-            Manifest.permission.WRITE_EXTERNAL_STORAGE
-        ))
+
+        requestPermissionLauncher.launch(
+            arrayOf(
+                Manifest.permission.CAMERA,
+                Manifest.permission.READ_EXTERNAL_STORAGE,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE
+            )
+        )
 
         setContent {
             SelfieTheme(darkTheme = true) {
@@ -91,7 +112,7 @@ fun SelfieApp(configDataStore: ConfigDataStore) {
     val scope = rememberCoroutineScope()
 
     val database = remember { AppDatabase.getDatabase(context) }
-    
+
     // Listen to navigation changes to track screen
     LaunchedEffect(navController) {
         navController.currentBackStackEntryFlow.collect { entry ->
@@ -136,9 +157,11 @@ fun SelfieApp(configDataStore: ConfigDataStore) {
                     composable("capture") {
                         CaptureScreen(
                             config = config,
-                            onNavigateToMain = { navController.navigate("main") {
-                                popUpTo("main") { inclusive = true }
-                            } },
+                            onNavigateToMain = {
+                                navController.navigate("main") {
+                                    popUpTo("main") { inclusive = true }
+                                }
+                            },
                             onNavigateToConfig = { navController.navigate("config") }
                         )
                     }
@@ -151,7 +174,7 @@ fun SelfieApp(configDataStore: ConfigDataStore) {
             }
         }
     }
-    
+
     // Trigger image load in background if not already started
     if (config != null && !isMainContentReady) {
         Box(modifier = Modifier.fillMaxSize().alpha(0f)) {
