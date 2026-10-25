@@ -30,9 +30,15 @@ The .apk file is at
 
 - [ ] Add toggle for accessing config screen with a pasword, numbers only, ensure there is a way of resetting it.
 
-- [ ] Allow to change the number of taps to enter the config screen, minimal 1.
+- [ ] Allow to change the number of taps to enter the config screen, minimum 1.
 
 - [ ] Allow to mark pictures to be printed, then inside config select all and print them with android print framework
+
+- [ ] There is a difference when the preview of the camera and the "recuadro" on top, there should not be.
+
+- [ ] Lock the app into portrait mode, or allow rotation, ask mom.
+
+- [ ] Check quality of images taken, i think there is a problem
 
 ## Made for use of
 
