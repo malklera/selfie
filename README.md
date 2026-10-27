@@ -34,7 +34,7 @@ The .apk file is at
 
 - [ ] Allow to mark pictures to be printed, then inside config select all and print them with android print framework
 
-- [ ] There is a difference when the preview of the camera and the "recuadro" on top, there should not be.
+- [ ] There is a time difference when the preview of the camera and the "recuadro" on top are show, there should not be.
 
 - [ ] Lock the app into portrait mode, or allow rotation, ask mom.
 
