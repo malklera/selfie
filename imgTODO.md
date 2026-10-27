@@ -71,7 +71,7 @@ Based on `imgPlan.md` and audit against the current state of the codebase.
 ---
 
 ### Phase 4: Camera & Preview Rework (`ui/screens/CaptureScreen.kt`)
-- [ ] **4.1 Update Camera Binding & Quality Settings**
+- [x] **4.1 Update Camera Binding & Quality Settings**
   - Change `ImageCapture` mode to `CAPTURE_MODE_MAXIMIZE_QUALITY`.
   - Set Jpeg Quality to `100` (`.setJpegQuality(100)`).
   - Set separate `ResolutionSelector` for `Preview`:
@@ -79,7 +79,7 @@ Based on `imgPlan.md` and audit against the current state of the codebase.
     - No fixed resolution strategy (let CameraX pick best stream size).
   - Remove `ViewPort` configuration (`previewView.viewPort`) to prevent CameraX auto-cropping.
   - Set `PreviewView.scaleType = PreviewView.ScaleType.FILL_CENTER`.
-- [ ] **4.2 Implement Fitted Preview Viewfinder Layout**
+- [x] **4.2 Implement Fitted Preview Viewfinder Layout**
   - Compute output region `R` from `imageCapture.resolutionInfo` (or sensor frame size + user mode settings + screen aspect ratio `S`).
   - Render outer `Box(Modifier.fillMaxSize().background(Color.Black), contentAlignment = Alignment.Center)`:
     - Inner `Box` sized to `fitSize(screenSize, R.aspect)` and clipped to bounds.

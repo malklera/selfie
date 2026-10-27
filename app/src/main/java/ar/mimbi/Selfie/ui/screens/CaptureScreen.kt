@@ -20,9 +20,9 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -45,7 +46,10 @@ import androidx.documentfile.provider.DocumentFile
 import androidx.exifinterface.media.ExifInterface
 import ar.mimbi.Selfie.data.AppConfig
 import ar.mimbi.Selfie.data.CameraResolutionHelper
+import ar.mimbi.Selfie.data.DecorationFit
 import ar.mimbi.Selfie.data.ErrorLogger
+import ar.mimbi.Selfie.data.ImageGeometryHelper
+import ar.mimbi.Selfie.data.PreviewFit
 import ar.mimbi.Selfie.data.UserActionTracker
 import ar.mimbi.Selfie.ui.components.SecretSettingsButton
 import kotlinx.coroutines.Dispatchers
@@ -76,10 +80,12 @@ fun CaptureScreen(
     var isFolderCheckPassed by remember { mutableStateOf(false) }
     var folderErrorMessage by remember { mutableStateOf<String?>(null) }
     
-    val selectedResolution = remember(config.pictureResolution) {
-        CameraResolutionHelper.parseResolution(config.pictureResolution)
-            ?: CameraResolutionHelper.getDefaultResolution(context)
+    val selectedResolution = remember(config.inputResolution) {
+        CameraResolutionHelper.parseResolution(config.inputResolution)
+            ?: CameraResolutionHelper.getMaxResolution(context)
     }
+
+    var realSensorSize by remember { mutableStateOf<Size?>(null) }
 
     // 1. Pre-check folder access
     LaunchedEffect(config.destinationPath) {
@@ -155,7 +161,8 @@ fun CaptureScreen(
         }
 
         ImageCapture.Builder()
-            .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+            .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
+            .setJpegQuality(100)
             .setFlashMode(ImageCapture.FLASH_MODE_OFF)
             .setResolutionSelector(resolutionSelectorBuilder.build())
             .build()
@@ -183,26 +190,19 @@ fun CaptureScreen(
             val rotation = previewView.display?.rotation ?: Surface.ROTATION_0
             imageCapture.targetRotation = rotation
 
-            val resolutionSelectorBuilder = ResolutionSelector.Builder()
+            val previewSelectorBuilder = ResolutionSelector.Builder()
             if (selectedResolution != null) {
-                val sensorSize = Size(
-                    maxOf(selectedResolution.width, selectedResolution.height),
-                    minOf(selectedResolution.width, selectedResolution.height)
-                )
-                resolutionSelectorBuilder.setResolutionStrategy(
-                    ResolutionStrategy(sensorSize, ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER)
-                )
                 val aspectStrategy = if (selectedResolution.is3_4) {
                     AspectRatioStrategy.RATIO_4_3_FALLBACK_AUTO_STRATEGY
                 } else {
                     AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY
                 }
-                resolutionSelectorBuilder.setAspectRatioStrategy(aspectStrategy)
+                previewSelectorBuilder.setAspectRatioStrategy(aspectStrategy)
             }
             
             val preview = Preview.Builder()
                 .setTargetRotation(rotation)
-                .setResolutionSelector(resolutionSelectorBuilder.build())
+                .setResolutionSelector(previewSelectorBuilder.build())
                 .build().also {
                     it.setSurfaceProvider(previewView.surfaceProvider)
                 }
@@ -211,13 +211,13 @@ fun CaptureScreen(
 
             try {
                 cameraProvider.unbindAll()
-                val useCaseGroupBuilder = UseCaseGroup.Builder()
-                    .addUseCase(preview)
-                    .addUseCase(imageCapture)
-                previewView.viewPort?.let { useCaseGroupBuilder.setViewPort(it) }
                 cameraProvider.bindToLifecycle(
-                    lifecycleOwner, cameraSelector, useCaseGroupBuilder.build()
+                    lifecycleOwner, cameraSelector, preview, imageCapture
                 )
+                imageCapture.resolutionInfo?.resolution?.let { res ->
+                    realSensorSize = res
+                    Log.d("CaptureScreen", "Bound ImageCapture real resolution: ${res.width}x${res.height}")
+                }
             } catch (exc: Exception) {
                 ErrorLogger.log("Use case binding failed: ${exc.message}")
                 Log.e("CaptureScreen", "Use case binding failed", exc)
@@ -270,29 +270,70 @@ fun CaptureScreen(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
-        if (!isCaptured) {
-            AndroidView(factory = { previewView }, modifier = Modifier.fillMaxSize())
+    BoxWithConstraints(modifier = Modifier.fillMaxSize().background(Color.Black)) {
+        val density = LocalDensity.current
+        val containerWidthPx = with(density) { maxWidth.toPx() }
+        val containerHeightPx = with(density) { maxHeight.toPx() }
+        val screenAspect = if (containerHeightPx > 0f) containerWidthPx / containerHeightPx else 1.0f
 
-            captureBoxBitmap?.let {
-                Image(
-                    bitmap = it.asImageBitmap(),
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.FillBounds
-                )
-            }
-            
-            if (isPreviewReady) {
+        val frameW = realSensorSize?.width ?: selectedResolution?.width ?: 1920
+        val frameH = realSensorSize?.height ?: selectedResolution?.height ?: 1080
+
+        val outputRegion = remember(frameW, frameH, config.previewFit, config.fixedAspect, screenAspect) {
+            ImageGeometryHelper.calculateOutputRegion(
+                frameW = frameW,
+                frameH = frameH,
+                previewFit = config.previewFit,
+                fixedAspect = config.fixedAspect,
+                screenAspect = screenAspect
+            )
+        }
+
+        val fittedSize = remember(containerWidthPx, containerHeightPx, outputRegion.aspect) {
+            ImageGeometryHelper.fitSize(containerWidthPx, containerHeightPx, outputRegion.aspect)
+        }
+
+        val fittedWidthDp = with(density) { fittedSize.width.toDp() }
+        val fittedHeightDp = with(density) { fittedSize.height.toDp() }
+
+        if (!isCaptured) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
                 Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
+                    modifier = Modifier
+                        .size(fittedWidthDp, fittedHeightDp)
+                        .clipToBounds()
                 ) {
-                    Text(
-                        text = countdown.toString(),
-                        color = Color.White.copy(alpha = 0.9f),
-                        fontSize = 120.sp
-                    )
+                    AndroidView(factory = { previewView }, modifier = Modifier.fillMaxSize())
+
+                    captureBoxBitmap?.let {
+                        val contentScale = if (config.decorationFit == DecorationFit.COVER) {
+                            ContentScale.Crop
+                        } else {
+                            ContentScale.FillBounds
+                        }
+                        Image(
+                            bitmap = it.asImageBitmap(),
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = contentScale
+                        )
+                    }
+                }
+
+                if (isPreviewReady) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = countdown.toString(),
+                            color = Color.White.copy(alpha = 0.9f),
+                            fontSize = 120.sp
+                        )
+                    }
                 }
             }
         } else {
