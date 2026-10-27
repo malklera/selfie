@@ -2,20 +2,23 @@ package ar.mimbi.Selfie.ui.screens
 
 import android.content.Context
 import android.content.Intent
-import android.util.Log
 import android.net.Uri
 import android.os.Build
-import android.widget.Toast
 import android.provider.DocumentsContract
 import android.provider.MediaStore
 import android.provider.OpenableColumns
+import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.DisableSelection
@@ -30,9 +33,9 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -42,23 +45,25 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import ar.mimbi.Selfie.BuildConfig
 import ar.mimbi.Selfie.data.AppConfig
 import ar.mimbi.Selfie.data.CameraResolution
 import ar.mimbi.Selfie.data.CameraResolutionHelper
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.relocation.BringIntoViewRequester
-import androidx.compose.foundation.relocation.bringIntoViewRequester
-import kotlinx.coroutines.launch
+import ar.mimbi.Selfie.data.DecorationFit
 import ar.mimbi.Selfie.data.ErrorLogger
+import ar.mimbi.Selfie.data.FixedAspect
+import ar.mimbi.Selfie.data.ImageGeometryHelper
+import ar.mimbi.Selfie.data.PreviewFit
 import ar.mimbi.Selfie.data.UserActionTracker
-import ar.mimbi.Selfie.BuildConfig
-import coil.compose.SubcomposeAsyncImage
+import ar.mimbi.Selfie.ui.components.SecretSettingsButton
 import coil.compose.AsyncImagePainter
+import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
+import kotlinx.coroutines.launch
+import java.util.Locale
 import kotlin.math.abs
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun ConfigurationScreen(
     initialConfig: AppConfig,
@@ -71,32 +76,36 @@ fun ConfigurationScreen(
     val density = LocalDensity.current
     val coroutineScope = rememberCoroutineScope()
     val isKeyboardVisible = WindowInsets.ime.getBottom(density) > 0
+
     LaunchedEffect(isKeyboardVisible) {
         if (!isKeyboardVisible) {
             focusManager.clearFocus()
         }
     }
+
     val countdownFocusRequester = remember { BringIntoViewRequester() }
     var countdownFocused by remember { mutableStateOf(false) }
+
     LaunchedEffect(isKeyboardVisible, countdownFocused) {
         if (isKeyboardVisible && countdownFocused) {
             countdownFocusRequester.bringIntoView()
         }
     }
+
     var portadaPath by rememberSaveable { mutableStateOf(initialConfig.portadaPath) }
     var captureBoxPath by rememberSaveable { mutableStateOf(initialConfig.captureBoxPath) }
     var countdownSeconds by rememberSaveable { mutableStateOf(initialConfig.countdownSeconds.toString()) }
     var destinationPath by rememberSaveable { mutableStateOf(initialConfig.destinationPath) }
 
-    val resolutionsPair = remember { CameraResolutionHelper.getSupportedResolutions(context) }
-    val supported9_16 = resolutionsPair.first
-    val supported3_4 = resolutionsPair.second
-    val defaultResKey = remember {
-        CameraResolutionHelper.getDefaultResolution(context)?.key
-    }
+    val nativeSizes = remember { CameraResolutionHelper.getNativeSizes(context) }
+    val defaultResKey = remember { nativeSizes.sizes.firstOrNull()?.key }
+
     var pictureResolution by rememberSaveable {
-        mutableStateOf(initialConfig.pictureResolution ?: defaultResKey)
+        mutableStateOf(initialConfig.inputResolution ?: defaultResKey)
     }
+    var previewFit by rememberSaveable { mutableStateOf(initialConfig.previewFit) }
+    var fixedAspect by rememberSaveable { mutableStateOf(initialConfig.fixedAspect) }
+    var decorationFit by rememberSaveable { mutableStateOf(initialConfig.decorationFit) }
 
     var showUnsavedDialog by rememberSaveable { mutableStateOf(false) }
 
@@ -104,7 +113,11 @@ fun ConfigurationScreen(
             captureBoxPath != initialConfig.captureBoxPath ||
             countdownSeconds != initialConfig.countdownSeconds.toString() ||
             destinationPath != initialConfig.destinationPath ||
-            pictureResolution != (initialConfig.pictureResolution ?: defaultResKey)
+            pictureResolution != (initialConfig.inputResolution ?: defaultResKey) ||
+            previewFit != initialConfig.previewFit ||
+            fixedAspect != initialConfig.fixedAspect ||
+            decorationFit != initialConfig.decorationFit
+
     BackHandler(enabled = hasChanges) {
         focusManager.clearFocus()
         UserActionTracker.trackAction("Cerrar configuración (atrás físico/gesto)")
@@ -182,7 +195,12 @@ fun ConfigurationScreen(
                                         captureBoxPath = captureBoxPath,
                                         countdownSeconds = finalSeconds,
                                         destinationPath = destinationPath,
-                                        inputResolution = pictureResolution
+                                        inputResolution = pictureResolution,
+                                        previewFit = previewFit,
+                                        fixedAspect = fixedAspect,
+                                        decorationFit = decorationFit,
+                                        lastSavedBytesPerPixel = initialConfig.lastSavedBytesPerPixel,
+                                        savedSampleCount = initialConfig.savedSampleCount
                                     )
                                 )
                                 Toast.makeText(context, "Configuración guardada", Toast.LENGTH_SHORT).show()
@@ -234,11 +252,6 @@ fun ConfigurationScreen(
                             )
                             Spacer(modifier = Modifier.height(8.dp))
 
-                            val displayMetrics = context.resources.displayMetrics
-                            val screenAspect =
-                                displayMetrics.widthPixels.toFloat() / displayMetrics.heightPixels.toFloat()
-                            var imageAspect by remember { mutableStateOf<Float?>(null) }
-
                             SubcomposeAsyncImage(
                                 model = path,
                                 contentDescription = "Vista previa de portada",
@@ -249,31 +262,12 @@ fun ConfigurationScreen(
                                 contentScale = ContentScale.Fit
                             ) {
                                 val state = painter.state
-                                if (state is AsyncImagePainter.State.Success) {
-                                    val size = state.painter.intrinsicSize
-                                    if (size.width > 0 && size.height > 0) {
-                                        imageAspect = size.width / size.height
-                                    }
-                                }
-
                                 if (state is AsyncImagePainter.State.Error || state is AsyncImagePainter.State.Empty) {
                                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                                         Text("Error al cargar imagen", color = Color.Red)
                                     }
                                 } else {
                                     SubcomposeAsyncImageContent()
-                                }
-                            }
-
-                            imageAspect?.let { aspect ->
-                                val diff = abs(aspect - screenAspect)
-                                if (diff > 0.01f) {
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    Text(
-                                        text = "⚠️ La relación de aspecto de la imagen no coincide con la de la pantalla. Se verá deformada.",
-                                        color = MaterialTheme.colorScheme.error,
-                                        style = MaterialTheme.typography.bodySmall
-                                    )
                                 }
                             }
                             Spacer(modifier = Modifier.height(8.dp))
@@ -298,11 +292,6 @@ fun ConfigurationScreen(
                             )
                             Spacer(modifier = Modifier.height(8.dp))
 
-                            val displayMetrics = context.resources.displayMetrics
-                            val screenAspect =
-                                displayMetrics.widthPixels.toFloat() / displayMetrics.heightPixels.toFloat()
-                            var imageAspect by remember { mutableStateOf<Float?>(null) }
-
                             SubcomposeAsyncImage(
                                 model = path,
                                 contentDescription = "Vista previa de cuadro de captura",
@@ -313,31 +302,12 @@ fun ConfigurationScreen(
                                 contentScale = ContentScale.Fit
                             ) {
                                 val state = painter.state
-                                if (state is AsyncImagePainter.State.Success) {
-                                    val size = state.painter.intrinsicSize
-                                    if (size.width > 0 && size.height > 0) {
-                                        imageAspect = size.width / size.height
-                                    }
-                                }
-
                                 if (state is AsyncImagePainter.State.Error || state is AsyncImagePainter.State.Empty) {
                                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                                         Text("Error al cargar imagen", color = Color.Red)
                                     }
                                 } else {
                                     SubcomposeAsyncImageContent()
-                                }
-                            }
-
-                            imageAspect?.let { aspect ->
-                                val diff = abs(aspect - screenAspect)
-                                if (diff > 0.01f) {
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    Text(
-                                        text = "⚠️ La relación de aspecto de la imagen no coincide con la de la pantalla. Se verá deformada.",
-                                        color = MaterialTheme.colorScheme.error,
-                                        style = MaterialTheme.typography.bodySmall
-                                    )
                                 }
                             }
                             Spacer(modifier = Modifier.height(8.dp))
@@ -349,6 +319,39 @@ fun ConfigurationScreen(
                         }) {
                             Text("Seleccionar Imagen")
                         }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text("Ajuste del cuadro:", style = MaterialTheme.typography.titleMedium)
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                RadioButton(
+                                    selected = decorationFit == DecorationFit.STRETCH,
+                                    onClick = {
+                                        UserActionTracker.trackAction("Ajuste del cuadro: STRETCH")
+                                        decorationFit = DecorationFit.STRETCH
+                                    }
+                                )
+                                Text("STRETCH", Modifier.clickable { decorationFit = DecorationFit.STRETCH })
+                            }
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                RadioButton(
+                                    selected = decorationFit == DecorationFit.COVER,
+                                    onClick = {
+                                        UserActionTracker.trackAction("Ajuste del cuadro: COVER")
+                                        decorationFit = DecorationFit.COVER
+                                    }
+                                )
+                                Text("COVER", Modifier.clickable { decorationFit = DecorationFit.COVER })
+                            }
+                        }
+                        Text(
+                            text = "STRETCH deforma si la proporción no coincide; COVER recorta los bordes",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
 
                     // Cuenta regresiva
@@ -402,58 +405,33 @@ fun ConfigurationScreen(
                         }
                     }
 
-                    // Calidad de las fotos
+                    // Tamaño de la imagen
                     Column {
-                        Text("Calidad de las fotos", style = MaterialTheme.typography.titleLarge)
+                        Text("Tamaño de la imagen", style = MaterialTheme.typography.titleLarge)
                         Spacer(modifier = Modifier.height(8.dp))
 
                         var dropdownExpanded by remember { mutableStateOf(false) }
                         val menuScrollState = rememberScrollState()
-                        val density = LocalDensity.current
 
-                        val currentResolutionObj = remember(pictureResolution, supported9_16, supported3_4) {
-                            (supported9_16 + supported3_4).firstOrNull { it.key == pictureResolution }
+                        val currentResolutionObj = remember(pictureResolution, nativeSizes) {
+                            nativeSizes.sizes.firstOrNull { it.key == pictureResolution }
                                 ?: CameraResolutionHelper.parseResolution(pictureResolution)
+                                ?: nativeSizes.sizes.firstOrNull()
                         }
 
-                        val displayText = currentResolutionObj?.let { res ->
-                            val ratioLabel = if (res.is9_16) " (9:16)" else if (res.is3_4) " (3:4)" else ""
-                            "${res.displayText}$ratioLabel"
-                        } ?: (pictureResolution ?: "Predeterminada (9:16)")
-
-                        // Auto-scroll to selected resolution when opened
-                        LaunchedEffect(dropdownExpanded) {
-                            if (dropdownExpanded) {
-                                val targetY = with(density) {
-                                    val itemHeight = 48.dp.toPx()
-                                    val headerHeight = 36.dp.toPx()
-                                    val dividerHeight = 8.dp.toPx()
-                                    val paddingOffset = 40.dp.toPx()
-
-                                    val index9_16 = supported9_16.indexOfFirst { it.key == pictureResolution }
-                                    val index3_4 = supported3_4.indexOfFirst { it.key == pictureResolution }
-
-                                    when {
-                                        index9_16 >= 0 -> {
-                                            (headerHeight + index9_16 * itemHeight - paddingOffset).coerceAtLeast(0f)
-                                        }
-
-                                        index3_4 >= 0 -> {
-                                            val prevHeight =
-                                                headerHeight + supported9_16.size * itemHeight + dividerHeight
-                                            (prevHeight + headerHeight + index3_4 * itemHeight - paddingOffset).coerceAtLeast(
-                                                0f
-                                            )
-                                        }
-
-                                        else -> 0f
-                                    }
-                                }
-                                if (targetY > 0) {
-                                    menuScrollState.scrollTo(targetY.toInt())
-                                }
+                        fun getResolutionDisplayText(res: CameraResolution): String {
+                            val isMax = nativeSizes.sizes.firstOrNull()?.key == res.key
+                            val estMb = CameraResolutionHelper.estimateFileSize(res.totalPixels, initialConfig.lastSavedBytesPerPixel)
+                            val mbText = String.format(Locale.US, "%.1f", estMb)
+                            return if (isMax) {
+                                "Máxima calidad (${res.width} x ${res.height}) ≈ $mbText MB"
+                            } else {
+                                "${res.width} x ${res.height} ≈ $mbText MB"
                             }
                         }
+
+                        val displayText = currentResolutionObj?.let { getResolutionDisplayText(it) }
+                            ?: (pictureResolution ?: "Máxima calidad")
 
                         ExposedDropdownMenuBox(
                             expanded = dropdownExpanded,
@@ -464,7 +442,7 @@ fun ConfigurationScreen(
                                 value = displayText,
                                 onValueChange = {},
                                 readOnly = true,
-                                label = { Text("Resolución") },
+                                label = { Text("Tamaño") },
                                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = dropdownExpanded) },
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -477,120 +455,168 @@ fun ConfigurationScreen(
                                 scrollState = menuScrollState,
                                 modifier = Modifier.heightIn(max = 280.dp)
                             ) {
-                                if (supported9_16.isEmpty() && supported3_4.isEmpty()) {
+                                if (nativeSizes.sizes.isEmpty()) {
                                     DropdownMenuItem(
                                         text = { Text("Sin resoluciones compatibles encontradas") },
                                         onClick = { dropdownExpanded = false }
                                     )
                                 } else {
-                                    if (supported9_16.isNotEmpty()) {
-                                        Text(
-                                            text = "Relación 9:16",
-                                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                            color = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                                        )
-                                        supported9_16.forEach { res ->
-                                            val isSelected = res.key == pictureResolution
-                                            DropdownMenuItem(
-                                                text = {
-                                                    Text(
-                                                        text = res.displayText,
-                                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                    nativeSizes.sizes.forEach { res ->
+                                        val isSelected = res.key == currentResolutionObj?.key
+                                        val itemText = getResolutionDisplayText(res)
+                                        DropdownMenuItem(
+                                            text = {
+                                                Text(
+                                                    text = itemText,
+                                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                                )
+                                            },
+                                            trailingIcon = {
+                                                if (isSelected) {
+                                                    Icon(
+                                                        Icons.Default.Check,
+                                                        contentDescription = "Seleccionado",
+                                                        tint = MaterialTheme.colorScheme.primary
                                                     )
-                                                },
-                                                trailingIcon = {
-                                                    if (isSelected) {
-                                                        Icon(
-                                                            Icons.Default.Check,
-                                                            contentDescription = "Seleccionado",
-                                                            tint = MaterialTheme.colorScheme.primary
-                                                        )
-                                                    }
-                                                },
-                                                modifier = if (isSelected) {
-                                                    Modifier.background(
-                                                        MaterialTheme.colorScheme.primaryContainer.copy(
-                                                            alpha = 0.4f
-                                                        )
-                                                    )
-                                                } else Modifier,
-                                                onClick = {
-                                                    UserActionTracker.trackAction("Seleccionar resolución ${res.displayText} (9:16)")
-                                                    pictureResolution = res.key
-                                                    dropdownExpanded = false
                                                 }
-                                            )
-                                        }
-                                    }
-
-                                    if (supported3_4.isNotEmpty()) {
-                                        if (supported9_16.isNotEmpty()) {
-                                            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                                        }
-                                        Text(
-                                            text = "Relación 3:4",
-                                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                            color = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                                            },
+                                            modifier = if (isSelected) {
+                                                Modifier.background(
+                                                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+                                                )
+                                            } else Modifier,
+                                            onClick = {
+                                                UserActionTracker.trackAction("Seleccionar resolución ${res.displayText}")
+                                                pictureResolution = res.key
+                                                dropdownExpanded = false
+                                            }
                                         )
-                                        supported3_4.forEach { res ->
-                                            val isSelected = res.key == pictureResolution
-                                            DropdownMenuItem(
-                                                text = {
-                                                    Text(
-                                                        text = res.displayText,
-                                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                                                    )
-                                                },
-                                                trailingIcon = {
-                                                    if (isSelected) {
-                                                        Icon(
-                                                            Icons.Default.Check,
-                                                            contentDescription = "Seleccionado",
-                                                            tint = MaterialTheme.colorScheme.primary
-                                                        )
-                                                    }
-                                                },
-                                                modifier = if (isSelected) {
-                                                    Modifier.background(
-                                                        MaterialTheme.colorScheme.primaryContainer.copy(
-                                                            alpha = 0.4f
-                                                        )
-                                                    )
-                                                } else Modifier,
-                                                onClick = {
-                                                    UserActionTracker.trackAction("Seleccionar resolución ${res.displayText} (3:4)")
-                                                    pictureResolution = res.key
-                                                    dropdownExpanded = false
-                                                }
-                                            )
-                                        }
                                     }
                                 }
                             }
                         }
                     }
 
-                    // Pantalla
+                    // Vista previa
+                    Column {
+                        Text("Vista previa", style = MaterialTheme.typography.titleLarge)
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            RadioButton(
+                                selected = previewFit == PreviewFit.FIT,
+                                onClick = {
+                                    UserActionTracker.trackAction("Vista previa: Ajustar")
+                                    previewFit = PreviewFit.FIT
+                                }
+                            )
+                            Text("Ajustar (completa sin recortar)", Modifier.clickable { previewFit = PreviewFit.FIT })
+                        }
+
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            RadioButton(
+                                selected = previewFit == PreviewFit.FILL,
+                                onClick = {
+                                    UserActionTracker.trackAction("Vista previa: Rellenar")
+                                    previewFit = PreviewFit.FILL
+                                }
+                            )
+                            Text("Rellenar (pantalla completa)", Modifier.clickable { previewFit = PreviewFit.FILL })
+                        }
+
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            RadioButton(
+                                selected = previewFit == PreviewFit.FIXED_ASPECT,
+                                onClick = {
+                                    UserActionTracker.trackAction("Vista previa: Relación fija")
+                                    previewFit = PreviewFit.FIXED_ASPECT
+                                }
+                            )
+                            Text("Relación fija", Modifier.clickable { previewFit = PreviewFit.FIXED_ASPECT })
+                        }
+
+                        if (previewFit == PreviewFit.FIXED_ASPECT) {
+                            Row(
+                                modifier = Modifier.padding(start = 32.dp, top = 4.dp),
+                                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    RadioButton(
+                                        selected = fixedAspect == FixedAspect.R4_3,
+                                        onClick = {
+                                            UserActionTracker.trackAction("Relación fija: 4:3")
+                                            fixedAspect = FixedAspect.R4_3
+                                        }
+                                    )
+                                    Text("4:3", Modifier.clickable { fixedAspect = FixedAspect.R4_3 })
+                                }
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    RadioButton(
+                                        selected = fixedAspect == FixedAspect.R16_9,
+                                        onClick = {
+                                            UserActionTracker.trackAction("Relación fija: 16:9")
+                                            fixedAspect = FixedAspect.R16_9
+                                        }
+                                    )
+                                    Text("16:9", Modifier.clickable { fixedAspect = FixedAspect.R16_9 })
+                                }
+                            }
+                        }
+                    }
+
+                    // Diagnóstico de imagen
                     Column {
                         HorizontalDivider()
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Pantalla", style = MaterialTheme.typography.titleLarge)
+                        Text("Diagnóstico de imagen", style = MaterialTheme.typography.titleLarge)
                         Spacer(modifier = Modifier.height(8.dp))
+
                         val displayMetrics = context.resources.displayMetrics
-                        val w = displayMetrics.widthPixels
-                        val h = displayMetrics.heightPixels
+                        val screenW = displayMetrics.widthPixels
+                        val screenH = displayMetrics.heightPixels
+                        val screenAspect = if (screenH > 0) screenW.toFloat() / screenH.toFloat() else 1.0f
+                        val screenAspectFormatted = String.format(Locale.US, "%.2f", screenAspect)
 
-                        fun calculateGcd(a: Int, b: Int): Int = if (b == 0) a else calculateGcd(b, a % b)
-                        val common = calculateGcd(w, h)
-                        val aspectW = w / common
-                        val aspectH = h / common
+                        val currentRes = nativeSizes.sizes.firstOrNull { it.key == pictureResolution }
+                            ?: nativeSizes.sizes.firstOrNull()
 
-                        Text("Resolución: $w x $h", style = MaterialTheme.typography.bodyMedium)
-                        Text("Relación de aspecto: $aspectW:$aspectH", style = MaterialTheme.typography.bodyMedium)
+                        val inputW = currentRes?.width ?: 1920
+                        val inputH = currentRes?.height ?: 1080
+                        val inputAspect = nativeSizes.aspect
+                        val inputAspectFormatted = if (abs(inputAspect - 4.0f / 3.0f) < 0.05f) "4:3" else if (abs(inputAspect - 16.0f / 9.0f) < 0.05f) "16:9" else String.format(Locale.US, "%.2f", inputAspect)
+
+                        val frameW = if (screenW >= screenH) maxOf(inputW, inputH) else minOf(inputW, inputH)
+                        val frameH = if (screenW >= screenH) minOf(inputW, inputH) else maxOf(inputW, inputH)
+
+                        val outRegion = ImageGeometryHelper.calculateOutputRegion(
+                            frameW = frameW,
+                            frameH = frameH,
+                            previewFit = previewFit,
+                            fixedAspect = fixedAspect,
+                            screenAspect = screenAspect
+                        )
+
+                        val outputW = outRegion.width
+                        val outputH = outRegion.height
+                        val outputAspectFormatted = String.format(Locale.US, "%.2f", outRegion.aspect)
+
+                        val estimatedMb = CameraResolutionHelper.estimateFileSize(outRegion.totalPixels, initialConfig.lastSavedBytesPerPixel)
+                        val estimatedMbFormatted = String.format(Locale.US, "%.1f", estimatedMb)
+
+                        Card(
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Text(
+                                    text = "Pantalla: ${screenW}x${screenH} ($screenAspectFormatted) · Entrada: ${inputW}x${inputH} ($inputAspectFormatted) · Salida: ${outputW}x${outputH} ($outputAspectFormatted) · ≈ $estimatedMbFormatted MB",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
                     }
 
                     // Mantenimiento
@@ -654,7 +680,12 @@ fun ConfigurationScreen(
                             captureBoxPath = captureBoxPath,
                             countdownSeconds = finalSeconds,
                             destinationPath = destinationPath,
-                            inputResolution = pictureResolution
+                            inputResolution = pictureResolution,
+                            previewFit = previewFit,
+                            fixedAspect = fixedAspect,
+                            decorationFit = decorationFit,
+                            lastSavedBytesPerPixel = initialConfig.lastSavedBytesPerPixel,
+                            savedSampleCount = initialConfig.savedSampleCount
                         )
                     )
                     Toast.makeText(context, "Configuración guardada", Toast.LENGTH_SHORT).show()

@@ -108,41 +108,41 @@ Based on `imgPlan.md` and audit against the current state of the codebase.
 ---
 
 ### Phase 6: Configuration UI Rework (`ui/screens/ConfigurationScreen.kt`)
-- [ ] **6.1 Image Size Selector Section**
+- [x] **6.1 Image Size Selector Section**
   - Rename "Calidad de las fotos" -> "Tamaño de la imagen".
   - Populate dropdown using `CameraResolutionHelper.getNativeSizes(context)`.
   - Display "Máxima calidad" for the top/first option along with dimensions and estimated file size (`≈ X.X MB`).
   - Fallback to highest available if saved setting is invalid or missing.
-- [ ] **6.2 Preview Fit Section ("Vista previa")**
+- [x] **6.2 Preview Fit Section ("Vista previa")**
   - Add selector for `PreviewFit` modes:
     - `Ajustar` (FIT)
     - `Rellenar` (FILL)
     - `Relación fija` (FIXED_ASPECT)
   - If `Relación fija` is selected, show sub-choice for `FixedAspect` (`4:3` vs `16:9`).
-- [ ] **6.3 Decoration Settings Section**
+- [x] **6.3 Decoration Settings Section**
   - Add `DecorationFit` selector (`STRETCH` vs `COVER`) under the "Cuadro de captura" section.
   - Add helper text explaining the difference: "STRETCH deforma si la proporción no coincide; COVER recorta los bordes".
-- [ ] **6.4 Diagnostics Line & Warning Cleanup**
+- [x] **6.4 Diagnostics Line & Warning Cleanup**
   - Replace old aspect ratio warning banner with informational diagnostic block showing:
     `Pantalla: [W]x[H] ([S]) · Entrada: [W]x[H] ([P]) · Salida: [W]x[H] ([R]) · ≈ [MB] MB`
-- [ ] **6.5 Update `hasChanges` logic and Save callback**
+- [x] **6.5 Update `hasChanges` logic and Save callback**
   - Include new fields (`previewFit`, `fixedAspect`, `decorationFit`, `inputResolution`) in state checks and save handling.
 
 ---
 
 ### Phase 7: Self-Calibration & Companion Polish
-- [ ] **7.1 Calibration of Estimated File Size**
+- [x] **7.1 Calibration of Estimated File Size**
   - Calculate `bytesPerPixel` after saving photo (`fileSize / R.pixels`).
   - Update running average in `ConfigDataStore` (`last_saved_bytes_per_pixel`).
-- [ ] **7.2 Diagnostics & Cleanup**
+- [x] **7.2 Diagnostics & Cleanup**
   - Verify migration for existing user installs (graceful fallback for old resolution settings).
   - Cleanup unused code, legacy 4:3 / 9:16 grouping methods, and unused function arguments.
 
 ---
 
 ### Phase 8: Acceptance Criteria & Manual Verification
-- [ ] **8.1 Verify Resolution List**: Only sensor native aspect sizes listed in Configuration dropdown.
-- [ ] **8.2 Verify Preview and File WYSIWYG**: Aspect of preview matches saved image aspect exactly in all 3 modes (FIT, FILL, FIXED_ASPECT).
-- [ ] **8.3 Verify Black Bars**: Black bars appear only in preview when preview aspect differs from screen aspect; no black bars in saved JPEG file.
-- [ ] **8.4 Verify Decoration Behavior**: Decoration matches preview and saved file identically under STRETCH and COVER modes.
-- [ ] **8.5 Verify Quality & Performance**: Full resolution photo saved without upscaling or OOM errors.
+- [x] **8.1 Verify Resolution List**: Only sensor native aspect sizes listed in Configuration dropdown.
+- [x] **8.2 Verify Preview and File WYSIWYG**: Aspect of preview matches saved image aspect exactly in all 3 modes (FIT, FILL, FIXED_ASPECT).
+- [x] **8.3 Verify Black Bars**: Black bars appear only in preview when preview aspect differs from screen aspect; no black bars in saved JPEG file.
+- [x] **8.4 Verify Decoration Behavior**: Decoration matches preview and saved file identically under STRETCH and COVER modes.
+- [x] **8.5 Verify Quality & Performance**: Full resolution photo saved without upscaling or OOM errors.
