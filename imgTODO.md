@@ -31,7 +31,7 @@ Based on `imgPlan.md` and audit against the current state of the codebase.
 ---
 
 ### Phase 2: Geometry & Resolution Helper Logic
-- [ ] **2.1 Geometry Helper Functions (`data/ImageGeometryHelper.kt` or inside `CameraResolutionHelper.kt`)**
+- [x] **2.1 Geometry Helper Functions (`data/ImageGeometryHelper.kt` or inside `CameraResolutionHelper.kt`)**
   - Implement `coverCrop(frameW: Int, frameH: Int, targetAspect: Float): Rect`
     - Crops center of `frameW x frameH` to match `targetAspect` without scaling.
   - Implement `fitSize(containerW: Float, containerH: Float, aspect: Float): SizeF` (or `DpSize`/`Size`)
@@ -40,7 +40,7 @@ Based on `imgPlan.md` and audit against the current state of the codebase.
     - Mode `a` (FIT) -> Full frame native aspect `P`.
     - Mode `b` (FILL) -> Center crop to screen aspect `S`.
     - Mode `c` (FIXED_ASPECT) -> Center crop to chosen `T` (4:3 or 16:9).
-- [ ] **2.2 Refactor `CameraResolutionHelper.kt`**
+- [x] **2.2 Refactor `CameraResolutionHelper.kt`**
   - Add `NativeSizes` data class: `(val aspect: Float, val sizes: List<CameraResolution>)`
   - Implement `getNativeSizes(context: Context): NativeSizes`
     - Read `JPEG` output sizes from `SCALER_STREAM_CONFIGURATION_MAP`.
@@ -54,7 +54,7 @@ Based on `imgPlan.md` and audit against the current state of the codebase.
 ---
 
 ### Phase 3: Unit Tests
-- [ ] **3.1 Add Unit Tests (`app/src/test/java/ar/mimbi/Selfie/ImageGeometryHelperTest.kt`)**
+- [x] **3.1 Add Unit Tests (`app/src/test/java/ar/mimbi/Selfie/ImageGeometryHelperTest.kt`)**
   - Test `coverCrop`:
     - 4:3 frame to 16:9 crop
     - 4:3 frame to custom screen aspect ratio
@@ -64,7 +64,7 @@ Based on `imgPlan.md` and audit against the current state of the codebase.
     - Container wider than aspect
     - Container taller than aspect
   - Test `calculateOutputRegion` for modes a, b, and c.
-- [ ] **3.2 Update `CameraResolutionHelperTest.kt`**
+- [x] **3.2 Update `CameraResolutionHelperTest.kt`**
   - Test native aspect filtering (ignoring non-native aspect sizes).
   - Test file size estimation calculations.
 

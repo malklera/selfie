@@ -35,7 +35,81 @@ data class CameraResolution(
         }
 }
 
+data class NativeSizes(
+    val aspect: Float,
+    val sizes: List<CameraResolution>
+)
+
 object CameraResolutionHelper {
+
+    internal fun filterNativeSizes(resolutions: List<CameraResolution>): NativeSizes {
+        if (resolutions.isEmpty()) return NativeSizes(4.0f / 3.0f, emptyList())
+
+        val maxSize = resolutions.maxByOrNull { it.totalPixels }
+            ?: return NativeSizes(4.0f / 3.0f, emptyList())
+
+        val nativeAspect = maxSize.height.toFloat() / maxSize.width.toFloat()
+
+        val filtered = resolutions.filter { res ->
+            val resAspect = res.height.toFloat() / res.width.toFloat()
+            abs(resAspect - nativeAspect) / nativeAspect <= 0.02f
+        }.sortedByDescending { it.totalPixels }
+
+        return NativeSizes(aspect = nativeAspect, sizes = filtered)
+    }
+
+    fun getNativeSizes(context: Context): NativeSizes {
+        try {
+            val cameraManager = context.getSystemService(Context.CAMERA_SERVICE) as? CameraManager
+                ?: return NativeSizes(4.0f / 3.0f, emptyList())
+
+            val cameraIdList = cameraManager.cameraIdList
+            if (cameraIdList.isEmpty()) return NativeSizes(4.0f / 3.0f, emptyList())
+
+            var selectedCameraId: String? = null
+            for (id in cameraIdList) {
+                val chars = cameraManager.getCameraCharacteristics(id)
+                val facing = chars.get(CameraCharacteristics.LENS_FACING)
+                if (facing == CameraCharacteristics.LENS_FACING_FRONT) {
+                    selectedCameraId = id
+                    break
+                }
+            }
+
+            if (selectedCameraId == null && cameraIdList.isNotEmpty()) {
+                selectedCameraId = cameraIdList[0]
+            }
+
+            if (selectedCameraId == null) return NativeSizes(4.0f / 3.0f, emptyList())
+
+            val characteristics = cameraManager.getCameraCharacteristics(selectedCameraId)
+            val map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
+            val sizes = map?.getOutputSizes(ImageFormat.JPEG)
+                ?: map?.getOutputSizes(SurfaceTexture::class.java)
+                ?: emptyArray()
+
+            val cameraResolutions = sizes.map { size ->
+                val portraitW = minOf(size.width, size.height)
+                val portraitH = maxOf(size.width, size.height)
+                CameraResolution(portraitW, portraitH)
+            }.distinctBy { "${it.width}x${it.height}" }
+
+            return filterNativeSizes(cameraResolutions)
+        } catch (e: Exception) {
+            ErrorLogger.log("Error consultando resoluciones nativas de cámara: ${e.message}")
+            return NativeSizes(4.0f / 3.0f, emptyList())
+        }
+    }
+
+    fun getMaxResolution(context: Context): CameraResolution? {
+        return getNativeSizes(context).sizes.firstOrNull() ?: getDefaultResolution(context)
+    }
+
+    fun estimateFileSize(pixels: Long, bytesPerPixel: Double = 0.35): Double {
+        if (pixels <= 0) return 0.0
+        val bytes = pixels * bytesPerPixel
+        return bytes / (1024.0 * 1024.0)
+    }
 
     fun getSupportedResolutions(context: Context): Pair<List<CameraResolution>, List<CameraResolution>> {
         try {
