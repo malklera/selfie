@@ -9,7 +9,7 @@ Based on `imgPlan.md` and audit against the current state of the codebase.
 ## Task Breakdown & Checklist
 
 ### Phase 1: Data Model & DataStore Persistence
-- [ ] **1.1 Update Enums and AppConfig (`data/AppConfig.kt`)**
+- [x] **1.1 Update Enums and AppConfig (`data/AppConfig.kt`)**
   - Add `enum class PreviewFit { FIT, FILL, FIXED_ASPECT }`
   - Add `enum class FixedAspect { R4_3, R16_9 }`
   - Add `enum class DecorationFit { STRETCH, COVER }`
@@ -18,7 +18,7 @@ Based on `imgPlan.md` and audit against the current state of the codebase.
     - Add `previewFit: PreviewFit = PreviewFit.FIT`
     - Add `fixedAspect: FixedAspect = FixedAspect.R16_9`
     - Add `decorationFit: DecorationFit = DecorationFit.STRETCH`
-- [ ] **1.2 Update DataStore (`data/ConfigDataStore.kt`)**
+- [x] **1.2 Update DataStore (`data/ConfigDataStore.kt`)**
   - Keep `PICTURE_RESOLUTION` ("picture_resolution") preference key for backwards compatibility.
   - Add preference keys:
     - `PREVIEW_FIT` (string preference key: "preview_fit")

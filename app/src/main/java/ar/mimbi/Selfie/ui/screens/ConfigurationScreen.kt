@@ -182,7 +182,7 @@ fun ConfigurationScreen(
                                         captureBoxPath = captureBoxPath,
                                         countdownSeconds = finalSeconds,
                                         destinationPath = destinationPath,
-                                        pictureResolution = pictureResolution
+                                        inputResolution = pictureResolution
                                     )
                                 )
                                 Toast.makeText(context, "Configuración guardada", Toast.LENGTH_SHORT).show()
@@ -654,7 +654,7 @@ fun ConfigurationScreen(
                             captureBoxPath = captureBoxPath,
                             countdownSeconds = finalSeconds,
                             destinationPath = destinationPath,
-                            pictureResolution = pictureResolution
+                            inputResolution = pictureResolution
                         )
                     )
                     Toast.makeText(context, "Configuración guardada", Toast.LENGTH_SHORT).show()

@@ -3,6 +3,7 @@ package ar.mimbi.Selfie.data
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -19,16 +20,41 @@ class ConfigDataStore(private val context: Context) {
         val COUNTDOWN_SECONDS = intPreferencesKey("countdown_seconds")
         val DESTINATION_PATH = stringPreferencesKey("destination_path")
         val PICTURE_RESOLUTION = stringPreferencesKey("picture_resolution")
+        val PREVIEW_FIT = stringPreferencesKey("preview_fit")
+        val FIXED_ASPECT = stringPreferencesKey("fixed_aspect")
+        val DECORATION_FIT = stringPreferencesKey("decoration_fit")
+        val LAST_SAVED_BYTES_PER_PIXEL = doublePreferencesKey("last_saved_bytes_per_pixel")
+        val SAVED_SAMPLE_COUNT = intPreferencesKey("saved_sample_count")
     }
 
     val appConfigFlow: Flow<AppConfig> = context.dataStore.data
         .map { preferences ->
+            val previewFitStr = preferences[PREVIEW_FIT]
+            val previewFit = previewFitStr?.let {
+                runCatching { PreviewFit.valueOf(it) }.getOrNull()
+            } ?: PreviewFit.FIT
+
+            val fixedAspectStr = preferences[FIXED_ASPECT]
+            val fixedAspect = fixedAspectStr?.let {
+                runCatching { FixedAspect.valueOf(it) }.getOrNull()
+            } ?: FixedAspect.R16_9
+
+            val decorationFitStr = preferences[DECORATION_FIT]
+            val decorationFit = decorationFitStr?.let {
+                runCatching { DecorationFit.valueOf(it) }.getOrNull()
+            } ?: DecorationFit.STRETCH
+
             AppConfig(
                 portadaPath = preferences[PORTADA_PATH],
                 captureBoxPath = preferences[CAPTURE_BOX_PATH],
                 countdownSeconds = preferences[COUNTDOWN_SECONDS] ?: 3,
                 destinationPath = preferences[DESTINATION_PATH] ?: "/storage/emulated/0/Pictures/selfie",
-                pictureResolution = preferences[PICTURE_RESOLUTION]
+                inputResolution = preferences[PICTURE_RESOLUTION],
+                previewFit = previewFit,
+                fixedAspect = fixedAspect,
+                decorationFit = decorationFit,
+                lastSavedBytesPerPixel = preferences[LAST_SAVED_BYTES_PER_PIXEL] ?: 0.35,
+                savedSampleCount = preferences[SAVED_SAMPLE_COUNT] ?: 0
             )
         }
 
@@ -46,11 +72,16 @@ class ConfigDataStore(private val context: Context) {
             }
             preferences[COUNTDOWN_SECONDS] = config.countdownSeconds
             preferences[DESTINATION_PATH] = config.destinationPath
-            if (config.pictureResolution != null) {
-                preferences[PICTURE_RESOLUTION] = config.pictureResolution
+            if (config.inputResolution != null) {
+                preferences[PICTURE_RESOLUTION] = config.inputResolution
             } else {
                 preferences.remove(PICTURE_RESOLUTION)
             }
+            preferences[PREVIEW_FIT] = config.previewFit.name
+            preferences[FIXED_ASPECT] = config.fixedAspect.name
+            preferences[DECORATION_FIT] = config.decorationFit.name
+            preferences[LAST_SAVED_BYTES_PER_PIXEL] = config.lastSavedBytesPerPixel
+            preferences[SAVED_SAMPLE_COUNT] = config.savedSampleCount
         }
     }
 }
