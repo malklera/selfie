@@ -89,7 +89,7 @@ Based on `imgPlan.md` and audit against the current state of the codebase.
 ---
 
 ### Phase 5: Save Pipeline Rework (`ui/screens/CaptureScreen.kt`)
-- [ ] **5.1 Refactor Image Processing Function**
+- [x] **5.1 Refactor Image Processing Function**
   - Rename `loadProcessAndCropBitmap` -> `loadProcessAndDecorateBitmap`.
   - Pass output region `R` and `DecorationFit` instead of `previewWidth`/`previewHeight`.
   - Step 1: Decode full size temporary JPEG and apply EXIF orientation / front camera mirror.
@@ -98,9 +98,9 @@ Based on `imgPlan.md` and audit against the current state of the codebase.
     - **STRETCH**: Stretch decoration overlay over `R`.
     - **COVER**: Scale decoration overlay keeping proportions to cover `R`, centering and clipping overflow.
   - Step 4: Avoid redundant intermediate full-size bitmap allocations (use direct canvas blitting).
-- [ ] **5.2 Update `saveBitmapToDestination`**
+- [x] **5.2 Update `saveBitmapToDestination`**
   - Set JPEG compression quality to `100` (changed from `95`).
-- [ ] **5.3 Update Logcat Logging**
+- [x] **5.3 Update Logcat Logging**
   - Log real `resolutionInfo` from camera.
   - Log output region `R` (dimensions and aspect).
   - Log saved image size and file size in bytes.
