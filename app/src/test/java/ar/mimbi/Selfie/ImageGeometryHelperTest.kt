@@ -142,4 +142,17 @@ class ImageGeometryHelperTest {
         assertEquals(4032, region3_4.height)
         assertEquals(3.0f / 4.0f, region3_4.aspect, 0.001f)
     }
+
+    @Test
+    fun testFormatAspectRatio() {
+        assertEquals("9:16", ImageGeometryHelper.formatAspectRatio(1080, 1920))
+        assertEquals("16:9", ImageGeometryHelper.formatAspectRatio(1920, 1080))
+        assertEquals("3:4", ImageGeometryHelper.formatAspectRatio(1080, 1440))
+        assertEquals("4:3", ImageGeometryHelper.formatAspectRatio(1440, 1080))
+        assertEquals("9:20", ImageGeometryHelper.formatAspectRatio(1080, 2400))
+        assertEquals("20:9", ImageGeometryHelper.formatAspectRatio(2400, 1080))
+        assertEquals("5:8", ImageGeometryHelper.formatAspectRatio(1200, 1920))
+        assertEquals("1:1", ImageGeometryHelper.formatAspectRatio(1000, 1000))
+        assertEquals("0:0", ImageGeometryHelper.formatAspectRatio(0, 0))
+    }
 }

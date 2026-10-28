@@ -55,7 +55,7 @@ What is show in the preview is what is saved in the end, they cannot differ, the
 
 - [x] "Relacion fija" change the display of options to a popup menu the same style as "tamaño de la imagen"
 
-- [ ] In "Diagnostico de imagen" use n:n style to describe the aspect ratio in all three items.
+- [x] In "Diagnostico de imagen" use n:n style to describe the aspect ratio in all three items.
 Get ride of the grey background in this, it should be black/transparent as the title
 
 - [ ] Get ride of the estimated size of the image in "Tamaño de imagen"

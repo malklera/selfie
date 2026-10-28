@@ -619,15 +619,14 @@ fun ConfigurationScreen(
                         val screenW = displayMetrics.widthPixels
                         val screenH = displayMetrics.heightPixels
                         val screenAspect = if (screenH > 0) screenW.toFloat() / screenH.toFloat() else 1.0f
-                        val screenAspectFormatted = String.format(Locale.US, "%.2f", screenAspect)
+                        val screenAspectFormatted = ImageGeometryHelper.formatAspectRatio(screenW, screenH)
 
                         val currentRes = nativeSizes.sizes.firstOrNull { it.key == pictureResolution }
                             ?: nativeSizes.sizes.firstOrNull()
 
                         val inputW = currentRes?.width ?: 1920
                         val inputH = currentRes?.height ?: 1080
-                        val inputAspect = nativeSizes.aspect
-                        val inputAspectFormatted = if (abs(inputAspect - 4.0f / 3.0f) < 0.05f) "4:3" else if (abs(inputAspect - 16.0f / 9.0f) < 0.05f) "16:9" else String.format(Locale.US, "%.2f", inputAspect)
+                        val inputAspectFormatted = ImageGeometryHelper.formatAspectRatio(inputW, inputH)
 
                         val frameW = if (screenW >= screenH) maxOf(inputW, inputH) else minOf(inputW, inputH)
                         val frameH = if (screenW >= screenH) minOf(inputW, inputH) else maxOf(inputW, inputH)
@@ -642,23 +641,15 @@ fun ConfigurationScreen(
 
                         val outputW = outRegion.width
                         val outputH = outRegion.height
-                        val outputAspectFormatted = String.format(Locale.US, "%.2f", outRegion.aspect)
+                        val outputAspectFormatted = ImageGeometryHelper.formatAspectRatio(outputW, outputH)
 
                         val estimatedMb = CameraResolutionHelper.estimateFileSize(outRegion.totalPixels, initialConfig.lastSavedBytesPerPixel)
                         val estimatedMbFormatted = String.format(Locale.US, "%.1f", estimatedMb)
 
-                        Card(
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Column(modifier = Modifier.padding(12.dp)) {
-                                Text(
-                                    text = "Pantalla: ${screenW}x${screenH} ($screenAspectFormatted) · Entrada: ${inputW}x${inputH} ($inputAspectFormatted) · Salida: ${outputW}x${outputH} ($outputAspectFormatted) · ≈ $estimatedMbFormatted MB",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
+                        Text(
+                            text = "Pantalla: ${screenW}x${screenH} ($screenAspectFormatted) · Entrada: ${inputW}x${inputH} ($inputAspectFormatted) · Salida: ${outputW}x${outputH} ($outputAspectFormatted) · ≈ $estimatedMbFormatted MB",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
                     }
 
                     // Mantenimiento

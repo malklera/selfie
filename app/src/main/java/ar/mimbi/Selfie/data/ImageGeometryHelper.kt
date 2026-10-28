@@ -106,4 +106,62 @@ object ImageGeometryHelper {
 
         return OutputRegion(cropRect)
     }
+
+    /**
+     * Formats width and height into an "n:n" aspect ratio string (e.g., "16:9", "9:16", "4:3", "3:4").
+     */
+    fun formatAspectRatio(width: Int, height: Int): String {
+        if (width <= 0 || height <= 0) return "0:0"
+
+        val aspect = width.toFloat() / height.toFloat()
+
+        val knownRatios = listOf(
+            9f / 16f to "9:16",
+            16f / 9f to "16:9",
+            3f / 4f to "3:4",
+            4f / 3f to "4:3",
+            9f / 20f to "9:20",
+            20f / 9f to "20:9",
+            1f / 2f to "1:2",
+            2f / 1f to "2:1",
+            5f / 8f to "5:8",
+            8f / 5f to "8:5",
+            1f / 1f to "1:1",
+            3f / 2f to "3:2",
+            2f / 3f to "2:3",
+            6f / 13f to "6:13",
+            13f / 6f to "13:6"
+        )
+
+        for ((ratio, label) in knownRatios) {
+            if (kotlin.math.abs(aspect - ratio) < 0.02f) {
+                return label
+            }
+        }
+
+        fun gcd(a: Int, b: Int): Int = if (b == 0) a else gcd(b, a % b)
+        val g = gcd(width, height)
+        val w = width / g
+        val h = height / g
+        if (w <= 50 && h <= 50) {
+            return "$w:$h"
+        }
+
+        var bestW = width
+        var bestH = height
+        var minDiff = Float.MAX_VALUE
+        for (d in 1..20) {
+            val n = (aspect * d).roundToInt()
+            if (n > 0) {
+                val diff = kotlin.math.abs(aspect - n.toFloat() / d)
+                if (diff < minDiff) {
+                    minDiff = diff
+                    bestW = n
+                    bestH = d
+                }
+            }
+        }
+        val g2 = gcd(bestW, bestH)
+        return "${bestW / g2}:${bestH / g2}"
+    }
 }
