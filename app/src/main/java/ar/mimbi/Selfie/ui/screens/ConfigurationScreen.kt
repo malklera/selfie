@@ -1,5 +1,7 @@
 package ar.mimbi.Selfie.ui.screens
 
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -684,12 +686,40 @@ fun ConfigurationScreen(
                     } else {
                         BuildConfig.GIT_COMMIT
                     }
+                    val fullVersionStr = "Versión: $versionText"
+                    val fullLicenseStr = "Licencia: MIT"
+                    val fullAuthorStr = "Autor: github.com/malklera"
+
                     Text(
-                        "Versión: $versionText",
-                        style = MaterialTheme.typography.bodyMedium
+                        fullVersionStr,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                copyToClipboard(context, fullVersionStr)
+                            }
+                            .padding(vertical = 4.dp)
                     )
-                    Text("Licencia: MIT", style = MaterialTheme.typography.bodyMedium)
-                    Text("Autor: github.com/malklera", style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        fullLicenseStr,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                copyToClipboard(context, fullLicenseStr)
+                            }
+                            .padding(vertical = 4.dp)
+                    )
+                    Text(
+                        fullAuthorStr,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                copyToClipboard(context, fullAuthorStr)
+                            }
+                            .padding(vertical = 4.dp)
+                    )
                 }
                 Spacer(modifier = Modifier.height(48.dp))
             }
@@ -900,4 +930,13 @@ private fun formatPathForDisplay(context: Context, uriString: String?): String {
     }
 
     return Uri.decode(uriString)
+}
+
+private fun copyToClipboard(context: Context, text: String) {
+    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+    val clip = ClipData.newPlainText("Acerca de", text)
+    clipboard.setPrimaryClip(clip)
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+        Toast.makeText(context, "Copiado al portapapeles", Toast.LENGTH_SHORT).show()
+    }
 }

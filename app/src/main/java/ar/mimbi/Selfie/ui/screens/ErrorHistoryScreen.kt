@@ -3,6 +3,7 @@ package ar.mimbi.Selfie.ui.screens
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.os.Build
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -171,5 +172,7 @@ private fun copyToClipboard(context: Context, text: String) {
     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
     val clip = ClipData.newPlainText("Error Log", text)
     clipboard.setPrimaryClip(clip)
-    Toast.makeText(context, "Copiado al portapapeles", Toast.LENGTH_SHORT).show()
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+        Toast.makeText(context, "Copiado al portapapeles", Toast.LENGTH_SHORT).show()
+    }
 }
