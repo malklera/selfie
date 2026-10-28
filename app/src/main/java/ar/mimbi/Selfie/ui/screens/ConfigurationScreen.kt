@@ -4,6 +4,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
 import android.provider.DocumentsContract
@@ -32,6 +33,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -58,6 +60,9 @@ import ar.mimbi.Selfie.data.ImageGeometryHelper
 import ar.mimbi.Selfie.data.PreviewFit
 import ar.mimbi.Selfie.data.UserActionTracker
 import ar.mimbi.Selfie.ui.components.SecretSettingsButton
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlin.math.abs
 import coil.compose.AsyncImagePainter
 import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
@@ -110,6 +115,24 @@ fun ConfigurationScreen(
     var decorationFit by rememberSaveable { mutableStateOf(initialConfig.decorationFit) }
 
     var showUnsavedDialog by rememberSaveable { mutableStateOf(false) }
+
+    val displayMetrics = context.resources.displayMetrics
+    val screenW = displayMetrics.widthPixels
+    val screenH = displayMetrics.heightPixels
+    val screenAspect = if (screenH > 0) screenW.toFloat() / screenH.toFloat() else 1.0f
+    val screenAspectFormatted = ImageGeometryHelper.formatAspectRatio(screenW, screenH)
+
+    val portadaDimensions by produceState<Pair<Int, Int>?>(initialValue = null, key1 = portadaPath) {
+        value = withContext(Dispatchers.IO) {
+            getImageDimensions(context, portadaPath)
+        }
+    }
+
+    val captureBoxDimensions by produceState<Pair<Int, Int>?>(initialValue = null, key1 = captureBoxPath) {
+        value = withContext(Dispatchers.IO) {
+            getImageDimensions(context, captureBoxPath)
+        }
+    }
 
     val hasChanges = portadaPath != initialConfig.portadaPath ||
             captureBoxPath != initialConfig.captureBoxPath ||
@@ -273,6 +296,19 @@ fun ConfigurationScreen(
                                 }
                             }
                             Spacer(modifier = Modifier.height(8.dp))
+
+                            portadaDimensions?.let { (w, h) ->
+                                val portadaAspect = w.toFloat() / h.toFloat()
+                                val portadaAspectFormatted = ImageGeometryHelper.formatAspectRatio(w, h)
+                                if (abs(portadaAspect - screenAspect) / screenAspect > 0.02f) {
+                                    Text(
+                                        text = "⚠️ La relación de aspecto de la portada ($portadaAspectFormatted) no coincide con la de la pantalla ($screenAspectFormatted).",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.error
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                }
+                            }
                         } ?: Text("Ninguna imagen seleccionada")
 
                         Button(onClick = {
@@ -313,6 +349,19 @@ fun ConfigurationScreen(
                                 }
                             }
                             Spacer(modifier = Modifier.height(8.dp))
+
+                            captureBoxDimensions?.let { (w, h) ->
+                                val captureBoxAspect = w.toFloat() / h.toFloat()
+                                val captureBoxAspectFormatted = ImageGeometryHelper.formatAspectRatio(w, h)
+                                if (abs(captureBoxAspect - screenAspect) / screenAspect > 0.02f) {
+                                    Text(
+                                        text = "⚠️ La relación de aspecto del cuadro ($captureBoxAspectFormatted) no coincide con la de la pantalla ($screenAspectFormatted).",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.error
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                }
+                            }
                         } ?: Text("Ninguna imagen seleccionada")
 
                         Button(onClick = {
@@ -938,5 +987,33 @@ private fun copyToClipboard(context: Context, text: String) {
     clipboard.setPrimaryClip(clip)
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
         Toast.makeText(context, "Copiado al portapapeles", Toast.LENGTH_SHORT).show()
+    }
+}
+
+private fun getImageDimensions(context: Context, pathOrUri: String?): Pair<Int, Int>? {
+    if (pathOrUri.isNullOrBlank()) return null
+    return try {
+        val uri = Uri.parse(pathOrUri)
+        val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        var decoded = false
+        if (uri.scheme == "content" || uri.scheme == "file") {
+            try {
+                context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                    BitmapFactory.decodeStream(inputStream, null, options)
+                    decoded = options.outWidth > 0 && options.outHeight > 0
+                }
+            } catch (_: Exception) {}
+        }
+        if (!decoded) {
+            val filePath = if (uri.scheme == "file") uri.path else pathOrUri
+            if (!filePath.isNullOrBlank()) {
+                BitmapFactory.decodeFile(filePath, options)
+            }
+        }
+        if (options.outWidth > 0 && options.outHeight > 0) {
+            Pair(options.outWidth, options.outHeight)
+        } else null
+    } catch (e: Exception) {
+        null
     }
 }

@@ -62,12 +62,10 @@ Get ride of the grey background in this, it should be black/transparent as the t
 
 - [x] In "Diagnostico de imagen" make each item below another, not besides each other
 
-- [ ] Put the information about the screen resolution and aspect ratio back again, allow to be copy in tap.
-
 - [x] Make each item(version, licencia, autor each separated) in "acerca de" copy in tap.
 
-- [ ] The warning regarding the aspect ratio of "portada" and "cuadro de captura" are still there?,
-i think the image i am testing with are not of the aspect ratio of the phone but i am not sure.
+- [x] The warning regarding the aspect ratio of "portada" and "cuadro de captura" are still there?,
+i think the image i am testing with are not of the aspect ratio of the phone but i do not get the warning
 
 - [ ] Test all type and combinations of aspect ratios
 
