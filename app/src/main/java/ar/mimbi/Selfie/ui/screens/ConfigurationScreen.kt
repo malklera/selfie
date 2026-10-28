@@ -537,52 +537,71 @@ fun ConfigurationScreen(
                         }
 
                         if (previewFit == PreviewFit.FIXED_ASPECT) {
-                            Column(modifier = Modifier.padding(start = 32.dp, top = 4.dp)) {
-                                Text("Proporción fija:", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                    verticalAlignment = Alignment.CenterVertically
+                            var aspectDropdownExpanded by remember { mutableStateOf(false) }
+                            val aspectMenuScrollState = rememberScrollState()
+
+                            fun getAspectDisplayText(aspect: FixedAspect): String = when (aspect) {
+                                FixedAspect.R3_4 -> "3:4"
+                                FixedAspect.R9_16 -> "9:16"
+                                FixedAspect.R4_3 -> "4:3"
+                                FixedAspect.R16_9 -> "16:9"
+                            }
+
+                            ExposedDropdownMenuBox(
+                                expanded = aspectDropdownExpanded,
+                                onExpandedChange = { aspectDropdownExpanded = it },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(start = 32.dp, top = 8.dp)
+                            ) {
+                                OutlinedTextField(
+                                    value = getAspectDisplayText(fixedAspect),
+                                    onValueChange = {},
+                                    readOnly = true,
+                                    label = { Text("Proporción") },
+                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = aspectDropdownExpanded) },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+                                )
+
+                                ExposedDropdownMenu(
+                                    expanded = aspectDropdownExpanded,
+                                    onDismissRequest = { aspectDropdownExpanded = false },
+                                    scrollState = aspectMenuScrollState,
+                                    modifier = Modifier.heightIn(max = 280.dp)
                                 ) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        RadioButton(
-                                            selected = fixedAspect == FixedAspect.R3_4,
+                                    FixedAspect.entries.forEach { aspect ->
+                                        val isSelected = aspect == fixedAspect
+                                        val itemText = getAspectDisplayText(aspect)
+                                        DropdownMenuItem(
+                                            text = {
+                                                Text(
+                                                    text = itemText,
+                                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                                )
+                                            },
+                                            trailingIcon = {
+                                                if (isSelected) {
+                                                    Icon(
+                                                        Icons.Default.Check,
+                                                        contentDescription = "Seleccionado",
+                                                        tint = MaterialTheme.colorScheme.primary
+                                                    )
+                                                }
+                                            },
+                                            modifier = if (isSelected) {
+                                                Modifier.background(
+                                                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+                                                )
+                                            } else Modifier,
                                             onClick = {
-                                                UserActionTracker.trackAction("Relación fija: 3:4")
-                                                fixedAspect = FixedAspect.R3_4
+                                                UserActionTracker.trackAction("Relación fija: $itemText")
+                                                fixedAspect = aspect
+                                                aspectDropdownExpanded = false
                                             }
                                         )
-                                        Text("3:4", Modifier.clickable { fixedAspect = FixedAspect.R3_4 })
-                                    }
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        RadioButton(
-                                            selected = fixedAspect == FixedAspect.R9_16,
-                                            onClick = {
-                                                UserActionTracker.trackAction("Relación fija: 9:16")
-                                                fixedAspect = FixedAspect.R9_16
-                                            }
-                                        )
-                                        Text("9:16", Modifier.clickable { fixedAspect = FixedAspect.R9_16 })
-                                    }
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        RadioButton(
-                                            selected = fixedAspect == FixedAspect.R4_3,
-                                            onClick = {
-                                                UserActionTracker.trackAction("Relación fija: 4:3")
-                                                fixedAspect = FixedAspect.R4_3
-                                            }
-                                        )
-                                        Text("4:3", Modifier.clickable { fixedAspect = FixedAspect.R4_3 })
-                                    }
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        RadioButton(
-                                            selected = fixedAspect == FixedAspect.R16_9,
-                                            onClick = {
-                                                UserActionTracker.trackAction("Relación fija: 16:9")
-                                                fixedAspect = FixedAspect.R16_9
-                                            }
-                                        )
-                                        Text("16:9", Modifier.clickable { fixedAspect = FixedAspect.R16_9 })
                                     }
                                 }
                             }

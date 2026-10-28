@@ -53,7 +53,7 @@ cover+16:9 decoration is cut off above/below, picture is cutoff above/below and 
 
 What is show in the preview is what is saved in the end, they cannot differ, the only difference is that for display it get scaled up/down to fit the screen, the final image is not scaled, fix all of this
 
-- [ ] "Relacion fija" change the display of options to a popup menu the same style as "tamaño de la imagen"
+- [x] "Relacion fija" change the display of options to a popup menu the same style as "tamaño de la imagen"
 
 - [ ] In "Diagnostico de imagen" use n:n style to describe the aspect ratio in all three items.
 Get ride of the grey background in this, it should be black/transparent as the title
