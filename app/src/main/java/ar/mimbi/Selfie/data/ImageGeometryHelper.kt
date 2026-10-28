@@ -94,10 +94,11 @@ object ImageGeometryHelper {
                 coverCrop(frameW, frameH, screenAspect)
             }
             PreviewFit.FIXED_ASPECT -> {
-                val isLandscape = frameW >= frameH
                 val targetAspect = when (fixedAspect) {
-                    FixedAspect.R4_3 -> if (isLandscape) 4.0f / 3.0f else 3.0f / 4.0f
-                    FixedAspect.R16_9 -> if (isLandscape) 16.0f / 9.0f else 9.0f / 16.0f
+                    FixedAspect.R4_3 -> 4.0f / 3.0f
+                    FixedAspect.R16_9 -> 16.0f / 9.0f
+                    FixedAspect.R3_4 -> 3.0f / 4.0f
+                    FixedAspect.R9_16 -> 9.0f / 16.0f
                 }
                 coverCrop(frameW, frameH, targetAspect)
             }

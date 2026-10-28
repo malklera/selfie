@@ -91,24 +91,6 @@ fun CaptureScreen(
 
     var realSensorSize by remember { mutableStateOf<Size?>(null) }
 
-    val displayMetrics = context.resources.displayMetrics
-    val screenWidthPx = displayMetrics.widthPixels.toFloat()
-    val screenHeightPx = displayMetrics.heightPixels.toFloat()
-    val screenAspect = if (screenHeightPx > 0f) screenWidthPx / screenHeightPx else 1.0f
-
-    val frameW = realSensorSize?.width ?: selectedResolution?.width ?: 1920
-    val frameH = realSensorSize?.height ?: selectedResolution?.height ?: 1080
-
-    val outputRegion = remember(frameW, frameH, config.previewFit, config.fixedAspect, screenAspect) {
-        ImageGeometryHelper.calculateOutputRegion(
-            frameW = frameW,
-            frameH = frameH,
-            previewFit = config.previewFit,
-            fixedAspect = config.fixedAspect,
-            screenAspect = screenAspect
-        )
-    }
-
     // 1. Pre-check folder access
     LaunchedEffect(config.destinationPath) {
         val result = checkDestinationWritable(context, config.destinationPath)
@@ -247,66 +229,28 @@ fun CaptureScreen(
         }, ContextCompat.getMainExecutor(context))
     }
 
-    LaunchedEffect(isCaptured, isPreviewReady, captureAttempt, isFolderCheckPassed) {
-        if (!isCaptured && isPreviewReady && isFolderCheckPassed) {
-            // Wait a bit if this is a retry
-            if (captureAttempt > 0) delay(2000)
-
-            // Reset countdown when starting a new capture session
-            countdown = config.countdownSeconds
-            while (countdown > 0) {
-                delay(1000)
-                countdown--
-            }
-
-            // Small buffer to ensure UI is settled
-            delay(200)
-
-            takePhoto(
-                context = context,
-                imageCapture = imageCapture,
-                captureBoxBitmap = captureBoxBitmap,
-                destinationPath = config.destinationPath,
-                outputRegion = outputRegion,
-                decorationFit = config.decorationFit,
-                executor = cameraExecutor,
-                onCaptured = { uri, bitmap, savedSizeBytes ->
-                    ContextCompat.getMainExecutor(context).execute {
-                        capturedUriString = uri.toString()
-                        capturedBitmap = bitmap
-                        isCaptured = true
-
-                        if (outputRegion.totalPixels > 0 && savedSizeBytes > 0) {
-                            val newBpp = savedSizeBytes.toDouble() / outputRegion.totalPixels.toDouble()
-                            val currentCount = config.savedSampleCount
-                            val updatedCount = currentCount + 1
-                            val updatedBpp = (config.lastSavedBytesPerPixel * currentCount + newBpp) / updatedCount
-                            val updatedConfig = config.copy(
-                                lastSavedBytesPerPixel = updatedBpp,
-                                savedSampleCount = updatedCount
-                            )
-                            scope.launch(Dispatchers.IO) {
-                                ConfigDataStore(context).saveConfig(updatedConfig)
-                            }
-                        }
-                    }
-                },
-                onError = { error ->
-                    ContextCompat.getMainExecutor(context).execute {
-                        ErrorLogger.log("Capture error: $error")
-                        Log.e("CaptureScreen", "Capture error: $error")
-                        Toast.makeText(context, error, Toast.LENGTH_LONG).show()
-                        captureAttempt++
-                    }
-                }
-            )
-        }
-    }
-
     BoxWithConstraints(modifier = Modifier.fillMaxSize().background(Color.Black)) {
         val density = LocalDensity.current
         val containerWidthPx = with(density) { maxWidth.toPx() }
         val containerHeightPx = with(density) { maxHeight.toPx() }
+        val isPortraitScreen = containerWidthPx < containerHeightPx
+        val containerAspect = if (containerHeightPx > 0f) containerWidthPx / containerHeightPx else 1.0f
+
+        val rawW = realSensorSize?.width ?: selectedResolution?.width ?: 1920
+        val rawH = realSensorSize?.height ?: selectedResolution?.height ?: 1080
+
+        val frameW = if (isPortraitScreen) minOf(rawW, rawH) else maxOf(rawW, rawH)
+        val frameH = if (isPortraitScreen) maxOf(rawW, rawH) else minOf(rawW, rawH)
+
+        val outputRegion = remember(frameW, frameH, config.previewFit, config.fixedAspect, containerAspect) {
+            ImageGeometryHelper.calculateOutputRegion(
+                frameW = frameW,
+                frameH = frameH,
+                previewFit = config.previewFit,
+                fixedAspect = config.fixedAspect,
+                screenAspect = containerAspect
+            )
+        }
 
         val fittedSize = remember(containerWidthPx, containerHeightPx, outputRegion.aspect) {
             ImageGeometryHelper.fitSize(containerWidthPx, containerHeightPx, outputRegion.aspect)
@@ -314,6 +258,62 @@ fun CaptureScreen(
 
         val fittedWidthDp = with(density) { fittedSize.width.toDp() }
         val fittedHeightDp = with(density) { fittedSize.height.toDp() }
+
+        LaunchedEffect(isCaptured, isPreviewReady, captureAttempt, isFolderCheckPassed) {
+            if (!isCaptured && isPreviewReady && isFolderCheckPassed) {
+                // Wait a bit if this is a retry
+                if (captureAttempt > 0) delay(2000)
+
+                // Reset countdown when starting a new capture session
+                countdown = config.countdownSeconds
+                while (countdown > 0) {
+                    delay(1000)
+                    countdown--
+                }
+
+                // Small buffer to ensure UI is settled
+                delay(200)
+
+                takePhoto(
+                    context = context,
+                    imageCapture = imageCapture,
+                    captureBoxBitmap = captureBoxBitmap,
+                    destinationPath = config.destinationPath,
+                    outputRegion = outputRegion,
+                    decorationFit = config.decorationFit,
+                    executor = cameraExecutor,
+                    onCaptured = { uri, bitmap, savedSizeBytes ->
+                        ContextCompat.getMainExecutor(context).execute {
+                            capturedUriString = uri.toString()
+                            capturedBitmap = bitmap
+                            isCaptured = true
+
+                            if (outputRegion.totalPixels > 0 && savedSizeBytes > 0) {
+                                val newBpp = savedSizeBytes.toDouble() / outputRegion.totalPixels.toDouble()
+                                val currentCount = config.savedSampleCount
+                                val updatedCount = currentCount + 1
+                                val updatedBpp = (config.lastSavedBytesPerPixel * currentCount + newBpp) / updatedCount
+                                val updatedConfig = config.copy(
+                                    lastSavedBytesPerPixel = updatedBpp,
+                                    savedSampleCount = updatedCount
+                                )
+                                scope.launch(Dispatchers.IO) {
+                                    ConfigDataStore(context).saveConfig(updatedConfig)
+                                }
+                            }
+                        }
+                    },
+                    onError = { error ->
+                        ContextCompat.getMainExecutor(context).execute {
+                            ErrorLogger.log("Capture error: $error")
+                            Log.e("CaptureScreen", "Capture error: $error")
+                            Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+                            captureAttempt++
+                        }
+                    }
+                )
+            }
+        }
 
         if (!isCaptured) {
             Box(
@@ -489,17 +489,29 @@ private fun loadProcessAndDecorateBitmap(
             ExifInterface.ORIENTATION_ROTATE_270 -> matrix.postRotate(270f)
         }
 
-        // Front camera mirroring to match preview viewfinder
-        matrix.postScale(-1f, 1f, bitmap.width / 2f, bitmap.height / 2f)
-
         val orientedBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
         if (orientedBitmap != bitmap) {
             bitmap.recycle()
         }
 
+        // Front camera mirroring around the actual oriented bitmap's center
+        val mirrorMatrix = Matrix().apply {
+            postScale(-1f, 1f, orientedBitmap.width / 2f, orientedBitmap.height / 2f)
+        }
+        val mirroredBitmap = Bitmap.createBitmap(orientedBitmap, 0, 0, orientedBitmap.width, orientedBitmap.height, mirrorMatrix, true)
+        if (mirroredBitmap != orientedBitmap) {
+            orientedBitmap.recycle()
+        }
+
         val outW = outputRegion.width
         val outH = outputRegion.height
         val srcCropRect = outputRegion.cropRect.toAndroidRect()
+
+        // Clamp crop rect to mirroredBitmap bounds
+        srcCropRect.left = srcCropRect.left.coerceIn(0, mirroredBitmap.width)
+        srcCropRect.top = srcCropRect.top.coerceIn(0, mirroredBitmap.height)
+        srcCropRect.right = srcCropRect.right.coerceIn(srcCropRect.left, mirroredBitmap.width)
+        srcCropRect.bottom = srcCropRect.bottom.coerceIn(srcCropRect.top, mirroredBitmap.height)
 
         Log.d("CaptureScreen", "Output region R: ${outW}x${outH} (aspect ${outputRegion.aspect})")
 
@@ -508,8 +520,8 @@ private fun loadProcessAndDecorateBitmap(
         val paint = Paint(Paint.FILTER_BITMAP_FLAG)
 
         val dstRect = AndroidRect(0, 0, outW, outH)
-        canvas.drawBitmap(orientedBitmap, srcCropRect, dstRect, paint)
-        orientedBitmap.recycle()
+        canvas.drawBitmap(mirroredBitmap, srcCropRect, dstRect, paint)
+        mirroredBitmap.recycle()
 
         if (overlay != null) {
             when (decorationFit) {

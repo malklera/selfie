@@ -19,7 +19,7 @@ class AppConfigTest {
         assertEquals("/storage/emulated/0/Pictures/selfie", config.destinationPath)
         assertNull(config.inputResolution)
         assertEquals(PreviewFit.FIT, config.previewFit)
-        assertEquals(FixedAspect.R16_9, config.fixedAspect)
+        assertEquals(FixedAspect.R9_16, config.fixedAspect)
         assertEquals(DecorationFit.STRETCH, config.decorationFit)
         assertEquals(0.35, config.lastSavedBytesPerPixel, 0.0001)
         assertEquals(0, config.savedSampleCount)
@@ -42,6 +42,8 @@ class AppConfigTest {
 
         assertEquals("R4_3", FixedAspect.R4_3.name)
         assertEquals("R16_9", FixedAspect.R16_9.name)
+        assertEquals("R3_4", FixedAspect.R3_4.name)
+        assertEquals("R9_16", FixedAspect.R9_16.name)
 
         assertEquals("STRETCH", DecorationFit.STRETCH.name)
         assertEquals("COVER", DecorationFit.COVER.name)

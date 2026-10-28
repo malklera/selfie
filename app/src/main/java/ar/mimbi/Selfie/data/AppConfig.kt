@@ -1,7 +1,7 @@
 package ar.mimbi.Selfie.data
 
 enum class PreviewFit { FIT, FILL, FIXED_ASPECT }
-enum class FixedAspect { R4_3, R16_9 }
+enum class FixedAspect { R4_3, R16_9, R3_4, R9_16 }
 enum class DecorationFit { STRETCH, COVER }
 
 data class AppConfig(
@@ -11,7 +11,7 @@ data class AppConfig(
     val destinationPath: String = "/storage/emulated/0/Pictures/selfie",
     val inputResolution: String? = null,
     val previewFit: PreviewFit = PreviewFit.FIT,
-    val fixedAspect: FixedAspect = FixedAspect.R16_9,
+    val fixedAspect: FixedAspect = FixedAspect.R9_16,
     val decorationFit: DecorationFit = DecorationFit.STRETCH,
     val lastSavedBytesPerPixel: Double = 0.35,
     val savedSampleCount: Int = 0

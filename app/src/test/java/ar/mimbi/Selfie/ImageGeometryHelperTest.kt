@@ -117,4 +117,29 @@ class ImageGeometryHelperTest {
         assertEquals(3024, region4_3.height)
         assertEquals(4.0f / 3.0f, region4_3.aspect, 0.001f)
     }
+
+    @Test
+    fun testCalculateOutputRegion_portrait_FIXED_ASPECT() {
+        val region9_16 = ImageGeometryHelper.calculateOutputRegion(
+            frameW = 3024,
+            frameH = 4032,
+            previewFit = PreviewFit.FIXED_ASPECT,
+            fixedAspect = FixedAspect.R9_16,
+            screenAspect = 0.625f
+        )
+        assertEquals(2268, region9_16.width)
+        assertEquals(4032, region9_16.height)
+        assertEquals(9.0f / 16.0f, region9_16.aspect, 0.001f)
+
+        val region3_4 = ImageGeometryHelper.calculateOutputRegion(
+            frameW = 3024,
+            frameH = 4032,
+            previewFit = PreviewFit.FIXED_ASPECT,
+            fixedAspect = FixedAspect.R3_4,
+            screenAspect = 0.625f
+        )
+        assertEquals(3024, region3_4.width)
+        assertEquals(4032, region3_4.height)
+        assertEquals(3.0f / 4.0f, region3_4.aspect, 0.001f)
+    }
 }

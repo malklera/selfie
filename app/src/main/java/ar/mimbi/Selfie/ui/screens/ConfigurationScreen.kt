@@ -537,30 +537,53 @@ fun ConfigurationScreen(
                         }
 
                         if (previewFit == PreviewFit.FIXED_ASPECT) {
-                            Row(
-                                modifier = Modifier.padding(start = 32.dp, top = 4.dp),
-                                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    RadioButton(
-                                        selected = fixedAspect == FixedAspect.R4_3,
-                                        onClick = {
-                                            UserActionTracker.trackAction("Relación fija: 4:3")
-                                            fixedAspect = FixedAspect.R4_3
-                                        }
-                                    )
-                                    Text("4:3", Modifier.clickable { fixedAspect = FixedAspect.R4_3 })
-                                }
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    RadioButton(
-                                        selected = fixedAspect == FixedAspect.R16_9,
-                                        onClick = {
-                                            UserActionTracker.trackAction("Relación fija: 16:9")
-                                            fixedAspect = FixedAspect.R16_9
-                                        }
-                                    )
-                                    Text("16:9", Modifier.clickable { fixedAspect = FixedAspect.R16_9 })
+                            Column(modifier = Modifier.padding(start = 32.dp, top = 4.dp)) {
+                                Text("Proporción fija:", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        RadioButton(
+                                            selected = fixedAspect == FixedAspect.R3_4,
+                                            onClick = {
+                                                UserActionTracker.trackAction("Relación fija: 3:4")
+                                                fixedAspect = FixedAspect.R3_4
+                                            }
+                                        )
+                                        Text("3:4", Modifier.clickable { fixedAspect = FixedAspect.R3_4 })
+                                    }
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        RadioButton(
+                                            selected = fixedAspect == FixedAspect.R9_16,
+                                            onClick = {
+                                                UserActionTracker.trackAction("Relación fija: 9:16")
+                                                fixedAspect = FixedAspect.R9_16
+                                            }
+                                        )
+                                        Text("9:16", Modifier.clickable { fixedAspect = FixedAspect.R9_16 })
+                                    }
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        RadioButton(
+                                            selected = fixedAspect == FixedAspect.R4_3,
+                                            onClick = {
+                                                UserActionTracker.trackAction("Relación fija: 4:3")
+                                                fixedAspect = FixedAspect.R4_3
+                                            }
+                                        )
+                                        Text("4:3", Modifier.clickable { fixedAspect = FixedAspect.R4_3 })
+                                    }
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        RadioButton(
+                                            selected = fixedAspect == FixedAspect.R16_9,
+                                            onClick = {
+                                                UserActionTracker.trackAction("Relación fija: 16:9")
+                                                fixedAspect = FixedAspect.R16_9
+                                            }
+                                        )
+                                        Text("16:9", Modifier.clickable { fixedAspect = FixedAspect.R16_9 })
+                                    }
                                 }
                             }
                         }
