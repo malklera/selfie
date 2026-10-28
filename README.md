@@ -58,7 +58,7 @@ What is show in the preview is what is saved in the end, they cannot differ, the
 - [x] In "Diagnostico de imagen" use n:n style to describe the aspect ratio in all three items.
 Get ride of the grey background in this, it should be black/transparent as the title
 
-- [ ] Get ride of the estimated size of the image in "Tamaño de imagen"
+- [x] Get ride of the estimated size of the image in "Tamaño de imagen"
 
 - [ ] Put the information about the screen resolution and aspect ratio back again, allow to be copy in tap.
 

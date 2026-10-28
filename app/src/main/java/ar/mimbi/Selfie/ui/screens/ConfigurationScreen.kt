@@ -421,12 +421,10 @@ fun ConfigurationScreen(
 
                         fun getResolutionDisplayText(res: CameraResolution): String {
                             val isMax = nativeSizes.sizes.firstOrNull()?.key == res.key
-                            val estMb = CameraResolutionHelper.estimateFileSize(res.totalPixels, initialConfig.lastSavedBytesPerPixel)
-                            val mbText = String.format(Locale.US, "%.1f", estMb)
                             return if (isMax) {
-                                "Máxima calidad (${res.width} x ${res.height}) ≈ $mbText MB"
+                                "Máxima calidad (${res.width} x ${res.height})"
                             } else {
-                                "${res.width} x ${res.height} ≈ $mbText MB"
+                                "${res.width} x ${res.height}"
                             }
                         }
 
