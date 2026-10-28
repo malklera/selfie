@@ -644,10 +644,11 @@ fun ConfigurationScreen(
                         val estimatedMb = CameraResolutionHelper.estimateFileSize(outRegion.totalPixels, initialConfig.lastSavedBytesPerPixel)
                         val estimatedMbFormatted = String.format(Locale.US, "%.1f", estimatedMb)
 
-                        Text(
-                            text = "Pantalla: ${screenW}x${screenH} ($screenAspectFormatted) · Entrada: ${inputW}x${inputH} ($inputAspectFormatted) · Salida: ${outputW}x${outputH} ($outputAspectFormatted) · ≈ $estimatedMbFormatted MB",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
+                        Text("Pantalla: ${screenW}x${screenH} ($screenAspectFormatted)", style = MaterialTheme.typography.bodyMedium)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text("Entrada: ${inputW}x${inputH} ($inputAspectFormatted)", style = MaterialTheme.typography.bodyMedium)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text("Salida: ${outputW}x${outputH} ($outputAspectFormatted)", style = MaterialTheme.typography.bodyMedium)
                     }
 
                     // Mantenimiento

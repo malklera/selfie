@@ -60,6 +60,8 @@ Get ride of the grey background in this, it should be black/transparent as the t
 
 - [x] Get ride of the estimated size of the image in "Tamaño de imagen"
 
+- [x] In "Diagnostico de imagen" make each item below another, not besides each other
+
 - [ ] Put the information about the screen resolution and aspect ratio back again, allow to be copy in tap.
 
 - [ ] Make each item(version, licencia, autor each separated) in "acerca de" copy in tap.
