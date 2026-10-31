@@ -23,6 +23,7 @@ class ConfigDataStore(private val context: Context) {
         val PREVIEW_FIT = stringPreferencesKey("preview_fit")
         val FIXED_ASPECT = stringPreferencesKey("fixed_aspect")
         val DECORATION_FIT = stringPreferencesKey("decoration_fit")
+        val APP_ORIENTATION = stringPreferencesKey("app_orientation")
         val LAST_SAVED_BYTES_PER_PIXEL = doublePreferencesKey("last_saved_bytes_per_pixel")
         val SAVED_SAMPLE_COUNT = intPreferencesKey("saved_sample_count")
     }
@@ -44,6 +45,11 @@ class ConfigDataStore(private val context: Context) {
                 runCatching { DecorationFit.valueOf(it) }.getOrNull()
             } ?: DecorationFit.STRETCH
 
+            val appOrientationStr = preferences[APP_ORIENTATION]
+            val appOrientation = appOrientationStr?.let {
+                runCatching { AppOrientation.valueOf(it) }.getOrNull()
+            } ?: AppOrientation.AUTO
+
             AppConfig(
                 portadaPath = preferences[PORTADA_PATH],
                 captureBoxPath = preferences[CAPTURE_BOX_PATH],
@@ -53,6 +59,7 @@ class ConfigDataStore(private val context: Context) {
                 previewFit = previewFit,
                 fixedAspect = fixedAspect,
                 decorationFit = decorationFit,
+                appOrientation = appOrientation,
                 lastSavedBytesPerPixel = preferences[LAST_SAVED_BYTES_PER_PIXEL] ?: 0.35,
                 savedSampleCount = preferences[SAVED_SAMPLE_COUNT] ?: 0
             )
@@ -80,6 +87,7 @@ class ConfigDataStore(private val context: Context) {
             preferences[PREVIEW_FIT] = config.previewFit.name
             preferences[FIXED_ASPECT] = config.fixedAspect.name
             preferences[DECORATION_FIT] = config.decorationFit.name
+            preferences[APP_ORIENTATION] = config.appOrientation.name
             preferences[LAST_SAVED_BYTES_PER_PIXEL] = config.lastSavedBytesPerPixel
             preferences[SAVED_SAMPLE_COUNT] = config.savedSampleCount
         }

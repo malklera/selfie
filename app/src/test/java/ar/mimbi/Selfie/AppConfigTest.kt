@@ -1,6 +1,7 @@
 package ar.mimbi.Selfie
 
 import ar.mimbi.Selfie.data.AppConfig
+import ar.mimbi.Selfie.data.AppOrientation
 import ar.mimbi.Selfie.data.DecorationFit
 import ar.mimbi.Selfie.data.FixedAspect
 import ar.mimbi.Selfie.data.PreviewFit
@@ -21,6 +22,7 @@ class AppConfigTest {
         assertEquals(PreviewFit.FIT, config.previewFit)
         assertEquals(FixedAspect.R9_16, config.fixedAspect)
         assertEquals(DecorationFit.STRETCH, config.decorationFit)
+        assertEquals(AppOrientation.AUTO, config.appOrientation)
         assertEquals(0.35, config.lastSavedBytesPerPixel, 0.0001)
         assertEquals(0, config.savedSampleCount)
     }
@@ -47,5 +49,9 @@ class AppConfigTest {
 
         assertEquals("STRETCH", DecorationFit.STRETCH.name)
         assertEquals("COVER", DecorationFit.COVER.name)
+
+        assertEquals("PORTRAIT", AppOrientation.PORTRAIT.name)
+        assertEquals("LANDSCAPE", AppOrientation.LANDSCAPE.name)
+        assertEquals("AUTO", AppOrientation.AUTO.name)
     }
 }

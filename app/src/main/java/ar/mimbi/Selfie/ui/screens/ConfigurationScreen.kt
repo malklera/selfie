@@ -1,5 +1,6 @@
 package ar.mimbi.Selfie.ui.screens
 
+import android.content.pm.ActivityInfo
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -50,7 +51,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ar.mimbi.Selfie.BuildConfig
+import ar.mimbi.Selfie.findActivity
 import ar.mimbi.Selfie.data.AppConfig
+import ar.mimbi.Selfie.data.AppOrientation
 import ar.mimbi.Selfie.data.CameraResolution
 import ar.mimbi.Selfie.data.CameraResolutionHelper
 import ar.mimbi.Selfie.data.DecorationFit
@@ -113,6 +116,21 @@ fun ConfigurationScreen(
     var previewFit by rememberSaveable { mutableStateOf(initialConfig.previewFit) }
     var fixedAspect by rememberSaveable { mutableStateOf(initialConfig.fixedAspect) }
     var decorationFit by rememberSaveable { mutableStateOf(initialConfig.decorationFit) }
+    var appOrientation by rememberSaveable { mutableStateOf(initialConfig.appOrientation) }
+
+    DisposableEffect(appOrientation) {
+        val activity = context.findActivity()
+        if (activity != null) {
+            val targetOrientation = when (appOrientation) {
+                AppOrientation.PORTRAIT -> ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                AppOrientation.LANDSCAPE -> ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                AppOrientation.AUTO -> ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR
+            }
+            Log.d("ConfigScreen", "Applying live requestedOrientation=$targetOrientation for $appOrientation")
+            activity.requestedOrientation = targetOrientation
+        }
+        onDispose {}
+    }
 
     var showUnsavedDialog by rememberSaveable { mutableStateOf(false) }
 
@@ -141,7 +159,8 @@ fun ConfigurationScreen(
             pictureResolution != (initialConfig.inputResolution ?: defaultResKey) ||
             previewFit != initialConfig.previewFit ||
             fixedAspect != initialConfig.fixedAspect ||
-            decorationFit != initialConfig.decorationFit
+            decorationFit != initialConfig.decorationFit ||
+            appOrientation != initialConfig.appOrientation
 
     BackHandler(enabled = hasChanges) {
         focusManager.clearFocus()
@@ -224,6 +243,7 @@ fun ConfigurationScreen(
                                         previewFit = previewFit,
                                         fixedAspect = fixedAspect,
                                         decorationFit = decorationFit,
+                                        appOrientation = appOrientation,
                                         lastSavedBytesPerPixel = initialConfig.lastSavedBytesPerPixel,
                                         savedSampleCount = initialConfig.savedSampleCount
                                     )
@@ -657,6 +677,61 @@ fun ConfigurationScreen(
                         }
                     }
 
+                    // Orientación de la aplicación
+                    Column {
+                        Text("Orientación de la aplicación", style = MaterialTheme.typography.titleLarge)
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            RadioButton(
+                                selected = appOrientation == AppOrientation.PORTRAIT,
+                                onClick = {
+                                    UserActionTracker.trackAction("Orientación: Vertical")
+                                    appOrientation = AppOrientation.PORTRAIT
+                                }
+                            )
+                            Text("Vertical (Portrait)", Modifier.clickable {
+                                UserActionTracker.trackAction("Orientación: Vertical")
+                                appOrientation = AppOrientation.PORTRAIT
+                            })
+                        }
+
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            RadioButton(
+                                selected = appOrientation == AppOrientation.LANDSCAPE,
+                                onClick = {
+                                    UserActionTracker.trackAction("Orientación: Horizontal")
+                                    appOrientation = AppOrientation.LANDSCAPE
+                                }
+                            )
+                            Text("Horizontal (Landscape)", Modifier.clickable {
+                                UserActionTracker.trackAction("Orientación: Horizontal")
+                                appOrientation = AppOrientation.LANDSCAPE
+                            })
+                        }
+
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            RadioButton(
+                                selected = appOrientation == AppOrientation.AUTO,
+                                onClick = {
+                                    UserActionTracker.trackAction("Orientación: Automática")
+                                    appOrientation = AppOrientation.AUTO
+                                }
+                            )
+                            Text("Automática (Auto)", Modifier.clickable {
+                                UserActionTracker.trackAction("Orientación: Automática")
+                                appOrientation = AppOrientation.AUTO
+                            })
+                        }
+
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Fuerza la orientación de la app e ignora el bloqueo de rotación del sistema.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
                     // Diagnóstico de imagen
                     Column {
                         HorizontalDivider()
@@ -795,6 +870,7 @@ fun ConfigurationScreen(
                             previewFit = previewFit,
                             fixedAspect = fixedAspect,
                             decorationFit = decorationFit,
+                            appOrientation = appOrientation,
                             lastSavedBytesPerPixel = initialConfig.lastSavedBytesPerPixel,
                             savedSampleCount = initialConfig.savedSampleCount
                         )

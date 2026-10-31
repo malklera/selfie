@@ -25,6 +25,12 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
+import android.content.pm.ActivityInfo
+import androidx.compose.ui.platform.LocalContext
+import ar.mimbi.Selfie.data.AppOrientation
 import ar.mimbi.Selfie.data.ConfigDataStore
 import ar.mimbi.Selfie.data.ErrorLogger
 import ar.mimbi.Selfie.data.UserActionTracker
@@ -101,12 +107,36 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+fun Context.findActivity(): Activity? {
+    var ctx = this
+    while (ctx is ContextWrapper) {
+        if (ctx is Activity) return ctx
+        ctx = ctx.baseContext
+    }
+    return null
+}
+
 @Composable
 fun SelfieApp(configDataStore: ConfigDataStore) {
     val navController = rememberNavController()
     val configState = configDataStore.appConfigFlow.collectAsState(initial = null)
     val config = configState.value
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+
+    LaunchedEffect(config?.appOrientation) {
+        val activity = context.findActivity()
+        android.util.Log.d("SelfieApp", "LaunchedEffect appOrientation=${config?.appOrientation}, activity=$activity")
+        if (activity != null && config != null) {
+            val targetOrientation = when (config.appOrientation) {
+                AppOrientation.PORTRAIT -> ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                AppOrientation.LANDSCAPE -> ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                AppOrientation.AUTO -> ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR
+            }
+            android.util.Log.d("SelfieApp", "Setting requestedOrientation=$targetOrientation (${config.appOrientation})")
+            activity.requestedOrientation = targetOrientation
+        }
+    }
 
     // Listen to navigation changes to track screen
     LaunchedEffect(navController) {

@@ -36,7 +36,11 @@ The .apk file is at
 
 - [ ] There is a time difference when the preview of the camera and the "recuadro" on top are show, there should not be.
 
-- [ ] Lock the app into portrait mode, or allow rotation, ask mom.
+- [x] add a section to control rotatio of the app, portrait, landscape, auto, can this ignore whatever the device auto rotate toggle is at?
+
+- [ ] Put a button that says "Abrir" that will open the selected folder in "Destino", put it besides the "Seleccionar Carpeta" button
+
+- [ ] make each item in "Diagnostico de image" copy in tap, the same as in "acerca de"
 
 - [x] Refactor the whole process of taking an image, preview and saving.
 
