@@ -40,7 +40,7 @@ The .apk file is at
 
 - [x] Put a button that says "Abrir" that will open the default file manager in the selected folder in "Destino", put it besides the "Seleccionar Carpeta" button
 
-- [ ] make each item in "Diagnostico de image" copy in tap, the same as in "acerca de"
+- [x] make each item in "Diagnostico de image" copy in tap, the same as in "acerca de"
 
 - [x] Refactor the whole process of taking an image, preview and saving.
 

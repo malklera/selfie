@@ -783,11 +783,40 @@ fun ConfigurationScreen(
                         val estimatedMb = CameraResolutionHelper.estimateFileSize(outRegion.totalPixels, initialConfig.lastSavedBytesPerPixel)
                         val estimatedMbFormatted = String.format(Locale.US, "%.1f", estimatedMb)
 
-                        Text("Pantalla: ${screenW}x${screenH} ($screenAspectFormatted)", style = MaterialTheme.typography.bodyMedium)
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text("Entrada: ${inputW}x${inputH} ($inputAspectFormatted)", style = MaterialTheme.typography.bodyMedium)
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text("Salida: ${outputW}x${outputH} ($outputAspectFormatted)", style = MaterialTheme.typography.bodyMedium)
+                        val pantallaText = "Pantalla: ${screenW}x${screenH} ($screenAspectFormatted)"
+                        val entradaText = "Entrada: ${inputW}x${inputH} ($inputAspectFormatted)"
+                        val salidaText = "Salida: ${outputW}x${outputH} ($outputAspectFormatted)"
+
+                        Text(
+                            pantallaText,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    copyToClipboard(context, pantallaText)
+                                }
+                                .padding(vertical = 4.dp)
+                        )
+                        Text(
+                            entradaText,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    copyToClipboard(context, entradaText)
+                                }
+                                .padding(vertical = 4.dp)
+                        )
+                        Text(
+                            salidaText,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    copyToClipboard(context, salidaText)
+                                }
+                                .padding(vertical = 4.dp)
+                        )
                     }
 
                     // Mantenimiento
@@ -1070,9 +1099,9 @@ private fun formatPathForDisplay(context: Context, uriString: String?): String {
     return Uri.decode(uriString)
 }
 
-private fun copyToClipboard(context: Context, text: String) {
+private fun copyToClipboard(context: Context, text: String, label: String = "Selfie") {
     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-    val clip = ClipData.newPlainText("Acerca de", text)
+    val clip = ClipData.newPlainText(label, text)
     clipboard.setPrimaryClip(clip)
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
         Toast.makeText(context, "Copiado al portapapeles", Toast.LENGTH_SHORT).show()
