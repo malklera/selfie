@@ -524,7 +524,6 @@ fun ConfigurationScreen(
                                 value = displayText,
                                 onValueChange = {},
                                 readOnly = true,
-                                label = { Text("Tamaño") },
                                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = dropdownExpanded) },
                                 modifier = Modifier
                                     .fillMaxWidth()
