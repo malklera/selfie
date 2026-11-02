@@ -10,6 +10,40 @@
     <uses-feature android:name="android.hardware.camera" />
     <uses-feature android:name="android.hardware.camera.front" />
 
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:mimeType="vnd.android.document/directory" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:mimeType="resource/folder" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="content" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="file" />
+        </intent>
+        <intent>
+            <action android:name="android.provider.action.BROWSE" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.GET_CONTENT" />
+            <data android:mimeType="*/*" />
+        </intent>
+
+        <package android:name="com.sec.android.app.myfiles" />
+        <package android:name="com.google.android.apps.nfiles" />
+        <package android:name="com.google.android.documentsui" />
+        <package android:name="com.android.documentsui" />
+        <package android:name="com.mi.android.globalFileexplorer" />
+        <package android:name="com.coloros.filemanager" />
+        <package android:name="com.motorola.filemanager" />
+    </queries>
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"

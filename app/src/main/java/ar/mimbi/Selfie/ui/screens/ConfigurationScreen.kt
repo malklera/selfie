@@ -5,6 +5,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import java.io.File
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
@@ -468,11 +469,23 @@ fun ConfigurationScreen(
                         Text("Destino", style = MaterialTheme.typography.titleLarge)
                         Spacer(modifier = Modifier.height(8.dp))
                         Text("Ruta: ${formatPathForDisplay(context, destinationPath)}")
-                        Button(onClick = {
-                            focusManager.clearFocus()
-                            directoryPicker.launch(null)
-                        }) {
-                            Text("Seleccionar Carpeta")
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Button(onClick = {
+                                focusManager.clearFocus()
+                                directoryPicker.launch(null)
+                            }) {
+                                Text("Seleccionar Carpeta")
+                            }
+                            Button(onClick = {
+                                focusManager.clearFocus()
+                                openFolder(context, destinationPath)
+                            }) {
+                                Text("Abrir")
+                            }
                         }
                     }
 
@@ -1093,3 +1106,152 @@ private fun getImageDimensions(context: Context, pathOrUri: String?): Pair<Int, 
         null
     }
 }
+
+private fun openFolder(context: Context, path: String?) {
+    if (path.isNullOrEmpty()) {
+        Toast.makeText(context, "No hay carpeta seleccionada", Toast.LENGTH_SHORT).show()
+        return
+    }
+
+    UserActionTracker.trackAction("Abrir carpeta de destino")
+
+    val intentsToTry = mutableListOf<Intent>()
+
+    if (path.startsWith("content://")) {
+        val uri = Uri.parse(path)
+        val isTree = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            DocumentsContract.isTreeUri(uri)
+        } else {
+            uri.path?.contains("/tree/") == true
+        }
+        if (isTree) {
+            try {
+                val docId = DocumentsContract.getTreeDocumentId(uri)
+                val docUri = DocumentsContract.buildDocumentUriUsingTree(uri, docId)
+                intentsToTry.add(Intent("android.provider.action.BROWSE").apply {
+                    setData(docUri)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+                })
+                intentsToTry.add(Intent(Intent.ACTION_VIEW).apply {
+                    setDataAndType(docUri, DocumentsContract.Document.MIME_TYPE_DIR)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+                })
+                intentsToTry.add(Intent(Intent.ACTION_VIEW).apply {
+                    setDataAndType(docUri, "resource/folder")
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+                })
+                intentsToTry.add(Intent(Intent.ACTION_VIEW).apply {
+                    setDataAndType(docUri, "*/*")
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+                })
+            } catch (e: Exception) {
+                ErrorLogger.log("Error al construir URI de árbol: ${e.message}")
+            }
+        }
+        intentsToTry.add(Intent("android.provider.action.BROWSE").apply {
+            setData(uri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+        })
+        intentsToTry.add(Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(uri, DocumentsContract.Document.MIME_TYPE_DIR)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+        })
+        intentsToTry.add(Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(uri, "resource/folder")
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+        })
+        intentsToTry.add(Intent(Intent.ACTION_VIEW, uri).apply {
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+        })
+    } else {
+        val file = File(path)
+        if (!file.exists()) {
+            try {
+                file.mkdirs()
+            } catch (e: Exception) {
+                ErrorLogger.log("Error al crear carpeta antes de abrir: ${e.message}")
+            }
+        }
+
+        if (path.startsWith("/storage/emulated/0") || path.startsWith("/sdcard")) {
+            val relativePath = path.removePrefix("/storage/emulated/0").removePrefix("/sdcard").removePrefix("/")
+            val docId = if (relativePath.isEmpty()) "primary:" else "primary:$relativePath"
+            val docUri = DocumentsContract.buildDocumentUri("com.android.externalstorage.documents", docId)
+            val treeUri = DocumentsContract.buildTreeDocumentUri("com.android.externalstorage.documents", docId)
+
+            intentsToTry.add(Intent("android.provider.action.BROWSE").apply {
+                setData(docUri)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+            })
+            intentsToTry.add(Intent("android.provider.action.BROWSE").apply {
+                setData(treeUri)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+            })
+            intentsToTry.add(Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(docUri, DocumentsContract.Document.MIME_TYPE_DIR)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+            })
+            intentsToTry.add(Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(treeUri, DocumentsContract.Document.MIME_TYPE_DIR)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+            })
+            intentsToTry.add(Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(docUri, "resource/folder")
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+            })
+            intentsToTry.add(Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(docUri, "*/*")
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+            })
+        }
+
+        val fileUri = Uri.parse("file://$path")
+        intentsToTry.add(Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(fileUri, "resource/folder")
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        })
+        intentsToTry.add(Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(fileUri, "vnd.android.document/directory")
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        })
+        intentsToTry.add(Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(fileUri, "*/*")
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        })
+    }
+
+    val knownFileManagerPackages = listOf(
+        "com.sec.android.app.myfiles",
+        "com.google.android.apps.nfiles",
+        "com.google.android.documentsui",
+        "com.android.documentsui",
+        "com.mi.android.globalFileexplorer",
+        "com.coloros.filemanager",
+        "com.motorola.filemanager"
+    )
+
+    for (pkg in knownFileManagerPackages) {
+        val launchIntent = context.packageManager.getLaunchIntentForPackage(pkg)
+        if (launchIntent != null) {
+            launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            intentsToTry.add(launchIntent)
+        }
+    }
+
+    var success = false
+    for (intent in intentsToTry) {
+        try {
+            context.startActivity(intent)
+            success = true
+            break
+        } catch (e: Exception) {
+            // Try next intent
+        }
+    }
+
+    if (!success) {
+        ErrorLogger.log("No se pudo abrir la carpeta $path")
+        Toast.makeText(context, "No se encontró una app para abrir la carpeta", Toast.LENGTH_SHORT).show()
+    }
+}
+

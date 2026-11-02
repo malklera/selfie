@@ -38,7 +38,7 @@ The .apk file is at
 
 - [x] add a section to control rotatio of the app, portrait, landscape, auto, can this ignore whatever the device auto rotate toggle is at?
 
-- [ ] Put a button that says "Abrir" that will open the selected folder in "Destino", put it besides the "Seleccionar Carpeta" button
+- [x] Put a button that says "Abrir" that will open the default file manager in the selected folder in "Destino", put it besides the "Seleccionar Carpeta" button
 
 - [ ] make each item in "Diagnostico de image" copy in tap, the same as in "acerca de"
 
