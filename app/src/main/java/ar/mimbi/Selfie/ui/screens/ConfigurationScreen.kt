@@ -427,45 +427,51 @@ fun ConfigurationScreen(
                     }
 
                     // Cuenta regresiva
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = "Cuenta regresiva",
-                            style = MaterialTheme.typography.titleLarge,
-                            modifier = Modifier.weight(1f)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        OutlinedTextField(
-                            value = countdownSeconds,
-                            onValueChange = {
-                                if (it.all { char -> char.isDigit() }) countdownSeconds =
-                                    it
-                            },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            singleLine = true,
-                            textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Center),
-                            modifier = Modifier
-                                .width(80.dp)
-                                .bringIntoViewRequester(countdownFocusRequester)
-                                .onFocusChanged { focusState ->
-                                    countdownFocused = focusState.isFocused
-                                    if (focusState.isFocused) {
-                                        coroutineScope.launch {
-                                            countdownFocusRequester.bringIntoView()
-                                        }
-                                        if (countdownSeconds == "0") {
-                                            countdownSeconds = ""
+                    Column {
+                        HorizontalDivider()
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "Cuenta regresiva",
+                                style = MaterialTheme.typography.titleLarge,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            OutlinedTextField(
+                                value = countdownSeconds,
+                                onValueChange = {
+                                    if (it.all { char -> char.isDigit() }) countdownSeconds =
+                                        it
+                                },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                singleLine = true,
+                                textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Center),
+                                modifier = Modifier
+                                    .width(80.dp)
+                                    .bringIntoViewRequester(countdownFocusRequester)
+                                    .onFocusChanged { focusState ->
+                                        countdownFocused = focusState.isFocused
+                                        if (focusState.isFocused) {
+                                            coroutineScope.launch {
+                                                countdownFocusRequester.bringIntoView()
+                                            }
+                                            if (countdownSeconds == "0") {
+                                                countdownSeconds = ""
+                                            }
                                         }
                                     }
-                                }
-                        )
+                            )
+                        }
                     }
 
                     // Destino
                     Column {
+                        HorizontalDivider()
+                        Spacer(modifier = Modifier.height(16.dp))
                         Text("Destino", style = MaterialTheme.typography.titleLarge)
                         Spacer(modifier = Modifier.height(8.dp))
                         Text("Ruta: ${formatPathForDisplay(context, destinationPath)}")
@@ -491,6 +497,8 @@ fun ConfigurationScreen(
 
                     // Tamaño de la imagen
                     Column {
+                        HorizontalDivider()
+                        Spacer(modifier = Modifier.height(16.dp))
                         Text("Tamaño de la imagen", style = MaterialTheme.typography.titleLarge)
                         Spacer(modifier = Modifier.height(8.dp))
 
@@ -691,6 +699,8 @@ fun ConfigurationScreen(
 
                     // Orientación de la aplicación
                     Column {
+                        HorizontalDivider()
+                        Spacer(modifier = Modifier.height(16.dp))
                         Text("Orientación de la aplicación", style = MaterialTheme.typography.titleLarge)
                         Spacer(modifier = Modifier.height(8.dp))
 
