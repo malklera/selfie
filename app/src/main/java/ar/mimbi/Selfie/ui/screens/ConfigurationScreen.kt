@@ -292,12 +292,6 @@ fun ConfigurationScreen(
                         Text("Portada", style = MaterialTheme.typography.titleLarge)
                         Spacer(modifier = Modifier.height(8.dp))
                         portadaPath?.let { path ->
-                            Text(
-                                "Ruta: ${formatPathForDisplay(context, path)}",
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-
                             SubcomposeAsyncImage(
                                 model = path,
                                 contentDescription = "Vista previa de portada",
@@ -330,6 +324,12 @@ fun ConfigurationScreen(
                                     Spacer(modifier = Modifier.height(8.dp))
                                 }
                             }
+
+                            Text(
+                                "Ruta: ${formatPathForDisplay(context, path)}",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
                         } ?: Text("Ninguna imagen seleccionada")
 
                         Button(onClick = {
@@ -345,12 +345,6 @@ fun ConfigurationScreen(
                         Text("Cuadro de captura", style = MaterialTheme.typography.titleLarge)
                         Spacer(modifier = Modifier.height(8.dp))
                         captureBoxPath?.let { path ->
-                            Text(
-                                "Ruta: ${formatPathForDisplay(context, path)}",
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-
                             SubcomposeAsyncImage(
                                 model = path,
                                 contentDescription = "Vista previa de cuadro de captura",
@@ -383,6 +377,12 @@ fun ConfigurationScreen(
                                     Spacer(modifier = Modifier.height(8.dp))
                                 }
                             }
+
+                            Text(
+                                "Ruta: ${formatPathForDisplay(context, path)}",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
                         } ?: Text("Ninguna imagen seleccionada")
 
                         Button(onClick = {
