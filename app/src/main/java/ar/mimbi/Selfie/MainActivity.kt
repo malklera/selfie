@@ -37,7 +37,6 @@ import ar.mimbi.Selfie.data.UserActionTracker
 import ar.mimbi.Selfie.ui.screens.CaptureScreen
 import ar.mimbi.Selfie.ui.screens.ConfigurationScreen
 import ar.mimbi.Selfie.ui.screens.ErrorHistoryScreen
-import ar.mimbi.Selfie.ui.screens.MainScreen
 import ar.mimbi.Selfie.ui.screens.SplashScreen
 import ar.mimbi.Selfie.ui.theme.SelfieTheme
 import kotlinx.coroutines.launch
@@ -160,9 +159,8 @@ fun SelfieApp(configDataStore: ConfigDataStore) {
                     modifier = Modifier.fillMaxSize()
                 ) {
                     composable("main") {
-                        MainScreen(
+                        CaptureScreen(
                             config = config,
-                            onNavigateToCapture = { navController.navigate("capture") },
                             onNavigateToConfig = { navController.navigate("config") },
                             onImageReady = { isMainContentReady = true }
                         )
@@ -179,17 +177,6 @@ fun SelfieApp(configDataStore: ConfigDataStore) {
                             onNavigateToErrorHistory = { navController.navigate("error_history") }
                         )
                     }
-                    composable("capture") {
-                        CaptureScreen(
-                            config = config,
-                            onNavigateToMain = {
-                                navController.navigate("main") {
-                                    popUpTo("main") { inclusive = true }
-                                }
-                            },
-                            onNavigateToConfig = { navController.navigate("config") }
-                        )
-                    }
                     composable("error_history") {
                         ErrorHistoryScreen(
                             onBack = { navController.popBackStack() }
@@ -203,9 +190,8 @@ fun SelfieApp(configDataStore: ConfigDataStore) {
     // Trigger image load in background if not already started
     if (config != null && !isMainContentReady) {
         Box(modifier = Modifier.fillMaxSize().alpha(0f)) {
-            MainScreen(
+            CaptureScreen(
                 config = config,
-                onNavigateToCapture = {},
                 onNavigateToConfig = {},
                 onImageReady = { isMainContentReady = true }
             )

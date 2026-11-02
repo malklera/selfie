@@ -21,6 +21,7 @@ import androidx.camera.view.PreviewView
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -54,6 +55,9 @@ import ar.mimbi.Selfie.data.ImageGeometryHelper
 import ar.mimbi.Selfie.data.OutputRegion
 import ar.mimbi.Selfie.data.UserActionTracker
 import ar.mimbi.Selfie.ui.components.SecretSettingsButton
+import coil.compose.AsyncImagePainter
+import coil.compose.SubcomposeAsyncImage
+import coil.compose.SubcomposeAsyncImageContent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -64,19 +68,25 @@ import java.util.*
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
+enum class KioskState {
+    WELCOME,
+    COUNTDOWN,
+    CAPTURED
+}
+
 @Composable
 fun CaptureScreen(
     config: AppConfig,
-    onNavigateToMain: () -> Unit,
-    onNavigateToConfig: () -> Unit
+    onNavigateToConfig: () -> Unit,
+    onImageReady: () -> Unit = {}
 ) {
     Log.d("CaptureScreen", "CaptureScreen composed")
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val scope = rememberCoroutineScope()
 
+    var kioskState by rememberSaveable { mutableStateOf(KioskState.WELCOME) }
     var countdown by rememberSaveable { mutableStateOf(config.countdownSeconds) }
-    var isCaptured by rememberSaveable { mutableStateOf(false) }
     var capturedUriString by rememberSaveable { mutableStateOf<String?>(null) }
     var capturedBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var captureBoxBitmap by remember { mutableStateOf<Bitmap?>(null) }
@@ -91,7 +101,7 @@ fun CaptureScreen(
 
     var realSensorSize by remember { mutableStateOf<Size?>(null) }
 
-    // 1. Pre-check folder access
+    // Pre-check folder access
     LaunchedEffect(config.destinationPath) {
         val result = checkDestinationWritable(context, config.destinationPath)
         if (result == null) {
@@ -122,7 +132,7 @@ fun CaptureScreen(
         }
     }
 
-    // Load capture box bitmap
+    // Pre-load capture box bitmap into memory
     LaunchedEffect(config.captureBoxPath) {
         config.captureBoxPath?.let { path ->
             val bitmap = withContext(Dispatchers.IO) {
@@ -136,6 +146,8 @@ fun CaptureScreen(
                 }
             }
             captureBoxBitmap = bitmap
+        } ?: run {
+            captureBoxBitmap = null
         }
     }
 
@@ -174,7 +186,7 @@ fun CaptureScreen(
 
     var isPreviewReady by remember { mutableStateOf(false) }
 
-    // Observer for camera stream state to ensure preview is visible
+    // Observer for camera stream state
     DisposableEffect(previewView) {
         val observer = androidx.lifecycle.Observer<PreviewView.StreamState> { state ->
             if (state == PreviewView.StreamState.STREAMING) {
@@ -187,7 +199,8 @@ fun CaptureScreen(
         }
     }
 
-    LaunchedEffect(selectedResolution) {
+    // Bind CameraX Use Cases (runs upon composition, streams in background behind Welcome screen)
+    LaunchedEffect(selectedResolution, lifecycleOwner) {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
         cameraProviderFuture.addListener({
             val cameraProvider = cameraProviderFuture.get()
@@ -229,6 +242,20 @@ fun CaptureScreen(
         }, ContextCompat.getMainExecutor(context))
     }
 
+    // Unbind camera & release executor when this screen is disposed (e.g. entering ConfigurationScreen)
+    DisposableEffect(Unit) {
+        onDispose {
+            Log.d("CaptureScreen", "CaptureScreen disposed: Unbinding camera and shutting down executor")
+            try {
+                val cameraProvider = ProcessCameraProvider.getInstance(context).get()
+                cameraProvider.unbindAll()
+            } catch (e: Exception) {
+                Log.e("CaptureScreen", "Error unbinding camera on dispose", e)
+            }
+            cameraExecutor.shutdown()
+        }
+    }
+
     BoxWithConstraints(modifier = Modifier.fillMaxSize().background(Color.Black)) {
         val density = LocalDensity.current
         val containerWidthPx = with(density) { maxWidth.toPx() }
@@ -259,20 +286,18 @@ fun CaptureScreen(
         val fittedWidthDp = with(density) { fittedSize.width.toDp() }
         val fittedHeightDp = with(density) { fittedSize.height.toDp() }
 
-        LaunchedEffect(isCaptured, isPreviewReady, captureAttempt, isFolderCheckPassed) {
-            if (!isCaptured && isPreviewReady && isFolderCheckPassed) {
-                // Wait a bit if this is a retry
+        // Trigger countdown and photo capture when state changes to COUNTDOWN
+        LaunchedEffect(kioskState, captureAttempt, isFolderCheckPassed) {
+            if (kioskState == KioskState.COUNTDOWN && isFolderCheckPassed) {
                 if (captureAttempt > 0) delay(2000)
 
-                // Reset countdown when starting a new capture session
                 countdown = config.countdownSeconds
                 while (countdown > 0) {
                     delay(1000)
                     countdown--
                 }
 
-                // Small buffer to ensure UI is settled
-                delay(200)
+                delay(100)
 
                 takePhoto(
                     context = context,
@@ -286,7 +311,7 @@ fun CaptureScreen(
                         ContextCompat.getMainExecutor(context).execute {
                             capturedUriString = uri.toString()
                             capturedBitmap = bitmap
-                            isCaptured = true
+                            kioskState = KioskState.CAPTURED
 
                             if (outputRegion.totalPixels > 0 && savedSizeBytes > 0) {
                                 val newBpp = savedSizeBytes.toDouble() / outputRegion.totalPixels.toDouble()
@@ -315,139 +340,192 @@ fun CaptureScreen(
             }
         }
 
-        if (!isCaptured) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
+        when (kioskState) {
+            KioskState.WELCOME, KioskState.COUNTDOWN -> {
                 Box(
-                    modifier = Modifier
-                        .size(fittedWidthDp, fittedHeightDp)
-                        .clipToBounds()
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
                 ) {
-                    AndroidView(factory = { previewView }, modifier = Modifier.fillMaxSize())
-
-                    captureBoxBitmap?.let {
-                        val contentScale = if (config.decorationFit == DecorationFit.COVER) {
-                            ContentScale.Crop
-                        } else {
-                            ContentScale.FillBounds
-                        }
-                        Image(
-                            bitmap = it.asImageBitmap(),
-                            contentDescription = null,
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = contentScale
-                        )
-                    }
-                }
-
-                if (isPreviewReady) {
+                    // Camera feed (active & streaming in background) + capture box overlay
                     Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = countdown.toString(),
-                            color = Color.White.copy(alpha = 0.9f),
-                            fontSize = 120.sp
-                        )
-                    }
-                }
-            }
-        } else {
-            Box(
-                modifier = Modifier.fillMaxSize()
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(top = 48.dp, bottom = 48.dp, start = 24.dp, end = 24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = "¡TU FOTO ESTÁ LISTA!",
-                        color = Color.Yellow,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.SansSerif,
-                        fontSize = 26.sp,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    Spacer(modifier = Modifier.height(32.dp))
-
-                    BoxWithConstraints(
                         modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth(),
-                        contentAlignment = Alignment.Center
+                            .size(fittedWidthDp, fittedHeightDp)
+                            .clipToBounds()
                     ) {
-                        capturedBitmap?.let { bitmap ->
-                            val imageRatio = bitmap.width.toFloat() / bitmap.height.toFloat()
-                            val containerRatio = maxWidth.value / maxHeight.value
+                        AndroidView(factory = { previewView }, modifier = Modifier.fillMaxSize())
 
-                            val (displayWidth, displayHeight) = if (imageRatio > containerRatio) {
-                                maxWidth to (maxWidth.value / imageRatio).dp
-                            } else {
-                                (maxHeight.value * imageRatio).dp to maxHeight
-                            }
-
-                            Box(
-                                modifier = Modifier
-                                    .size(displayWidth, displayHeight)
-                                    .clip(RoundedCornerShape(32.dp))
-                            ) {
+                        if (kioskState == KioskState.COUNTDOWN) {
+                            captureBoxBitmap?.let {
+                                val contentScale = if (config.decorationFit == DecorationFit.COVER) {
+                                    ContentScale.Crop
+                                } else {
+                                    ContentScale.FillBounds
+                                }
                                 Image(
-                                    bitmap = bitmap.asImageBitmap(),
+                                    bitmap = it.asImageBitmap(),
                                     contentDescription = null,
                                     modifier = Modifier.fillMaxSize(),
-                                    contentScale = ContentScale.Fit
+                                    contentScale = contentScale
                                 )
                             }
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(32.dp))
+                    // Welcome Overlay (Portada image or default message covering camera preview)
+                    if (kioskState == KioskState.WELCOME) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color.Black)
+                                .clickable {
+                                    UserActionTracker.trackAction("Tocar para capturar")
+                                    kioskState = KioskState.COUNTDOWN
+                                }
+                        ) {
+                            if (config.portadaPath != null) {
+                                SubcomposeAsyncImage(
+                                    model = config.portadaPath,
+                                    contentDescription = null,
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.FillBounds
+                                ) {
+                                    val state = painter.state
+                                    LaunchedEffect(state) {
+                                        if (state is AsyncImagePainter.State.Success || state is AsyncImagePainter.State.Error) {
+                                            onImageReady()
+                                        }
+                                    }
+                                    if (state is AsyncImagePainter.State.Error || state is AsyncImagePainter.State.Empty) {
+                                        KioskDefaultMessage()
+                                    } else {
+                                        SubcomposeAsyncImageContent()
+                                    }
+                                }
+                            } else {
+                                KioskDefaultMessage()
+                                LaunchedEffect(Unit) {
+                                    onImageReady()
+                                }
+                            }
+                        }
+                    }
 
-                    Button(
-                        onClick = {
-                            UserActionTracker.trackAction("OTRA FOTO")
-                            onNavigateToMain()
-                        },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.Transparent,
-                            contentColor = Color.White
-                        ),
-                        border = BorderStroke(1.5.dp, Color.Gray),
-                        shape = RoundedCornerShape(24.dp)
-                    ) {
-                        Text(
-                            text = "📸 OTRA FOTO",
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp
-                        )
+                    // Countdown Overlay
+                    if (kioskState == KioskState.COUNTDOWN) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = countdown.toString(),
+                                color = Color.White.copy(alpha = 0.9f),
+                                fontSize = 120.sp
+                            )
+                        }
                     }
                 }
+            }
+            KioskState.CAPTURED -> {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(top = 48.dp, bottom = 48.dp, start = 24.dp, end = 24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = "¡TU FOTO ESTÁ LISTA!",
+                            color = Color.Yellow,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.SansSerif,
+                            fontSize = 26.sp,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
 
-                SecretSettingsButton(
-                    onNavigateToConfig = onNavigateToConfig,
-                    modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .padding(16.dp)
-                        .size(58.dp)
-                )
+                        Spacer(modifier = Modifier.height(32.dp))
+
+                        BoxWithConstraints(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxWidth(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            capturedBitmap?.let { bitmap ->
+                                val imageRatio = bitmap.width.toFloat() / bitmap.height.toFloat()
+                                val containerRatio = maxWidth.value / maxHeight.value
+
+                                val (displayWidth, displayHeight) = if (imageRatio > containerRatio) {
+                                    maxWidth to (maxWidth.value / imageRatio).dp
+                                } else {
+                                    (maxHeight.value * imageRatio).dp to maxHeight
+                                }
+
+                                Box(
+                                    modifier = Modifier
+                                        .size(displayWidth, displayHeight)
+                                        .clip(RoundedCornerShape(32.dp))
+                                ) {
+                                    Image(
+                                        bitmap = bitmap.asImageBitmap(),
+                                        contentDescription = null,
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentScale = ContentScale.Fit
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(32.dp))
+
+                        Button(
+                            onClick = {
+                                UserActionTracker.trackAction("OTRA FOTO")
+                                capturedBitmap = null
+                                capturedUriString = null
+                                kioskState = KioskState.WELCOME
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color.Transparent,
+                                contentColor = Color.White
+                            ),
+                            border = BorderStroke(1.5.dp, Color.Gray),
+                            shape = RoundedCornerShape(24.dp)
+                        ) {
+                            Text(
+                                text = "📸 OTRA FOTO",
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 18.sp
+                            )
+                        }
+                    }
+                }
             }
         }
-    }
 
-    DisposableEffect(Unit) {
-        onDispose {
-            Log.d("CaptureScreen", "CaptureScreen disposed")
-            cameraExecutor.shutdown()
+        // Settings button on top (available on Welcome and Captured screens)
+        if (kioskState == KioskState.WELCOME || kioskState == KioskState.CAPTURED) {
+            SecretSettingsButton(
+                onNavigateToConfig = onNavigateToConfig,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(16.dp)
+                    .size(58.dp)
+            )
         }
+    }
+}
+
+@Composable
+private fun KioskDefaultMessage() {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Text(
+            text = "Toca aqui para foto",
+            color = Color.White,
+            fontSize = 32.sp
+        )
     }
 }
 
