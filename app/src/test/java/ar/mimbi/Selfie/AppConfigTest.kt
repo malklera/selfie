@@ -23,8 +23,6 @@ class AppConfigTest {
         assertEquals(FixedAspect.R9_16, config.fixedAspect)
         assertEquals(DecorationFit.STRETCH, config.decorationFit)
         assertEquals(AppOrientation.AUTO, config.appOrientation)
-        assertEquals(0.35, config.lastSavedBytesPerPixel, 0.0001)
-        assertEquals(0, config.savedSampleCount)
     }
 
     @Test

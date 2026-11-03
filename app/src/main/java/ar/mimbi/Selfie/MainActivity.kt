@@ -8,7 +8,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.Crossfade
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
@@ -148,53 +150,46 @@ fun SelfieApp(configDataStore: ConfigDataStore) {
     // State to track if the main screen content (image) is ready
     var isMainContentReady by remember { mutableStateOf(false) }
 
-    Crossfade(targetState = config == null || !isMainContentReady, label = "splashTransition") { showSplash ->
-        if (showSplash) {
-            SplashScreen()
-        } else {
-            if (config != null) {
-                NavHost(
-                    navController = navController,
-                    startDestination = "main",
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    composable("main") {
-                        CaptureScreen(
-                            config = config,
-                            onNavigateToConfig = { navController.navigate("config") },
-                            onImageReady = { isMainContentReady = true }
-                        )
-                    }
-                    composable("config") {
-                        ConfigurationScreen(
-                            initialConfig = config,
-                            onSave = { newConfig ->
-                                scope.launch {
-                                    configDataStore.saveConfig(newConfig)
-                                }
-                            },
-                            onClose = { navController.popBackStack() },
-                            onNavigateToErrorHistory = { navController.navigate("error_history") }
-                        )
-                    }
-                    composable("error_history") {
-                        ErrorHistoryScreen(
-                            onBack = { navController.popBackStack() }
-                        )
-                    }
+    Box(modifier = Modifier.fillMaxSize()) {
+        if (config != null) {
+            NavHost(
+                navController = navController,
+                startDestination = "main",
+                modifier = Modifier.fillMaxSize()
+            ) {
+                composable("main") {
+                    CaptureScreen(
+                        config = config,
+                        onNavigateToConfig = { navController.navigate("config") },
+                        onImageReady = { isMainContentReady = true }
+                    )
+                }
+                composable("config") {
+                    ConfigurationScreen(
+                        initialConfig = config,
+                        onSave = { newConfig ->
+                            scope.launch {
+                                configDataStore.saveConfig(newConfig)
+                            }
+                        },
+                        onClose = { navController.popBackStack() },
+                        onNavigateToErrorHistory = { navController.navigate("error_history") }
+                    )
+                }
+                composable("error_history") {
+                    ErrorHistoryScreen(
+                        onBack = { navController.popBackStack() }
+                    )
                 }
             }
         }
-    }
 
-    // Trigger image load in background if not already started
-    if (config != null && !isMainContentReady) {
-        Box(modifier = Modifier.fillMaxSize().alpha(0f)) {
-            CaptureScreen(
-                config = config,
-                onNavigateToConfig = {},
-                onImageReady = { isMainContentReady = true }
-            )
+        AnimatedVisibility(
+            visible = config == null || !isMainContentReady,
+            enter = fadeIn(),
+            exit = fadeOut()
+        ) {
+            SplashScreen()
         }
     }
 }

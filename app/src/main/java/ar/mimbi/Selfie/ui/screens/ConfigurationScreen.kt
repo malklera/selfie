@@ -244,9 +244,7 @@ fun ConfigurationScreen(
                                         previewFit = previewFit,
                                         fixedAspect = fixedAspect,
                                         decorationFit = decorationFit,
-                                        appOrientation = appOrientation,
-                                        lastSavedBytesPerPixel = initialConfig.lastSavedBytesPerPixel,
-                                        savedSampleCount = initialConfig.savedSampleCount
+                                        appOrientation = appOrientation
                                     )
                                 )
                                 Toast.makeText(context, "Configuración guardada", Toast.LENGTH_SHORT).show()
@@ -789,7 +787,7 @@ fun ConfigurationScreen(
                         val outputH = outRegion.height
                         val outputAspectFormatted = ImageGeometryHelper.formatAspectRatio(outputW, outputH)
 
-                        val estimatedMb = CameraResolutionHelper.estimateFileSize(outRegion.totalPixels, initialConfig.lastSavedBytesPerPixel)
+                        val estimatedMb = CameraResolutionHelper.estimateFileSize(outRegion.totalPixels)
                         val estimatedMbFormatted = String.format(Locale.US, "%.1f", estimatedMb)
 
                         val pantallaText = "Pantalla: ${screenW}x${screenH} ($screenAspectFormatted)"
@@ -921,9 +919,7 @@ fun ConfigurationScreen(
                             previewFit = previewFit,
                             fixedAspect = fixedAspect,
                             decorationFit = decorationFit,
-                            appOrientation = appOrientation,
-                            lastSavedBytesPerPixel = initialConfig.lastSavedBytesPerPixel,
-                            savedSampleCount = initialConfig.savedSampleCount
+                            appOrientation = appOrientation
                         )
                     )
                     Toast.makeText(context, "Configuración guardada", Toast.LENGTH_SHORT).show()

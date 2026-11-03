@@ -34,7 +34,7 @@ The .apk file is at
 
 - [ ] Allow to mark pictures to be printed, then inside config select all and print them with android print framework
 
-- [ ] There is a time difference when the preview of the camera and the "recuadro" on top are show, there should not be.
+- [x] There is a time difference when the preview of the camera and the "recuadro" on top are show, there should not be.
 
 - [x] add a section to control rotatio of the app, portrait, landscape, auto, can this ignore whatever the device auto rotate toggle is at?
 

@@ -14,9 +14,7 @@ data class AppConfig(
     val previewFit: PreviewFit = PreviewFit.FIT,
     val fixedAspect: FixedAspect = FixedAspect.R9_16,
     val decorationFit: DecorationFit = DecorationFit.STRETCH,
-    val appOrientation: AppOrientation = AppOrientation.AUTO,
-    val lastSavedBytesPerPixel: Double = 0.35,
-    val savedSampleCount: Int = 0
+    val appOrientation: AppOrientation = AppOrientation.AUTO
 ) {
     @Deprecated("Use inputResolution instead", ReplaceWith("inputResolution"))
     val pictureResolution: String?

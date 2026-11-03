@@ -3,7 +3,6 @@ package ar.mimbi.Selfie.data
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -24,8 +23,6 @@ class ConfigDataStore(private val context: Context) {
         val FIXED_ASPECT = stringPreferencesKey("fixed_aspect")
         val DECORATION_FIT = stringPreferencesKey("decoration_fit")
         val APP_ORIENTATION = stringPreferencesKey("app_orientation")
-        val LAST_SAVED_BYTES_PER_PIXEL = doublePreferencesKey("last_saved_bytes_per_pixel")
-        val SAVED_SAMPLE_COUNT = intPreferencesKey("saved_sample_count")
     }
 
     val appConfigFlow: Flow<AppConfig> = context.dataStore.data
@@ -59,9 +56,7 @@ class ConfigDataStore(private val context: Context) {
                 previewFit = previewFit,
                 fixedAspect = fixedAspect,
                 decorationFit = decorationFit,
-                appOrientation = appOrientation,
-                lastSavedBytesPerPixel = preferences[LAST_SAVED_BYTES_PER_PIXEL] ?: 0.35,
-                savedSampleCount = preferences[SAVED_SAMPLE_COUNT] ?: 0
+                appOrientation = appOrientation
             )
         }
 
@@ -88,8 +83,6 @@ class ConfigDataStore(private val context: Context) {
             preferences[FIXED_ASPECT] = config.fixedAspect.name
             preferences[DECORATION_FIT] = config.decorationFit.name
             preferences[APP_ORIENTATION] = config.appOrientation.name
-            preferences[LAST_SAVED_BYTES_PER_PIXEL] = config.lastSavedBytesPerPixel
-            preferences[SAVED_SAMPLE_COUNT] = config.savedSampleCount
         }
     }
 }

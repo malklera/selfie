@@ -48,7 +48,6 @@ import androidx.documentfile.provider.DocumentFile
 import androidx.exifinterface.media.ExifInterface
 import ar.mimbi.Selfie.data.AppConfig
 import ar.mimbi.Selfie.data.CameraResolutionHelper
-import ar.mimbi.Selfie.data.ConfigDataStore
 import ar.mimbi.Selfie.data.DecorationFit
 import ar.mimbi.Selfie.data.ErrorLogger
 import ar.mimbi.Selfie.data.ImageGeometryHelper
@@ -80,12 +79,12 @@ fun CaptureScreen(
     onNavigateToConfig: () -> Unit,
     onImageReady: () -> Unit = {}
 ) {
-    Log.d("CaptureScreen", "CaptureScreen composed")
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val scope = rememberCoroutineScope()
 
     var kioskState by rememberSaveable { mutableStateOf(KioskState.WELCOME) }
+    Log.d("CaptureScreen", "CaptureScreen composed (kioskState = $kioskState)")
     var countdown by rememberSaveable { mutableStateOf(config.countdownSeconds) }
     var capturedUriString by rememberSaveable { mutableStateOf<String?>(null) }
     var capturedBitmap by remember { mutableStateOf<Bitmap?>(null) }
@@ -297,8 +296,6 @@ fun CaptureScreen(
                     countdown--
                 }
 
-                delay(100)
-
                 takePhoto(
                     context = context,
                     imageCapture = imageCapture,
@@ -307,25 +304,16 @@ fun CaptureScreen(
                     outputRegion = outputRegion,
                     decorationFit = config.decorationFit,
                     executor = cameraExecutor,
-                    onCaptured = { uri, bitmap, savedSizeBytes ->
+                    scope = scope,
+                    onPhotoProcessed = { bitmap ->
                         ContextCompat.getMainExecutor(context).execute {
-                            capturedUriString = uri.toString()
                             capturedBitmap = bitmap
                             kioskState = KioskState.CAPTURED
-
-                            if (outputRegion.totalPixels > 0 && savedSizeBytes > 0) {
-                                val newBpp = savedSizeBytes.toDouble() / outputRegion.totalPixels.toDouble()
-                                val currentCount = config.savedSampleCount
-                                val updatedCount = currentCount + 1
-                                val updatedBpp = (config.lastSavedBytesPerPixel * currentCount + newBpp) / updatedCount
-                                val updatedConfig = config.copy(
-                                    lastSavedBytesPerPixel = updatedBpp,
-                                    savedSampleCount = updatedCount
-                                )
-                                scope.launch(Dispatchers.IO) {
-                                    ConfigDataStore(context).saveConfig(updatedConfig)
-                                }
-                            }
+                        }
+                    },
+                    onPhotoSaved = { uri ->
+                        if (capturedUriString != uri.toString()) {
+                            capturedUriString = uri.toString()
                         }
                     },
                     onError = { error ->
@@ -340,166 +328,169 @@ fun CaptureScreen(
             }
         }
 
-        when (kioskState) {
-            KioskState.WELCOME, KioskState.COUNTDOWN -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    // Camera feed (active & streaming in background) + capture box overlay
-                    Box(
-                        modifier = Modifier
-                            .size(fittedWidthDp, fittedHeightDp)
-                            .clipToBounds()
-                    ) {
-                        AndroidView(factory = { previewView }, modifier = Modifier.fillMaxSize())
+        // LAYER 1: Permanent Camera Preview Feed & Capture Box Overlay
+        // AndroidView(previewView) is ALWAYS present in composition so SurfaceView is NEVER destroyed.
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(fittedWidthDp, fittedHeightDp)
+                    .clipToBounds()
+            ) {
+                AndroidView(factory = { previewView }, modifier = Modifier.fillMaxSize())
 
-                        if (kioskState == KioskState.COUNTDOWN) {
-                            captureBoxBitmap?.let {
-                                val contentScale = if (config.decorationFit == DecorationFit.COVER) {
-                                    ContentScale.Crop
-                                } else {
-                                    ContentScale.FillBounds
-                                }
+                if (kioskState == KioskState.COUNTDOWN) {
+                    captureBoxBitmap?.let {
+                        val contentScale = if (config.decorationFit == DecorationFit.COVER) {
+                            ContentScale.Crop
+                        } else {
+                            ContentScale.FillBounds
+                        }
+                        Image(
+                            bitmap = it.asImageBitmap(),
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = contentScale
+                        )
+                    }
+                }
+            }
+        }
+
+        // LAYER 2: Welcome Overlay (Portada image or default message covering camera preview)
+        if (kioskState == KioskState.WELCOME) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black)
+                    .clickable {
+                        UserActionTracker.trackAction("Tocar para capturar")
+                        kioskState = KioskState.COUNTDOWN
+                    }
+            ) {
+                if (config.portadaPath != null) {
+                    SubcomposeAsyncImage(
+                        model = config.portadaPath,
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.FillBounds
+                    ) {
+                        val state = painter.state
+                        LaunchedEffect(state) {
+                            if (state is AsyncImagePainter.State.Success || state is AsyncImagePainter.State.Error) {
+                                onImageReady()
+                            }
+                        }
+                        if (state is AsyncImagePainter.State.Error || state is AsyncImagePainter.State.Empty) {
+                            KioskDefaultMessage()
+                        } else {
+                            SubcomposeAsyncImageContent()
+                        }
+                    }
+                } else {
+                    KioskDefaultMessage()
+                    LaunchedEffect(Unit) {
+                        onImageReady()
+                    }
+                }
+            }
+        }
+
+        // LAYER 3: Countdown Text Overlay
+        if (kioskState == KioskState.COUNTDOWN) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = countdown.toString(),
+                    color = Color.White.copy(alpha = 0.9f),
+                    fontSize = 120.sp
+                )
+            }
+        }
+
+        // LAYER 4: Captured Result Overlay
+        if (kioskState == KioskState.CAPTURED) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(top = 48.dp, bottom = 48.dp, start = 24.dp, end = 24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = "¡TU FOTO ESTÁ LISTA!",
+                        color = Color.Yellow,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.SansSerif,
+                        fontSize = 26.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    BoxWithConstraints(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        capturedBitmap?.let { bitmap ->
+                            val imageRatio = bitmap.width.toFloat() / bitmap.height.toFloat()
+                            val containerRatio = maxWidth.value / maxHeight.value
+
+                            val (displayWidth, displayHeight) = if (imageRatio > containerRatio) {
+                                maxWidth to (maxWidth.value / imageRatio).dp
+                            } else {
+                                (maxHeight.value * imageRatio).dp to maxHeight
+                            }
+
+                            Box(
+                                modifier = Modifier
+                                    .size(displayWidth, displayHeight)
+                                    .clip(RoundedCornerShape(32.dp))
+                            ) {
                                 Image(
-                                    bitmap = it.asImageBitmap(),
+                                    bitmap = bitmap.asImageBitmap(),
                                     contentDescription = null,
                                     modifier = Modifier.fillMaxSize(),
-                                    contentScale = contentScale
+                                    contentScale = ContentScale.Fit
                                 )
                             }
                         }
                     }
 
-                    // Welcome Overlay (Portada image or default message covering camera preview)
-                    if (kioskState == KioskState.WELCOME) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(Color.Black)
-                                .clickable {
-                                    UserActionTracker.trackAction("Tocar para capturar")
-                                    kioskState = KioskState.COUNTDOWN
-                                }
-                        ) {
-                            if (config.portadaPath != null) {
-                                SubcomposeAsyncImage(
-                                    model = config.portadaPath,
-                                    contentDescription = null,
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentScale = ContentScale.FillBounds
-                                ) {
-                                    val state = painter.state
-                                    LaunchedEffect(state) {
-                                        if (state is AsyncImagePainter.State.Success || state is AsyncImagePainter.State.Error) {
-                                            onImageReady()
-                                        }
-                                    }
-                                    if (state is AsyncImagePainter.State.Error || state is AsyncImagePainter.State.Empty) {
-                                        KioskDefaultMessage()
-                                    } else {
-                                        SubcomposeAsyncImageContent()
-                                    }
-                                }
-                            } else {
-                                KioskDefaultMessage()
-                                LaunchedEffect(Unit) {
-                                    onImageReady()
-                                }
-                            }
-                        }
-                    }
+                    Spacer(modifier = Modifier.height(32.dp))
 
-                    // Countdown Overlay
-                    if (kioskState == KioskState.COUNTDOWN) {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = countdown.toString(),
-                                color = Color.White.copy(alpha = 0.9f),
-                                fontSize = 120.sp
-                            )
-                        }
-                    }
-                }
-            }
-            KioskState.CAPTURED -> {
-                Box(modifier = Modifier.fillMaxSize()) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(top = 48.dp, bottom = 48.dp, start = 24.dp, end = 24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
+                    Button(
+                        onClick = {
+                            UserActionTracker.trackAction("OTRA FOTO")
+                            capturedBitmap = null
+                            capturedUriString = null
+                            kioskState = KioskState.WELCOME
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.Transparent,
+                            contentColor = Color.White
+                        ),
+                        border = BorderStroke(1.5.dp, Color.Gray),
+                        shape = RoundedCornerShape(24.dp)
                     ) {
                         Text(
-                            text = "¡TU FOTO ESTÁ LISTA!",
-                            color = Color.Yellow,
+                            text = "📸 OTRA FOTO",
+                            color = Color.White,
                             fontWeight = FontWeight.Bold,
-                            fontFamily = FontFamily.SansSerif,
-                            fontSize = 26.sp,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth()
+                            fontSize = 18.sp
                         )
-
-                        Spacer(modifier = Modifier.height(32.dp))
-
-                        BoxWithConstraints(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxWidth(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            capturedBitmap?.let { bitmap ->
-                                val imageRatio = bitmap.width.toFloat() / bitmap.height.toFloat()
-                                val containerRatio = maxWidth.value / maxHeight.value
-
-                                val (displayWidth, displayHeight) = if (imageRatio > containerRatio) {
-                                    maxWidth to (maxWidth.value / imageRatio).dp
-                                } else {
-                                    (maxHeight.value * imageRatio).dp to maxHeight
-                                }
-
-                                Box(
-                                    modifier = Modifier
-                                        .size(displayWidth, displayHeight)
-                                        .clip(RoundedCornerShape(32.dp))
-                                ) {
-                                    Image(
-                                        bitmap = bitmap.asImageBitmap(),
-                                        contentDescription = null,
-                                        modifier = Modifier.fillMaxSize(),
-                                        contentScale = ContentScale.Fit
-                                    )
-                                }
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(32.dp))
-
-                        Button(
-                            onClick = {
-                                UserActionTracker.trackAction("OTRA FOTO")
-                                capturedBitmap = null
-                                capturedUriString = null
-                                kioskState = KioskState.WELCOME
-                            },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color.Transparent,
-                                contentColor = Color.White
-                            ),
-                            border = BorderStroke(1.5.dp, Color.Gray),
-                            shape = RoundedCornerShape(24.dp)
-                        ) {
-                            Text(
-                                text = "📸 OTRA FOTO",
-                                color = Color.White,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 18.sp
-                            )
-                        }
                     }
                 }
             }
@@ -529,23 +520,27 @@ private fun KioskDefaultMessage() {
     }
 }
 
-private fun loadProcessAndDecorateBitmap(
+private fun loadProcessAndDecorateImageProxy(
     context: Context,
-    file: File,
+    imageProxy: ImageProxy,
     outputRegion: OutputRegion,
     decorationFit: DecorationFit,
     overlay: Bitmap? = null
 ): Bitmap? {
     try {
-        val bitmap = BitmapFactory.decodeFile(file.absolutePath) ?: return null
+        val buffer = imageProxy.planes[0].buffer
+        val bytes = ByteArray(buffer.remaining())
+        buffer.get(bytes)
 
-        val exif = ExifInterface(file.absolutePath)
+        val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size) ?: return null
+
+        val exif = ExifInterface(java.io.ByteArrayInputStream(bytes))
         val orientation = exif.getAttributeInt(
             ExifInterface.TAG_ORIENTATION,
             ExifInterface.ORIENTATION_NORMAL
         )
 
-        Log.d("CaptureScreen", "EXIF Orientation: $orientation, Raw Size: ${bitmap.width}x${bitmap.height}")
+        Log.d("CaptureScreen", "In-Memory EXIF Orientation: $orientation, Raw Size: ${bitmap.width}x${bitmap.height}")
 
         val matrix = Matrix()
         when (orientation) {
@@ -572,7 +567,7 @@ private fun loadProcessAndDecorateBitmap(
             bitmap.recycle()
         }
 
-        // Front camera mirroring around the actual oriented bitmap's center
+        // Front camera mirroring around center
         val mirrorMatrix = Matrix().apply {
             postScale(-1f, 1f, orientedBitmap.width / 2f, orientedBitmap.height / 2f)
         }
@@ -618,11 +613,11 @@ private fun loadProcessAndDecorateBitmap(
             }
         }
 
-        Log.d("CaptureScreen", "Bitmap processed & decorated. Final size: ${resultBitmap.width}x${resultBitmap.height}")
+        Log.d("CaptureScreen", "In-Memory Bitmap processed & decorated. Final size: ${resultBitmap.width}x${resultBitmap.height}")
         return resultBitmap
     } catch (e: Exception) {
-        ErrorLogger.log("Error processing captured bitmap: ${e.message}")
-        Log.e("CaptureScreen", "Error processing captured bitmap", e)
+        ErrorLogger.log("Error processing in-memory captured bitmap: ${e.message}")
+        Log.e("CaptureScreen", "Error processing in-memory captured bitmap", e)
         return null
     }
 }
@@ -635,49 +630,60 @@ private fun takePhoto(
     outputRegion: OutputRegion,
     decorationFit: DecorationFit,
     executor: ExecutorService,
-    onCaptured: (Uri, Bitmap, Long) -> Unit,
+    scope: kotlinx.coroutines.CoroutineScope,
+    onPhotoProcessed: (Bitmap) -> Unit,
+    onPhotoSaved: (Uri) -> Unit,
     onError: (String) -> Unit
 ) {
-    val tempFile = File(context.cacheDir, "temp_capture_${System.currentTimeMillis()}.jpg")
-    val outputOptions = ImageCapture.OutputFileOptions.Builder(tempFile).build()
-
-    Log.d("CaptureScreen", "Paso 1: Iniciando captura en archivo temporal")
+    Log.d("CaptureScreen", "Paso 1: Iniciando captura en memoria (RAM)")
     imageCapture.takePicture(
-        outputOptions, executor, object : ImageCapture.OnImageSavedCallback {
-            override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
+        executor,
+        object : ImageCapture.OnImageCapturedCallback() {
+            override fun onCaptureStarted() {
+                super.onCaptureStarted()
+                Log.d("CaptureScreen", "Obturador activado en el sensor de la cámara")
+            }
+
+            override fun onCaptureSuccess(image: ImageProxy) {
                 try {
-                    Log.d("CaptureScreen", "ImageCapture resolutionInfo: ${imageCapture.resolutionInfo?.resolution}")
-                    Log.d("CaptureScreen", "Paso 2: Foto capturada. Procesando, recortando y aplicando overlay...")
-                    val processedBitmap = loadProcessAndDecorateBitmap(
+                    Log.d("CaptureScreen", "Paso 2: Foto capturada en RAM. Procesando, recortando y decorando...")
+                    val processedBitmap = loadProcessAndDecorateImageProxy(
                         context = context,
-                        file = tempFile,
+                        imageProxy = image,
                         outputRegion = outputRegion,
                         decorationFit = decorationFit,
                         overlay = captureBoxBitmap
                     )
+                    image.close()
+
                     if (processedBitmap == null) {
-                        ErrorLogger.log("Paso 2: Falló el procesamiento de la imagen")
-                        onError("Paso 2: Falló el procesamiento de la imagen")
+                        ErrorLogger.log("Paso 2: Falló el procesamiento de la imagen en memoria")
+                        onError("Paso 2: Falló el procesamiento de la imagen en memoria")
                         return
                     }
 
-                    Log.d("CaptureScreen", "Paso 3: Guardando imagen en destino final...")
-                    val finalUri = saveBitmapToDestination(context, processedBitmap, destinationPath)
-                    if (finalUri != null) {
-                        val savedSizeBytes = getSavedFileSize(context, finalUri)
-                        Log.d("CaptureScreen", "Saved JPEG: ${processedBitmap.width}x${processedBitmap.height}, $savedSizeBytes bytes")
-                        Log.d("CaptureScreen", "Paso 3: Guardado completado con éxito")
-                        onCaptured(finalUri, processedBitmap, savedSizeBytes)
-                    } else {
-                        ErrorLogger.log("Paso 3: Falló la creación del archivo final")
-                        onError("Paso 3: Falló la creación del archivo final")
+                    // Tweak 1: Show result screen immediately!
+                    onPhotoProcessed(processedBitmap)
+
+                    // Save to disk asynchronously in background without blocking UI
+                    scope.launch(Dispatchers.IO) {
+                        Log.d("CaptureScreen", "Paso 3: Guardando imagen final en destino (en segundo plano)...")
+                        val finalUri = saveBitmapToDestination(context, processedBitmap, destinationPath)
+                        if (finalUri != null) {
+                            val savedSizeBytes = getSavedFileSize(context, finalUri)
+                            Log.d("CaptureScreen", "Saved JPEG: ${processedBitmap.width}x${processedBitmap.height}, $savedSizeBytes bytes")
+                            Log.d("CaptureScreen", "Paso 3: Guardado completado con éxito")
+                            onPhotoSaved(finalUri)
+                        } else {
+                            ErrorLogger.log("Paso 3: Falló la creación del archivo final")
+                            onError("Paso 3: Falló la creación del archivo final")
+                        }
                     }
                 } catch (e: Exception) {
-                    ErrorLogger.log("Paso 3: Error de sistema al guardar (${e.localizedMessage})")
-                    Log.e("CaptureScreen", "Error saving file", e)
-                    onError("Paso 3: Error de sistema al guardar (${e.localizedMessage})")
-                } finally {
-                    if (tempFile.exists()) tempFile.delete()
+                    image.close()
+                    ErrorLogger.log("Paso 3: Error de sistema al procesar/guardar (${e.localizedMessage})")
+                    Log.e("CaptureScreen", "Error saving file from RAM", e)
+                    onError("Paso 3: Error de sistema al procesar/guardar (${e.localizedMessage})")
                 }
             }
 
@@ -685,12 +691,11 @@ private fun takePhoto(
                 ErrorLogger.log("Photo capture failed: ${exception.message}")
                 Log.e("CaptureScreen", "Photo capture failed: ${exception.message}", exception)
                 val msg = when (exception.imageCaptureError) {
-                    ImageCapture.ERROR_FILE_IO -> "Paso 1: Error de disco (Espacio o Permiso)"
+                    ImageCapture.ERROR_FILE_IO -> "Paso 1: Error de disco"
                     ImageCapture.ERROR_CAMERA_CLOSED -> "Paso 1: Cámara cerrada"
                     else -> "Paso 1: Falló el obturador (Error ${exception.imageCaptureError})"
                 }
                 onError(msg)
-                if (tempFile.exists()) tempFile.delete()
             }
         }
     )
