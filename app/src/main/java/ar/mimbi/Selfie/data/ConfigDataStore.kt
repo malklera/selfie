@@ -3,6 +3,7 @@ package ar.mimbi.Selfie.data
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -23,6 +24,9 @@ class ConfigDataStore(private val context: Context) {
         val FIXED_ASPECT = stringPreferencesKey("fixed_aspect")
         val DECORATION_FIT = stringPreferencesKey("decoration_fit")
         val APP_ORIENTATION = stringPreferencesKey("app_orientation")
+        val SHOW_PRINT_BUTTON = booleanPreferencesKey("show_print_button")
+        val MAX_PRINT_COUNT = intPreferencesKey("max_print_count")
+        val PRINT_COUNT = intPreferencesKey("print_count")
     }
 
     val appConfigFlow: Flow<AppConfig> = context.dataStore.data
@@ -56,7 +60,10 @@ class ConfigDataStore(private val context: Context) {
                 previewFit = previewFit,
                 fixedAspect = fixedAspect,
                 decorationFit = decorationFit,
-                appOrientation = appOrientation
+                appOrientation = appOrientation,
+                showPrintButton = preferences[SHOW_PRINT_BUTTON] ?: false,
+                maxPrintCount = preferences[MAX_PRINT_COUNT] ?: 0,
+                printCount = preferences[PRINT_COUNT] ?: 0
             )
         }
 
@@ -83,6 +90,9 @@ class ConfigDataStore(private val context: Context) {
             preferences[FIXED_ASPECT] = config.fixedAspect.name
             preferences[DECORATION_FIT] = config.decorationFit.name
             preferences[APP_ORIENTATION] = config.appOrientation.name
+            preferences[SHOW_PRINT_BUTTON] = config.showPrintButton
+            preferences[MAX_PRINT_COUNT] = config.maxPrintCount
+            preferences[PRINT_COUNT] = config.printCount
         }
     }
 }

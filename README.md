@@ -24,16 +24,6 @@ The .apk file is at
 
 ## TODO
 
-- [ ] Add support for use of frontal camera.
-
-- [ ] Probably should update the color theme, think about this.
-
-- [ ] Add toggle for accessing config screen with a pasword, numbers only, ensure there is a way of resetting it.
-
-- [ ] Allow to change the number of taps to enter the config screen, minimum 1.
-
-- [ ] Allow to mark pictures to be printed, then inside config select all and print them with android print framework
-
 - [x] There is a time difference when the preview of the camera and the "recuadro" on top are show, there should not be.
 
 - [x] add a section to control rotatio of the app, portrait, landscape, auto, can this ignore whatever the device auto rotate toggle is at?
@@ -71,7 +61,19 @@ Get ride of the grey background in this, it should be black/transparent as the t
 - [x] The warning regarding the aspect ratio of "portada" and "cuadro de captura" are still there?,
 i think the image i am testing with are not of the aspect ratio of the phone but i do not get the warning
 
-- [ ] Test all type and combinations of aspect ratios
+- [ ] Add support for use of frontal camera.
+
+- [ ] Probably should update the color theme, think about this.
+
+- [ ] Add toggle for accessing config screen with a pasword, numbers only, ensure there is a way of resetting it.
+
+- [ ] Allow to change the number of taps to enter the config screen, minimum 1.
+
+- [ ] Allow to mark pictures to be printed, then inside config select all and print them with android print framework
+
+- [x] Add a button called "Impresion" above "Mantenimiento", which will take to a new screen.
+
+- [x] Copy the printing screen from the printing branch, only it, do not copy what is inside each of the other screens e.g. "configuracion de impresora", "plantillas de impresion" and "gestion de cola de impresion" yet
 
 ## Made for use of
 

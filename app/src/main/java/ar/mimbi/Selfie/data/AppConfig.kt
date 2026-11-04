@@ -14,7 +14,10 @@ data class AppConfig(
     val previewFit: PreviewFit = PreviewFit.FIT,
     val fixedAspect: FixedAspect = FixedAspect.R9_16,
     val decorationFit: DecorationFit = DecorationFit.STRETCH,
-    val appOrientation: AppOrientation = AppOrientation.AUTO
+    val appOrientation: AppOrientation = AppOrientation.AUTO,
+    val showPrintButton: Boolean = false,
+    val maxPrintCount: Int = 0,
+    val printCount: Int = 0
 ) {
     @Deprecated("Use inputResolution instead", ReplaceWith("inputResolution"))
     val pictureResolution: String?

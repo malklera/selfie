@@ -80,7 +80,8 @@ fun ConfigurationScreen(
     initialConfig: AppConfig,
     onSave: (AppConfig) -> Unit,
     onClose: () -> Unit,
-    onNavigateToErrorHistory: () -> Unit
+    onNavigateToErrorHistory: () -> Unit,
+    onNavigateToPrinting: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
@@ -118,6 +119,7 @@ fun ConfigurationScreen(
     var fixedAspect by rememberSaveable { mutableStateOf(initialConfig.fixedAspect) }
     var decorationFit by rememberSaveable { mutableStateOf(initialConfig.decorationFit) }
     var appOrientation by rememberSaveable { mutableStateOf(initialConfig.appOrientation) }
+    var isSaved by remember { mutableStateOf(false) }
 
     DisposableEffect(appOrientation) {
         val activity = context.findActivity()
@@ -127,10 +129,26 @@ fun ConfigurationScreen(
                 AppOrientation.LANDSCAPE -> ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
                 AppOrientation.AUTO -> ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR
             }
-            Log.d("ConfigScreen", "Applying live requestedOrientation=$targetOrientation for $appOrientation")
-            activity.requestedOrientation = targetOrientation
+            if (activity.requestedOrientation != targetOrientation) {
+                Log.d("ConfigScreen", "Applying live requestedOrientation=$targetOrientation for $appOrientation")
+                activity.requestedOrientation = targetOrientation
+            }
         }
-        onDispose {}
+        onDispose {
+            if (!isSaved) {
+                val activity = context.findActivity()
+                if (activity != null) {
+                    val initialTarget = when (initialConfig.appOrientation) {
+                        AppOrientation.PORTRAIT -> ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                        AppOrientation.LANDSCAPE -> ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                        AppOrientation.AUTO -> ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR
+                    }
+                    if (activity.requestedOrientation != initialTarget) {
+                        activity.requestedOrientation = initialTarget
+                    }
+                }
+            }
+        }
     }
 
     var showUnsavedDialog by rememberSaveable { mutableStateOf(false) }
@@ -233,6 +251,7 @@ fun ConfigurationScreen(
                             IconButton(onClick = {
                                 focusManager.clearFocus()
                                 UserActionTracker.trackAction("Guardar configuración")
+                                isSaved = true
                                 val finalSeconds = countdownSeconds.toIntOrNull() ?: 0
                                 onSave(
                                     AppConfig(
@@ -826,6 +845,34 @@ fun ConfigurationScreen(
                         )
                     }
 
+                    // Impresión
+                    Column {
+                        HorizontalDivider()
+                        Spacer(modifier = Modifier.height(16.dp))
+                        OutlinedCard(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    focusManager.clearFocus()
+                                    UserActionTracker.trackAction("Ir a pantalla de impresión")
+                                    onNavigateToPrinting()
+                                }
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .padding(12.dp)
+                                    .fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column {
+                                    Text("Impresión", fontWeight = FontWeight.Bold)
+                                    Text("Configuración de impresora, plantillas y cola", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
+                        }
+                    }
+
                     // Mantenimiento
                     Column {
                         HorizontalDivider()
@@ -908,6 +955,7 @@ fun ConfigurationScreen(
                 TextButton(onClick = {
                     focusManager.clearFocus()
                     Log.d("ConfigScreen", "Dialog Save clicked")
+                    isSaved = true
                     val finalSeconds = countdownSeconds.toIntOrNull() ?: 0
                     onSave(
                         AppConfig(

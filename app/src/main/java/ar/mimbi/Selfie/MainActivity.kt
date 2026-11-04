@@ -31,11 +31,13 @@ import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.pm.ActivityInfo
+import android.widget.Toast
 import androidx.compose.ui.platform.LocalContext
 import ar.mimbi.Selfie.data.AppOrientation
 import ar.mimbi.Selfie.data.ConfigDataStore
 import ar.mimbi.Selfie.data.ErrorLogger
 import ar.mimbi.Selfie.data.UserActionTracker
+import ar.mimbi.Selfie.printing.ui.owner.PrintingScreen
 import ar.mimbi.Selfie.ui.screens.CaptureScreen
 import ar.mimbi.Selfie.ui.screens.ConfigurationScreen
 import ar.mimbi.Selfie.ui.screens.ErrorHistoryScreen
@@ -134,8 +136,10 @@ fun SelfieApp(configDataStore: ConfigDataStore) {
                 AppOrientation.LANDSCAPE -> ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
                 AppOrientation.AUTO -> ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR
             }
-            android.util.Log.d("SelfieApp", "Setting requestedOrientation=$targetOrientation (${config.appOrientation})")
-            activity.requestedOrientation = targetOrientation
+            if (activity.requestedOrientation != targetOrientation) {
+                android.util.Log.d("SelfieApp", "Setting requestedOrientation=$targetOrientation (${config.appOrientation})")
+                activity.requestedOrientation = targetOrientation
+            }
         }
     }
 
@@ -173,7 +177,28 @@ fun SelfieApp(configDataStore: ConfigDataStore) {
                             }
                         },
                         onClose = { navController.popBackStack() },
-                        onNavigateToErrorHistory = { navController.navigate("error_history") }
+                        onNavigateToErrorHistory = { navController.navigate("error_history") },
+                        onNavigateToPrinting = { navController.navigate("printing") }
+                    )
+                }
+                composable("printing") {
+                    PrintingScreen(
+                        initialConfig = config,
+                        onSave = { newConfig ->
+                            scope.launch {
+                                configDataStore.saveConfig(newConfig)
+                            }
+                        },
+                        onBack = { navController.popBackStack() },
+                        onNavigateToPrinterConfig = {
+                            Toast.makeText(context, "Pantalla no disponible aún", Toast.LENGTH_SHORT).show()
+                        },
+                        onNavigateToTemplateConfig = {
+                            Toast.makeText(context, "Pantalla no disponible aún", Toast.LENGTH_SHORT).show()
+                        },
+                        onNavigateToQueueManagement = {
+                            Toast.makeText(context, "Pantalla no disponible aún", Toast.LENGTH_SHORT).show()
+                        }
                     )
                 }
                 composable("error_history") {
