@@ -37,6 +37,7 @@ import ar.mimbi.Selfie.data.AppOrientation
 import ar.mimbi.Selfie.data.ConfigDataStore
 import ar.mimbi.Selfie.data.ErrorLogger
 import ar.mimbi.Selfie.data.UserActionTracker
+import ar.mimbi.Selfie.printing.queue.PrintQueueManager
 import ar.mimbi.Selfie.printing.ui.owner.PrintingScreen
 import ar.mimbi.Selfie.ui.screens.CaptureScreen
 import ar.mimbi.Selfie.ui.screens.ConfigurationScreen
@@ -143,6 +144,8 @@ fun SelfieApp(configDataStore: ConfigDataStore) {
         }
     }
 
+    val printQueueManager = remember { PrintQueueManager() }
+
     // Listen to navigation changes to track screen
     LaunchedEffect(navController) {
         navController.currentBackStackEntryFlow.collect { entry ->
@@ -165,7 +168,13 @@ fun SelfieApp(configDataStore: ConfigDataStore) {
                     CaptureScreen(
                         config = config,
                         onNavigateToConfig = { navController.navigate("config") },
-                        onImageReady = { isMainContentReady = true }
+                        onImageReady = { isMainContentReady = true },
+                        onPrint = { photoUri, copies ->
+                            scope.launch {
+                                printQueueManager.enqueuePhoto(context, photoUri, copies)
+                                configDataStore.incrementPrintCount(copies)
+                            }
+                        }
                     )
                 }
                 composable("config") {
@@ -198,7 +207,8 @@ fun SelfieApp(configDataStore: ConfigDataStore) {
                         },
                         onNavigateToQueueManagement = {
                             Toast.makeText(context, "Pantalla no disponible aún", Toast.LENGTH_SHORT).show()
-                        }
+                        },
+                        queueManager = printQueueManager
                     )
                 }
                 composable("error_history") {

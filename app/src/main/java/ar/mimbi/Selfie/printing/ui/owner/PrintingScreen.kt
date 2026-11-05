@@ -64,12 +64,14 @@ fun PrintingScreen(
         }
     }
 
+    var showPrintButton by rememberSaveable { mutableStateOf(initialConfig.showPrintButton) }
     var maxPrintCount by rememberSaveable { mutableStateOf(initialConfig.maxPrintCount.toString()) }
     var printCount by rememberSaveable { mutableIntStateOf(initialConfig.printCount) }
     var wasResetToZero by rememberSaveable { mutableStateOf(false) }
     var showUnsavedDialog by rememberSaveable { mutableStateOf(false) }
 
-    val hasChanges = maxPrintCount != initialConfig.maxPrintCount.toString() ||
+    val hasChanges = showPrintButton != initialConfig.showPrintButton ||
+            maxPrintCount != initialConfig.maxPrintCount.toString() ||
             printCount != initialConfig.printCount
 
     BackHandler(enabled = hasChanges) {
@@ -108,6 +110,7 @@ fun PrintingScreen(
                         }
                         onSave(
                             initialConfig.copy(
+                                showPrintButton = showPrintButton,
                                 maxPrintCount = finalMaxPrintCount,
                                 printCount = printCount
                             )
@@ -138,6 +141,27 @@ fun PrintingScreen(
                 .verticalScroll(scrollState),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
+            // Switch: Mostrar botón
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = "Mostrar botón",
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.weight(1f)
+                )
+                Switch(
+                    checked = showPrintButton,
+                    onCheckedChange = {
+                        focusManager.clearFocus()
+                        UserActionTracker.trackAction("Cambiar mostrar botón de impresión: $it")
+                        showPrintButton = it
+                    }
+                )
+            }
+
             // Máximo número de impresiones
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -300,6 +324,7 @@ fun PrintingScreen(
                     }
                     onSave(
                         initialConfig.copy(
+                            showPrintButton = showPrintButton,
                             maxPrintCount = finalMaxPrintCount,
                             printCount = printCount
                         )

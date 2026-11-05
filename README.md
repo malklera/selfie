@@ -49,18 +49,6 @@ What is show in the preview is what is saved in the end, they cannot differ, the
 
 - [x] "Relacion fija" change the display of options to a popup menu the same style as "tamaño de la imagen"
 
-- [x] In "Diagnostico de imagen" use n:n style to describe the aspect ratio in all three items.
-Get ride of the grey background in this, it should be black/transparent as the title
-
-- [x] Get ride of the estimated size of the image in "Tamaño de imagen"
-
-- [x] In "Diagnostico de imagen" make each item below another, not besides each other
-
-- [x] Make each item(version, licencia, autor each separated) in "acerca de" copy in tap.
-
-- [x] The warning regarding the aspect ratio of "portada" and "cuadro de captura" are still there?,
-i think the image i am testing with are not of the aspect ratio of the phone but i do not get the warning
-
 - [ ] Add support for use of frontal camera.
 
 - [ ] Probably should update the color theme, think about this.
@@ -70,10 +58,6 @@ i think the image i am testing with are not of the aspect ratio of the phone but
 - [ ] Allow to change the number of taps to enter the config screen, minimum 1.
 
 - [ ] Allow to mark pictures to be printed, then inside config select all and print them with android print framework
-
-- [x] Add a button called "Impresion" above "Mantenimiento", which will take to a new screen.
-
-- [x] Copy the printing screen from the printing branch, only it, do not copy what is inside each of the other screens e.g. "configuracion de impresora", "plantillas de impresion" and "gestion de cola de impresion" yet
 
 ## Made for use of
 
