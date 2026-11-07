@@ -38,6 +38,7 @@ import ar.mimbi.Selfie.data.ConfigDataStore
 import ar.mimbi.Selfie.data.ErrorLogger
 import ar.mimbi.Selfie.data.UserActionTracker
 import ar.mimbi.Selfie.printing.queue.PrintQueueManager
+import ar.mimbi.Selfie.printing.ui.owner.PrinterConfigScreen
 import ar.mimbi.Selfie.printing.ui.owner.PrintingScreen
 import ar.mimbi.Selfie.ui.screens.CaptureScreen
 import ar.mimbi.Selfie.ui.screens.ConfigurationScreen
@@ -200,7 +201,7 @@ fun SelfieApp(configDataStore: ConfigDataStore) {
                         },
                         onBack = { navController.popBackStack() },
                         onNavigateToPrinterConfig = {
-                            Toast.makeText(context, "Pantalla no disponible aún", Toast.LENGTH_SHORT).show()
+                            navController.navigate("printer_config")
                         },
                         onNavigateToTemplateConfig = {
                             Toast.makeText(context, "Pantalla no disponible aún", Toast.LENGTH_SHORT).show()
@@ -209,6 +210,11 @@ fun SelfieApp(configDataStore: ConfigDataStore) {
                             Toast.makeText(context, "Pantalla no disponible aún", Toast.LENGTH_SHORT).show()
                         },
                         queueManager = printQueueManager
+                    )
+                }
+                composable("printer_config") {
+                    PrinterConfigScreen(
+                        onBack = { navController.popBackStack() }
                     )
                 }
                 composable("error_history") {

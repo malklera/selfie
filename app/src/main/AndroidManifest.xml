@@ -34,6 +34,12 @@
             <action android:name="android.intent.action.GET_CONTENT" />
             <data android:mimeType="*/*" />
         </intent>
+        <intent>
+            <action android:name="android.printservice.PrintService" />
+        </intent>
+        <intent>
+            <action android:name="android.settings.ACTION_PRINT_SETTINGS" />
+        </intent>
 
         <package android:name="com.sec.android.app.myfiles" />
         <package android:name="com.google.android.apps.nfiles" />

@@ -59,6 +59,17 @@ What is show in the preview is what is saved in the end, they cannot differ, the
 
 - [ ] Allow to mark pictures to be printed, then inside config select all and print them with android print framework
 
+- [x] on tap of "configuracion de impresora" open a new screen that would allow you to search and connect to a printer, use whatever android/kotlin provides for this, if there is some api of framework, no need to implement from scrach
+
+- [ ] From printing branch copy the implementation for the templates. Each template is ONE future pdf page A4
+
+- [ ] From printing branch, take inspiration for the queue and change the following:
+Allow to select on/multiple/all elements of the queue, on select show options to take out of the queue, and printing
+On print, generate a in memory pdf following the template then call upon the android printing service, (can you pass the printing connected information to the android side or do i have to select printing each time anyway?), what type of pre configured parametres can we pass to android so i do not have to select everything manually?
+On selection of multiple elements generate a pdf with multiple pages, then the rest the same.
+Only mark elements as printed if the android service returns some type of success state we can query, otherwise just use "Enviado" instead of "Pendiente", so at least
+i know what i tried to print.
+
 ## Made for use of
 
 [Instagram Mimbi](https://www.instagram.com/mimbi_glitterbar)
