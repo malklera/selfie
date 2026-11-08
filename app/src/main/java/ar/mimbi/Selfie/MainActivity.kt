@@ -37,9 +37,13 @@ import ar.mimbi.Selfie.data.AppOrientation
 import ar.mimbi.Selfie.data.ConfigDataStore
 import ar.mimbi.Selfie.data.ErrorLogger
 import ar.mimbi.Selfie.data.UserActionTracker
+import ar.mimbi.Selfie.data.db.AppDatabase
+import ar.mimbi.Selfie.printing.printer.PrinterManager
 import ar.mimbi.Selfie.printing.queue.PrintQueueManager
+import ar.mimbi.Selfie.printing.queue.PrintQueueRepository
 import ar.mimbi.Selfie.printing.ui.owner.PrinterConfigScreen
 import ar.mimbi.Selfie.printing.ui.owner.PrintingScreen
+import ar.mimbi.Selfie.printing.ui.owner.TemplateConfigScreen
 import ar.mimbi.Selfie.ui.screens.CaptureScreen
 import ar.mimbi.Selfie.ui.screens.ConfigurationScreen
 import ar.mimbi.Selfie.ui.screens.ErrorHistoryScreen
@@ -145,7 +149,12 @@ fun SelfieApp(configDataStore: ConfigDataStore) {
         }
     }
 
-    val printQueueManager = remember { PrintQueueManager() }
+    val printQueueManager = remember(context) {
+        val database = AppDatabase.getDatabase(context)
+        val repository = PrintQueueRepository(database)
+        val printerManager = PrinterManager()
+        PrintQueueManager(repository, printerManager)
+    }
 
     // Listen to navigation changes to track screen
     LaunchedEffect(navController) {
@@ -204,12 +213,18 @@ fun SelfieApp(configDataStore: ConfigDataStore) {
                             navController.navigate("printer_config")
                         },
                         onNavigateToTemplateConfig = {
-                            Toast.makeText(context, "Pantalla no disponible aún", Toast.LENGTH_SHORT).show()
+                            navController.navigate("template_config")
                         },
                         onNavigateToQueueManagement = {
                             Toast.makeText(context, "Pantalla no disponible aún", Toast.LENGTH_SHORT).show()
                         },
                         queueManager = printQueueManager
+                    )
+                }
+                composable("template_config") {
+                    TemplateConfigScreen(
+                        queueManager = printQueueManager,
+                        onBack = { navController.popBackStack() }
                     )
                 }
                 composable("printer_config") {

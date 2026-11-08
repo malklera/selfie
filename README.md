@@ -57,11 +57,12 @@ What is show in the preview is what is saved in the end, they cannot differ, the
 
 - [ ] Allow to change the number of taps to enter the config screen, minimum 1.
 
-- [ ] Allow to mark pictures to be printed, then inside config select all and print them with android print framework
 
 - [x] on tap of "configuracion de impresora" open a new screen that would allow you to search and connect to a printer, use whatever android/kotlin provides for this, if there is some api of framework, no need to implement from scrach
 
-- [ ] From printing branch copy the implementation for the templates. Each template is ONE future pdf page A4
+- [x] From printing branch copy the implementation for the templates. Each template is ONE future pdf page A4
+
+- [ ] Allow to mark pictures to be printed, then inside config select all and print them with android print framework
 
 - [ ] From printing branch, take inspiration for the queue and change the following:
 Allow to select on/multiple/all elements of the queue, on select show options to take out of the queue, and printing
