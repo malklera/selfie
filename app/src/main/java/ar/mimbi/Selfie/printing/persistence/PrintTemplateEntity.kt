@@ -11,6 +11,7 @@ data class PrintTemplateEntity(
     val version: Int,
     val isActive: Boolean = false,
     val quality: String = "Alta (300 DPI)",
+    val colorMode: String = "Color",
     val widthCm: Float = 21.0f,
     val heightCm: Float = 29.7f,
     val marginMm: Float = 0.0f,

@@ -21,8 +21,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import ar.mimbi.Selfie.data.AppOrientation
 import ar.mimbi.Selfie.data.db.AppDatabase
 import ar.mimbi.Selfie.data.db.ErrorLog
+import ar.mimbi.Selfie.ui.components.EnforceAppOrientation
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -32,8 +34,11 @@ import java.util.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ErrorHistoryScreen(
+    appOrientation: AppOrientation? = null,
     onBack: () -> Unit
 ) {
+    EnforceAppOrientation(appOrientation)
+
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val database = remember { AppDatabase.getDatabase(context) }

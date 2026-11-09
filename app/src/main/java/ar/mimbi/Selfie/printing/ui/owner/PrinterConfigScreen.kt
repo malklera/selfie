@@ -34,7 +34,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import ar.mimbi.Selfie.data.AppOrientation
 import ar.mimbi.Selfie.data.UserActionTracker
+import ar.mimbi.Selfie.ui.components.EnforceAppOrientation
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -166,8 +168,11 @@ private fun queryPrinterAndServiceInfo(context: Context): PrinterInfoResult {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PrinterConfigScreen(
+    appOrientation: AppOrientation? = null,
     onBack: () -> Unit
 ) {
+    EnforceAppOrientation(appOrientation)
+
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val scrollState = rememberScrollState()

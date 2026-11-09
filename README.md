@@ -62,14 +62,21 @@ What is show in the preview is what is saved in the end, they cannot differ, the
 
 - [x] From printing branch copy the implementation for the templates. Each template is ONE future pdf page A4
 
-- [ ] Allow to mark pictures to be printed, then inside config select all and print them with android print framework
-
 - [ ] From printing branch, take inspiration for the queue and change the following:
 Allow to select on/multiple/all elements of the queue, on select show options to take out of the queue, and printing
 On print, generate a in memory pdf following the template then call upon the android printing service, (can you pass the printing connected information to the android side or do i have to select printing each time anyway?), what type of pre configured parametres can we pass to android so i do not have to select everything manually?
 On selection of multiple elements generate a pdf with multiple pages, then the rest the same.
 Only mark elements as printed if the android service returns some type of success state we can query, otherwise just use "Enviado" instead of "Pendiente", so at least
 i know what i tried to print.
+
+- [ ] Setting a config in the print screen, then saving in the main config screen resets whatever was in the print screen.
+
+- [ ] Change the queue preview column to do not show the tick selector, allow to select one by maintaining the tapped on top of one item
+
+- [x] Drop the use of # to indicate number
+
+- [x] The queue screen make the whole part of the scroll, not only the list of items
+
 
 ## Made for use of
 

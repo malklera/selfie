@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import ar.mimbi.Selfie.data.AppConfig
 import ar.mimbi.Selfie.data.UserActionTracker
 import ar.mimbi.Selfie.printing.queue.PrintQueueManager
+import ar.mimbi.Selfie.ui.components.EnforceAppOrientation
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -48,6 +49,8 @@ fun PrintingScreen(
     val focusManager = LocalFocusManager.current
     val density = LocalDensity.current
     val coroutineScope = rememberCoroutineScope()
+
+    EnforceAppOrientation(initialConfig.appOrientation)
 
     val isKeyboardVisible = WindowInsets.ime.getBottom(density) > 0
     LaunchedEffect(isKeyboardVisible) {

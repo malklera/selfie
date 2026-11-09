@@ -26,6 +26,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import android.app.Activity
 import android.content.Context
@@ -43,7 +44,9 @@ import ar.mimbi.Selfie.printing.queue.PrintQueueManager
 import ar.mimbi.Selfie.printing.queue.PrintQueueRepository
 import ar.mimbi.Selfie.printing.ui.owner.PrinterConfigScreen
 import ar.mimbi.Selfie.printing.ui.owner.PrintingScreen
+import ar.mimbi.Selfie.printing.ui.owner.QueueManagementScreen
 import ar.mimbi.Selfie.printing.ui.owner.TemplateConfigScreen
+import ar.mimbi.Selfie.ui.components.EnforceAppOrientation
 import ar.mimbi.Selfie.ui.screens.CaptureScreen
 import ar.mimbi.Selfie.ui.screens.ConfigurationScreen
 import ar.mimbi.Selfie.ui.screens.ErrorHistoryScreen
@@ -133,21 +136,7 @@ fun SelfieApp(configDataStore: ConfigDataStore) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
-    LaunchedEffect(config?.appOrientation) {
-        val activity = context.findActivity()
-        android.util.Log.d("SelfieApp", "LaunchedEffect appOrientation=${config?.appOrientation}, activity=$activity")
-        if (activity != null && config != null) {
-            val targetOrientation = when (config.appOrientation) {
-                AppOrientation.PORTRAIT -> ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-                AppOrientation.LANDSCAPE -> ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-                AppOrientation.AUTO -> ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR
-            }
-            if (activity.requestedOrientation != targetOrientation) {
-                android.util.Log.d("SelfieApp", "Setting requestedOrientation=$targetOrientation (${config.appOrientation})")
-                activity.requestedOrientation = targetOrientation
-            }
-        }
-    }
+    EnforceAppOrientation(config?.appOrientation)
 
     val printQueueManager = remember(context) {
         val database = AppDatabase.getDatabase(context)
@@ -216,24 +205,34 @@ fun SelfieApp(configDataStore: ConfigDataStore) {
                             navController.navigate("template_config")
                         },
                         onNavigateToQueueManagement = {
-                            Toast.makeText(context, "Pantalla no disponible aún", Toast.LENGTH_SHORT).show()
+                            navController.navigate("queue_management")
                         },
                         queueManager = printQueueManager
+                    )
+                }
+                composable("queue_management") {
+                    QueueManagementScreen(
+                        queueManager = printQueueManager,
+                        appOrientation = config.appOrientation,
+                        onBack = { navController.popBackStack() }
                     )
                 }
                 composable("template_config") {
                     TemplateConfigScreen(
                         queueManager = printQueueManager,
+                        appOrientation = config.appOrientation,
                         onBack = { navController.popBackStack() }
                     )
                 }
                 composable("printer_config") {
                     PrinterConfigScreen(
+                        appOrientation = config.appOrientation,
                         onBack = { navController.popBackStack() }
                     )
                 }
                 composable("error_history") {
                     ErrorHistoryScreen(
+                        appOrientation = config.appOrientation,
                         onBack = { navController.popBackStack() }
                     )
                 }

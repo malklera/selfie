@@ -45,6 +45,12 @@ interface PrintItemDao {
     @Query("DELETE FROM print_items WHERE status = 'PRINTED'")
     suspend fun deletePrintedItems(): Int
 
+    @Query("DELETE FROM print_items WHERE id IN (:ids)")
+    suspend fun deleteItemsByIds(ids: List<Long>): Int
+
+    @Query("SELECT * FROM print_items WHERE id IN (:ids) ORDER BY sequence ASC")
+    suspend fun getItemsByIds(ids: List<Long>): List<PrintItemEntity>
+
     @Query("DELETE FROM print_items")
     suspend fun deleteAllItems(): Int
 }

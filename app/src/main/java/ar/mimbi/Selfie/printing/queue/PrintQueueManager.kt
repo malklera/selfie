@@ -3,7 +3,19 @@ package ar.mimbi.Selfie.printing.queue
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Paint
+import android.graphics.Rect
+import android.graphics.pdf.PdfDocument
 import android.net.Uri
+import android.os.Bundle
+import android.os.CancellationSignal
+import android.os.ParcelFileDescriptor
+import android.print.PageRange
+import android.print.PrintAttributes
+import android.print.PrintDocumentAdapter
+import android.print.PrintDocumentInfo
+import android.print.PrintJobInfo
+import android.print.PrintManager
 import android.util.Log
 import ar.mimbi.Selfie.data.ErrorLogger
 import ar.mimbi.Selfie.printing.model.*
@@ -12,6 +24,8 @@ import ar.mimbi.Selfie.printing.printer.PrinterStatus
 import ar.mimbi.Selfie.printing.template.DefaultTemplateRenderer
 import ar.mimbi.Selfie.printing.template.DefaultTemplates
 import ar.mimbi.Selfie.printing.template.TemplateRenderer
+import java.io.FileOutputStream
+import kotlin.math.roundToInt
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.sync.Mutex
@@ -93,8 +107,120 @@ class PrintQueueManager(
         repository.clearPrintedItems()
     }
 
+    suspend fun deleteItems(itemIds: List<Long>) {
+        repository.deleteItems(itemIds)
+    }
+
     suspend fun clearQueue() {
         repository.clearQueue()
+    }
+
+    suspend fun printSelectedItems(context: Context, itemIds: List<Long>): Boolean {
+        if (itemIds.isEmpty()) return false
+
+        val selectedItems = repository.getItemsByIds(itemIds)
+        if (selectedItems.isEmpty()) return false
+
+        val template = repository.getActiveTemplate()
+        val slotCount = template.slotCount.coerceAtLeast(1)
+        val chunks = selectedItems.chunked(slotCount)
+
+        val printablePages = mutableListOf<PrintablePage>()
+        for (chunk in chunks) {
+            val loadedBitmaps = mutableListOf<Bitmap?>()
+            for (item in chunk) {
+                val bitmap = decodeBitmapFromUri(context, item.photoUri, PageSize().widthPx, PageSize().heightPx)
+                loadedBitmaps.add(bitmap)
+            }
+            val renderedPage = renderer.render(template, loadedBitmaps, PageSize())
+            loadedBitmaps.forEach { it?.recycle() }
+            printablePages.add(renderedPage)
+        }
+
+        val pdfDocument = PdfDocument()
+        val pdfWidth = (template.widthCm / 2.54f * 72f).roundToInt().coerceAtLeast(100)
+        val pdfHeight = (template.heightCm / 2.54f * 72f).roundToInt().coerceAtLeast(100)
+
+        printablePages.forEachIndexed { index, printablePage ->
+            val pageInfo = PdfDocument.PageInfo.Builder(pdfWidth, pdfHeight, index + 1).create()
+            val pdfPage = pdfDocument.startPage(pageInfo)
+            val canvas = pdfPage.canvas
+
+            printablePage.bitmap?.let { bmp ->
+                if (!bmp.isRecycled) {
+                    val srcRect = Rect(0, 0, bmp.width, bmp.height)
+                    val dstRect = Rect(0, 0, pdfWidth, pdfHeight)
+                    val paint = Paint(Paint.FILTER_BITMAP_FLAG)
+                    canvas.drawBitmap(bmp, srcRect, dstRect, paint)
+                }
+            }
+            pdfDocument.finishPage(pdfPage)
+            printablePage.bitmap?.let {
+                if (!it.isRecycled) {
+                    it.recycle()
+                }
+            }
+        }
+
+        val printManager = context.getSystemService(Context.PRINT_SERVICE) as? PrintManager
+        if (printManager == null) {
+            try {
+                pdfDocument.close()
+            } catch (_: Exception) {}
+            return false
+        }
+
+        val mediaSize = if (template.widthCm > template.heightCm) {
+            PrintAttributes.MediaSize.ISO_A4.asLandscape()
+        } else {
+            PrintAttributes.MediaSize.ISO_A4.asPortrait()
+        }
+
+        val resolutionDpi = if (template.quality.contains("300")) 300 else 200
+        val printAttributes = PrintAttributes.Builder()
+            .setMediaSize(mediaSize)
+            .setColorMode(PrintAttributes.COLOR_MODE_COLOR)
+            .setMinMargins(PrintAttributes.Margins.NO_MARGINS)
+            .setResolution(PrintAttributes.Resolution("res_id", "Default Resolution", resolutionDpi, resolutionDpi))
+            .build()
+
+        val jobName = "Impresión Selfie (${selectedItems.size} foto(s))"
+        val adapter = PdfDocumentPrintAdapter(pdfDocument, printablePages.size, jobName)
+
+        repository.updateItemStatuses(itemIds, PrintItemStatus.SENT)
+
+        val printJob = try {
+            printManager.print(jobName, adapter, printAttributes)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error starting print job: ${e.message}", e)
+            ErrorLogger.log("Error starting print job: ${e.message}")
+            repository.updateItemStatuses(itemIds, PrintItemStatus.FAILED)
+            return false
+        }
+
+        if (printJob != null) {
+            scope.launch {
+                var waitedMs = 0
+                while (waitedMs < 120000) {
+                    delay(1000)
+                    waitedMs += 1000
+                    val info = printJob.info
+                    val state = info.state
+                    if (state == PrintJobInfo.STATE_COMPLETED) {
+                        repository.updateItemStatuses(itemIds, PrintItemStatus.PRINTED)
+                        break
+                    } else if (state == PrintJobInfo.STATE_FAILED) {
+                        repository.updateItemStatuses(itemIds, PrintItemStatus.FAILED)
+                        break
+                    } else if (state == PrintJobInfo.STATE_CANCELED) {
+                        repository.updateItemStatuses(itemIds, PrintItemStatus.CANCELED)
+                        break
+                    }
+                }
+            }
+        }
+
+        return true
     }
 
     suspend fun processQueue(context: Context? = null, flush: Boolean = false, targetItemIds: List<Long>? = null) {
@@ -220,5 +346,58 @@ class PrintQueueManager(
         }
 
         return inSampleSize
+    }
+}
+
+private class PdfDocumentPrintAdapter(
+    private val pdfDocument: PdfDocument,
+    private val pageCount: Int,
+    private val documentName: String
+) : PrintDocumentAdapter() {
+
+    override fun onLayout(
+        oldAttributes: PrintAttributes?,
+        newAttributes: PrintAttributes,
+        cancellationSignal: CancellationSignal?,
+        callback: LayoutResultCallback,
+        extras: Bundle?
+    ) {
+        if (cancellationSignal?.isCanceled == true) {
+            callback.onLayoutCancelled()
+            return
+        }
+
+        val info = PrintDocumentInfo.Builder(documentName)
+            .setContentType(PrintDocumentInfo.CONTENT_TYPE_DOCUMENT)
+            .setPageCount(pageCount)
+            .build()
+
+        callback.onLayoutFinished(info, true)
+    }
+
+    override fun onWrite(
+        pages: Array<out PageRange>?,
+        destination: ParcelFileDescriptor,
+        cancellationSignal: CancellationSignal?,
+        callback: WriteResultCallback
+    ) {
+        try {
+            pdfDocument.writeTo(FileOutputStream(destination.fileDescriptor))
+            callback.onWriteFinished(arrayOf(PageRange.ALL_PAGES))
+        } catch (e: Exception) {
+            Log.e("PdfPrintAdapter", "Error writing PDF: ${e.message}", e)
+            callback.onWriteFailed(e.message)
+        } finally {
+            try {
+                pdfDocument.close()
+            } catch (_: Exception) {}
+        }
+    }
+
+    override fun onFinish() {
+        super.onFinish()
+        try {
+            pdfDocument.close()
+        } catch (_: Exception) {}
     }
 }

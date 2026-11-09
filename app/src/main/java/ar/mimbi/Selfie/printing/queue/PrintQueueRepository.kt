@@ -41,6 +41,7 @@ open class PrintQueueRepository(private val database: AppDatabase? = null) {
                         version = template.version,
                         isActive = isActive,
                         quality = template.quality,
+                        colorMode = template.colorMode,
                         widthCm = template.widthCm,
                         heightCm = template.heightCm,
                         marginMm = template.marginMm,
@@ -198,6 +199,25 @@ open class PrintQueueRepository(private val database: AppDatabase? = null) {
         itemDao?.deletePrintedItems()
     }
 
+    open suspend fun deleteItems(ids: List<Long>) {
+        if (ids.isNotEmpty()) {
+            itemDao?.deleteItemsByIds(ids)
+        }
+    }
+
+    open suspend fun getItemsByIds(ids: List<Long>): List<PrintItem> {
+        if (ids.isEmpty()) return emptyList()
+        return itemDao?.getItemsByIds(ids)?.map {
+            PrintItem(
+                id = it.id,
+                batchId = it.batchId,
+                photoUri = it.photoUri,
+                sequence = it.sequence,
+                status = runCatching { PrintItemStatus.valueOf(it.status) }.getOrDefault(PrintItemStatus.PENDING)
+            )
+        } ?: emptyList()
+    }
+
     open suspend fun clearQueue() {
         itemDao?.deleteAllItems()
         batchDao?.deleteAllBatches()
@@ -254,17 +274,21 @@ open class PrintQueueRepository(private val database: AppDatabase? = null) {
 
     private fun parseTemplateEntity(entity: PrintTemplateEntity): PrintTemplate {
         val slots = mutableListOf<PhotoSlot>()
-        val jsonArray = JSONArray(entity.slotsJson)
-        for (i in 0 until jsonArray.length()) {
-            val obj = jsonArray.getJSONObject(i)
-            slots.add(
-                PhotoSlot(
-                    left = obj.getDouble("left").toFloat(),
-                    top = obj.getDouble("top").toFloat(),
-                    width = obj.getDouble("width").toFloat(),
-                    height = obj.getDouble("height").toFloat()
+        try {
+            val jsonArray = JSONArray(entity.slotsJson)
+            for (i in 0 until jsonArray.length()) {
+                val obj = jsonArray.getJSONObject(i)
+                slots.add(
+                    PhotoSlot(
+                        left = obj.getDouble("left").toFloat(),
+                        top = obj.getDouble("top").toFloat(),
+                        width = obj.getDouble("width").toFloat(),
+                        height = obj.getDouble("height").toFloat()
+                    )
                 )
-            )
+            }
+        } catch (e: Exception) {
+            return DefaultTemplates.getById(entity.id)
         }
         return PrintTemplate(
             id = entity.id,
@@ -272,6 +296,7 @@ open class PrintQueueRepository(private val database: AppDatabase? = null) {
             slots = slots,
             version = entity.version,
             quality = entity.quality,
+            colorMode = entity.colorMode,
             widthCm = entity.widthCm,
             heightCm = entity.heightCm,
             marginMm = entity.marginMm,

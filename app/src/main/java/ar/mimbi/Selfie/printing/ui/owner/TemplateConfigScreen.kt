@@ -24,9 +24,11 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import ar.mimbi.Selfie.data.AppOrientation
 import ar.mimbi.Selfie.printing.model.PrintTemplate
 import ar.mimbi.Selfie.printing.queue.PrintQueueManager
 import ar.mimbi.Selfie.printing.template.DefaultTemplates
+import ar.mimbi.Selfie.ui.components.EnforceAppOrientation
 import kotlinx.coroutines.launch
 import kotlin.math.min
 
@@ -34,8 +36,11 @@ import kotlin.math.min
 @Composable
 fun TemplateConfigScreen(
     queueManager: PrintQueueManager,
+    appOrientation: AppOrientation? = null,
     onBack: () -> Unit
 ) {
+    EnforceAppOrientation(appOrientation)
+
     val activeTemplate by queueManager.activeTemplateFlow.collectAsState(initial = DefaultTemplates.TEMPLATE_FULL_WIDTH_SINGLE)
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
@@ -229,6 +234,24 @@ private fun TemplateItemCard(
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Medium
                 )
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    SuggestionChip(
+                        onClick = { },
+                        label = { Text("${template.widthCm}×${template.heightCm} cm", style = MaterialTheme.typography.labelSmall) }
+                    )
+                    SuggestionChip(
+                        onClick = { },
+                        label = { Text(template.colorMode, style = MaterialTheme.typography.labelSmall) }
+                    )
+                    SuggestionChip(
+                        onClick = { },
+                        label = { Text(template.quality, style = MaterialTheme.typography.labelSmall) }
+                    )
+                }
             }
 
             if (isSelected) {

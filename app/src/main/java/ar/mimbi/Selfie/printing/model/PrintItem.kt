@@ -8,6 +8,7 @@ enum class PrintItemStatus {
     QUEUED,    // En cola de impresión
     PRINTING,  // Imprimiendo / Enviando a la impresora
     BLOCKED,   // Bloqueado - Verificar impresora (papel/atasco)
+    SENT,      // Enviado a servicio de impresión de Android
     PRINTED,   // Completado exitosamente
     FAILED,    // Error de impresión
     CANCELED   // Cancelado por el usuario
