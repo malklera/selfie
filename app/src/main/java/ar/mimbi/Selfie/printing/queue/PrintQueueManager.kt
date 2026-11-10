@@ -258,6 +258,9 @@ class PrintQueueManager(
                     Log.e(TAG, "Error starting print job: ${e.message}", e)
                     ErrorLogger.log("Error starting print job: ${e.message}")
                     repository.updatePageStatuses(renderedPageIds, PrintPageStatus.FAILED, "Error al iniciar impresión: ${e.message}")
+                    try {
+                        pdfDocument.close()
+                    } catch (_: Exception) {}
                     null
                 }
 
@@ -354,6 +357,8 @@ private class PdfDocumentPrintAdapter(
     private val documentName: String
 ) : PrintDocumentAdapter() {
 
+    private var isClosed = false
+
     override fun onLayout(
         oldAttributes: PrintAttributes?,
         newAttributes: PrintAttributes,
@@ -380,23 +385,33 @@ private class PdfDocumentPrintAdapter(
         cancellationSignal: CancellationSignal?,
         callback: WriteResultCallback
     ) {
+        if (cancellationSignal?.isCanceled == true) {
+            callback.onWriteCancelled()
+            return
+        }
+
         try {
             pdfDocument.writeTo(FileOutputStream(destination.fileDescriptor))
             callback.onWriteFinished(arrayOf(PageRange.ALL_PAGES))
         } catch (e: Exception) {
             Log.e("PdfPrintAdapter", "Error writing PDF: ${e.message}", e)
             callback.onWriteFailed(e.message)
-        } finally {
-            try {
-                pdfDocument.close()
-            } catch (_: Exception) {}
         }
     }
 
     override fun onFinish() {
         super.onFinish()
-        try {
-            pdfDocument.close()
-        } catch (_: Exception) {}
+        closeDocument()
+    }
+
+    private fun closeDocument() {
+        if (!isClosed) {
+            isClosed = true
+            try {
+                pdfDocument.close()
+            } catch (e: Exception) {
+                Log.e("PdfPrintAdapter", "Error closing PdfDocument: ${e.message}")
+            }
+        }
     }
 }

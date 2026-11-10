@@ -386,34 +386,37 @@ private class TestPagePrintAdapter : PrintDocumentAdapter() {
             return
         }
 
-        pdfDocument = PdfDocument()
+        try {
+            pdfDocument?.close()
+        } catch (_: Exception) {}
+
+        val newDoc = PdfDocument()
         val pageInfo = PdfDocument.PageInfo.Builder(595, 842, 1).create() // Standard A4 size in points
-        val page = pdfDocument?.startPage(pageInfo)
+        val page = newDoc.startPage(pageInfo)
 
-        page?.let { p ->
-            val canvas: Canvas = p.canvas
-            val titlePaint = Paint().apply {
-                color = Color.BLACK
-                textSize = 24f
-                isAntiAlias = true
-                isFakeBoldText = true
-            }
-            val bodyPaint = Paint().apply {
-                color = Color.DKGRAY
-                textSize = 14f
-                isAntiAlias = true
-            }
-
-            canvas.drawText("Página de Prueba - Selfie App", 50f, 80f, titlePaint)
-            canvas.drawText("Configuración de Impresora en Android", 50f, 120f, bodyPaint)
-            canvas.drawText("Estado: Impresora conectada y funcionando.", 50f, 160f, bodyPaint)
-
-            val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
-            val dateStr = dateFormat.format(Date())
-            canvas.drawText("Fecha y hora: $dateStr", 50f, 200f, bodyPaint)
-
-            pdfDocument?.finishPage(p)
+        val canvas: Canvas = page.canvas
+        val titlePaint = Paint().apply {
+            color = Color.BLACK
+            textSize = 24f
+            isAntiAlias = true
+            isFakeBoldText = true
         }
+        val bodyPaint = Paint().apply {
+            color = Color.DKGRAY
+            textSize = 14f
+            isAntiAlias = true
+        }
+
+        canvas.drawText("Página de Prueba - Selfie App", 50f, 80f, titlePaint)
+        canvas.drawText("Configuración de Impresora en Android", 50f, 120f, bodyPaint)
+        canvas.drawText("Estado: Impresora conectada y funcionando.", 50f, 160f, bodyPaint)
+
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+        val dateStr = dateFormat.format(Date())
+        canvas.drawText("Fecha y hora: $dateStr", 50f, 200f, bodyPaint)
+
+        newDoc.finishPage(page)
+        pdfDocument = newDoc
 
         val info = PrintDocumentInfo.Builder("Pagina_Prueba_Selfie.pdf")
             .setContentType(PrintDocumentInfo.CONTENT_TYPE_DOCUMENT)
@@ -429,16 +432,30 @@ private class TestPagePrintAdapter : PrintDocumentAdapter() {
         cancellationSignal: CancellationSignal?,
         callback: WriteResultCallback
     ) {
-        try {
-            pdfDocument?.writeTo(FileOutputStream(destination.fileDescriptor))
-        } catch (e: Exception) {
-            callback.onWriteFailed(e.message)
+        if (cancellationSignal?.isCanceled == true) {
+            callback.onWriteCancelled()
             return
-        } finally {
-            pdfDocument?.close()
-            pdfDocument = null
         }
 
-        callback.onWriteFinished(arrayOf(PageRange.ALL_PAGES))
+        val doc = pdfDocument
+        if (doc == null) {
+            callback.onWriteFailed("Document is null")
+            return
+        }
+
+        try {
+            doc.writeTo(FileOutputStream(destination.fileDescriptor))
+            callback.onWriteFinished(arrayOf(PageRange.ALL_PAGES))
+        } catch (e: Exception) {
+            callback.onWriteFailed(e.message)
+        }
+    }
+
+    override fun onFinish() {
+        super.onFinish()
+        try {
+            pdfDocument?.close()
+        } catch (_: Exception) {}
+        pdfDocument = null
     }
 }

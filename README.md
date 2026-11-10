@@ -76,6 +76,8 @@ i know what i tried to print.
 
 - [x] The queue screen make the whole part of the scroll, not only the list of items
 
+- [ ] Allow to select already sended page in the print queue and reprint it, make it so i have to maintain the tap.
+
 
 ## Made for use of
 
