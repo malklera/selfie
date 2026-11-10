@@ -57,12 +57,11 @@ What is show in the preview is what is saved in the end, they cannot differ, the
 
 - [ ] Allow to change the number of taps to enter the config screen, minimum 1.
 
-
 - [x] on tap of "configuracion de impresora" open a new screen that would allow you to search and connect to a printer, use whatever android/kotlin provides for this, if there is some api of framework, no need to implement from scrach
 
 - [x] From printing branch copy the implementation for the templates. Each template is ONE future pdf page A4
 
-- [ ] From printing branch, take inspiration for the queue and change the following:
+- [x] From printing branch, take inspiration for the queue and change the following:
 Allow to select on/multiple/all elements of the queue, on select show options to take out of the queue, and printing
 On print, generate a in memory pdf following the template then call upon the android printing service, (can you pass the printing connected information to the android side or do i have to select printing each time anyway?), what type of pre configured parametres can we pass to android so i do not have to select everything manually?
 On selection of multiple elements generate a pdf with multiple pages, then the rest the same.
@@ -71,7 +70,11 @@ i know what i tried to print.
 
 - [ ] Setting a config in the print screen, then saving in the main config screen resets whatever was in the print screen.
 
-- [ ] Change the queue preview column to do not show the tick selector, allow to select one by maintaining the tapped on top of one item
+- [ ] Do nothing for now. The queue have to reflect the selected template, if i choose a template that use more that one picture, the queue have to reflect that,  what do "Lote n" represents? each item should indicate what template it belongs to, what is a good way of selecting pictures to print? because if something fail it probably would be the template, so instead of 1 picture, more may fail together, printing again i would want them to be together, 
+
+- [ ] drop the "Foto n" title form queue items
+
+- [x] Change the queue preview column to do not show the tick selector, allow to select one by maintaining the tapped on top of one item
 
 - [x] Drop the use of # to indicate number
 

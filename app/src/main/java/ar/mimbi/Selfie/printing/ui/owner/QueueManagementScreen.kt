@@ -1,7 +1,9 @@
 package ar.mimbi.Selfie.printing.ui.owner
 
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -200,17 +202,6 @@ fun QueueManagementScreen(
                                     }
                                 }
                             ) {
-                                Checkbox(
-                                    checked = isAllSelected,
-                                    onCheckedChange = { checked ->
-                                        val filteredIds = filteredItems.map { it.id }.toSet()
-                                        selectedItemIds = if (checked) {
-                                            selectedItemIds + filteredIds
-                                        } else {
-                                            selectedItemIds - filteredIds
-                                        }
-                                    }
-                                )
                                 Text(
                                     text = if (isAllSelected) "Desmarcar todo" else "Seleccionar todo",
                                     style = MaterialTheme.typography.bodyMedium,
@@ -473,9 +464,24 @@ private fun PrintItemCard(
     onToggleSelect: () -> Unit
 ) {
     OutlinedCard(
+        colors = CardDefaults.outlinedCardColors(
+            containerColor = if (isSelected) {
+                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+            } else {
+                MaterialTheme.colorScheme.surface
+            }
+        ),
+        border = if (isSelected) {
+            BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+        } else {
+            CardDefaults.outlinedCardBorder()
+        },
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onToggleSelect() }
+            .combinedClickable(
+                onClick = { onToggleSelect() },
+                onLongClick = { onToggleSelect() }
+            )
     ) {
         Row(
             modifier = Modifier
@@ -484,11 +490,6 @@ private fun PrintItemCard(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Checkbox(
-                checked = isSelected,
-                onCheckedChange = { onToggleSelect() }
-            )
-
             AsyncImage(
                 model = item.photoUri,
                 contentDescription = "Foto ${item.sequence}",
