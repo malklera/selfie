@@ -70,7 +70,8 @@ i know what i tried to print.
 
 - [ ] Setting a config in the print screen, then saving in the main config screen resets whatever was in the print screen.
 
-- [ ] Do nothing for now. The queue have to reflect the selected template, if i choose a template that use more that one picture, the queue have to reflect that,  what do "Lote n" represents? each item should indicate what template it belongs to, what is a good way of selecting pictures to print? because if something fail it probably would be the template, so instead of 1 picture, more may fail together, printing again i would want them to be together, 
+- [ ] Do nothing for now. The queue have to reflect the selected template, if i choose a template that use more that one picture, the queue have to reflect that,  what do "Lote n" represents? each item should indicate what template it belongs to, what is a good way of selecting pictures to print? because if something fail it probably would be the template, so instead of 1 picture, more may fail together, printing again i would want them to be together
+i can think of adding a horizontal separator to separate the pictures that will go in the same page, but for selecting, do we select each section(page) or free selection of pictures, what about if i select pictures with different templates like template2pics and template3pics, which is filled up first and what order? tell me options
 
 - [ ] drop the "Foto n" title form queue items
 
