@@ -2,6 +2,7 @@ package ar.mimbi.Selfie.printing.ui.owner
 
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
@@ -11,6 +12,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Print
@@ -29,20 +32,20 @@ import androidx.compose.ui.unit.dp
 import ar.mimbi.Selfie.data.AppOrientation
 import ar.mimbi.Selfie.data.UserActionTracker
 import ar.mimbi.Selfie.printing.model.PrintItem
-import ar.mimbi.Selfie.printing.model.PrintItemStatus
+import ar.mimbi.Selfie.printing.model.PrintPage
+import ar.mimbi.Selfie.printing.model.PrintPageStatus
 import ar.mimbi.Selfie.printing.model.PrintTemplate
 import ar.mimbi.Selfie.printing.queue.PrintQueueManager
 import ar.mimbi.Selfie.ui.components.EnforceAppOrientation
 import coil.compose.AsyncImage
 import kotlinx.coroutines.launch
-import kotlin.math.ceil
 
-private enum class StatusFilter(val label: String) {
-    ALL("Todos"),
-    PENDING("Pendientes"),
-    SENT("Enviados"),
-    PRINTED("Impresos"),
-    FAILED("Fallidos")
+private enum class PageStatusFilter(val label: String) {
+    ALL("Todas"),
+    READY("Listas"),
+    OPEN("Abiertas"),
+    PRINTED("Impresas"),
+    FAILED("Fallidas")
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -57,32 +60,40 @@ fun QueueManagementScreen(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
-    val allItems by queueManager.allItemsFlow.collectAsState(initial = emptyList())
+    val allPages by queueManager.allPagesFlow.collectAsState(initial = emptyList())
     val activeTemplate by queueManager.activeTemplateFlow.collectAsState(initial = null)
 
-    var selectedItemIds by remember { mutableStateOf(setOf<Long>()) }
-    var currentFilter by remember { mutableStateOf(StatusFilter.ALL) }
+    var selectedPageIds by remember { mutableStateOf(setOf<Long>()) }
+    var currentFilter by remember { mutableStateOf(PageStatusFilter.ALL) }
     var showMenu by remember { mutableStateOf(false) }
 
+    var partialPrintPageConfirm by remember { mutableStateOf<PrintPage?>(null) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     var showClearConfirmDialog by remember { mutableStateOf(false) }
     var showClearPrintedConfirmDialog by remember { mutableStateOf(false) }
 
-    // Filter items based on selected tab
-    val filteredItems = remember(allItems, currentFilter) {
+    val filteredPages = remember(allPages, currentFilter) {
         when (currentFilter) {
-            StatusFilter.ALL -> allItems
-            StatusFilter.PENDING -> allItems.filter { it.status == PrintItemStatus.PENDING }
-            StatusFilter.SENT -> allItems.filter { it.status == PrintItemStatus.SENT }
-            StatusFilter.PRINTED -> allItems.filter { it.status == PrintItemStatus.PRINTED }
-            StatusFilter.FAILED -> allItems.filter {
-                it.status == PrintItemStatus.FAILED || it.status == PrintItemStatus.CANCELED
+            PageStatusFilter.ALL -> allPages
+            PageStatusFilter.READY -> allPages.filter { it.status == PrintPageStatus.READY }
+            PageStatusFilter.OPEN -> allPages.filter { it.status == PrintPageStatus.OPEN }
+            PageStatusFilter.PRINTED -> allPages.filter { it.status == PrintPageStatus.PRINTED }
+            PageStatusFilter.FAILED -> allPages.filter {
+                it.status == PrintPageStatus.FAILED || it.status == PrintPageStatus.CANCELED
             }
         }
     }
 
-    val isAllSelected = remember(filteredItems, selectedItemIds) {
-        filteredItems.isNotEmpty() && filteredItems.all { it.id in selectedItemIds }
+    val eligibleSelectablePages = remember(filteredPages) {
+        filteredPages.filter {
+            it.status == PrintPageStatus.READY ||
+                    it.status == PrintPageStatus.FAILED ||
+                    it.status == PrintPageStatus.CANCELED
+        }
+    }
+
+    val isAllSelected = remember(eligibleSelectablePages, selectedPageIds) {
+        eligibleSelectablePages.isNotEmpty() && eligibleSelectablePages.all { it.id in selectedPageIds }
     }
 
     Scaffold(
@@ -106,28 +117,28 @@ fun QueueManagementScreen(
                         onDismissRequest = { showMenu = false }
                     ) {
                         DropdownMenuItem(
-                            text = { Text("Imprimir restantes pendientes") },
+                            text = { Text("Imprimir páginas listas") },
                             leadingIcon = { Icon(Icons.Default.Print, contentDescription = null) },
                             onClick = {
                                 showMenu = false
                                 coroutineScope.launch {
-                                    val success = queueManager.printRemaining(context)
+                                    val success = queueManager.printReadyPages(context)
                                     if (success) {
-                                        Toast.makeText(context, "Procesando pendientes...", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, "Enviando páginas listas a impresión...", Toast.LENGTH_SHORT).show()
                                     } else {
-                                        Toast.makeText(context, "Impresora no lista", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, "No hay páginas listas para imprimir", Toast.LENGTH_SHORT).show()
                                     }
                                 }
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("Reintentar fallidos") },
+                            text = { Text("Reintentar fallidas") },
                             leadingIcon = { Icon(Icons.Default.Refresh, contentDescription = null) },
                             onClick = {
                                 showMenu = false
                                 coroutineScope.launch {
-                                    queueManager.retryFailed(context)
-                                    Toast.makeText(context, "Reintentando fallidos...", Toast.LENGTH_SHORT).show()
+                                    queueManager.retryFailedPages(context)
+                                    Toast.makeText(context, "Reintentando páginas fallidas...", Toast.LENGTH_SHORT).show()
                                 }
                             }
                         )
@@ -159,16 +170,15 @@ fun QueueManagementScreen(
                 .padding(padding)
                 .navigationBarsPadding(),
             contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 32.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Active Template & Selection Info Banner
-            activeTemplate?.let { template ->
-                item(key = "template_banner") {
-                    TemplateInfoBanner(
-                        template = template,
-                        selectedCount = selectedItemIds.size
-                    )
-                }
+            // Active Template & Queue Status Banner
+            item(key = "queue_banner") {
+                QueueStatusBanner(
+                    activeTemplate = activeTemplate,
+                    allPages = allPages,
+                    selectedPageCount = selectedPageIds.size
+                )
             }
 
             // Selection Controls & Action Bar
@@ -192,50 +202,51 @@ fun QueueManagementScreen(
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.clickable {
+                                modifier = Modifier.clickable(enabled = eligibleSelectablePages.isNotEmpty()) {
                                     if (isAllSelected) {
-                                        val filteredIds = filteredItems.map { it.id }.toSet()
-                                        selectedItemIds = selectedItemIds - filteredIds
+                                        val eligibleIds = eligibleSelectablePages.map { it.id }.toSet()
+                                        selectedPageIds = selectedPageIds - eligibleIds
                                     } else {
-                                        val filteredIds = filteredItems.map { it.id }.toSet()
-                                        selectedItemIds = selectedItemIds + filteredIds
+                                        val eligibleIds = eligibleSelectablePages.map { it.id }.toSet()
+                                        selectedPageIds = selectedPageIds + eligibleIds
                                     }
                                 }
                             ) {
                                 Text(
                                     text = if (isAllSelected) "Desmarcar todo" else "Seleccionar todo",
                                     style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Bold
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (eligibleSelectablePages.isNotEmpty()) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                                 )
                             }
 
                             Text(
-                                text = "(${selectedItemIds.size}/${allItems.size})",
+                                text = "${selectedPageIds.size} página(s) seleccionadas",
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary
                             )
                         }
 
-                        // Action buttons when items are selected
-                        if (selectedItemIds.isNotEmpty()) {
+                        // Action buttons when pages are selected
+                        if (selectedPageIds.isNotEmpty()) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 Button(
                                     onClick = {
-                                        val idsToPrint = selectedItemIds.toList()
-                                        UserActionTracker.trackAction("Imprimir ${idsToPrint.size} elementos seleccionados")
+                                        val pageIdsToPrint = selectedPageIds.toList()
+                                        UserActionTracker.trackAction("Imprimir ${pageIdsToPrint.size} páginas seleccionadas")
                                         coroutineScope.launch {
-                                            val success = queueManager.printSelectedItems(context, idsToPrint)
+                                            val success = queueManager.printPages(context, pageIdsToPrint)
                                             if (success) {
                                                 Toast.makeText(
                                                     context,
                                                     "Enviado al servicio de impresión de Android",
                                                     Toast.LENGTH_SHORT
                                                 ).show()
-                                                selectedItemIds = emptySet()
+                                                selectedPageIds = emptySet()
                                             } else {
                                                 Toast.makeText(
                                                     context,
@@ -249,7 +260,7 @@ fun QueueManagementScreen(
                                 ) {
                                     Icon(Icons.Default.Print, contentDescription = null, modifier = Modifier.size(18.dp))
                                     Spacer(modifier = Modifier.width(6.dp))
-                                    Text("Imprimir (${selectedItemIds.size})", maxLines = 1)
+                                    Text("Imprimir (${selectedPageIds.size})", maxLines = 1)
                                 }
 
                                 OutlinedButton(
@@ -263,7 +274,7 @@ fun QueueManagementScreen(
                                 ) {
                                     Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
                                     Spacer(modifier = Modifier.width(6.dp))
-                                    Text("Quitar (${selectedItemIds.size})", maxLines = 1)
+                                    Text("Quitar (${selectedPageIds.size})", maxLines = 1)
                                 }
                             }
                         }
@@ -271,21 +282,21 @@ fun QueueManagementScreen(
                 }
             }
 
-            // Filter Chips Horizontal Scrollable Row (LazyRow prevents text wrapping inside buttons)
+            // Filter Chips Horizontal Scrollable Row
             item(key = "filter_chips") {
                 LazyRow(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(StatusFilter.entries.toTypedArray(), key = { it.name }) { filter ->
-                        val count = remember(allItems, filter) {
+                    items(PageStatusFilter.entries.toTypedArray(), key = { it.name }) { filter ->
+                        val count = remember(allPages, filter) {
                             when (filter) {
-                                StatusFilter.ALL -> allItems.size
-                                StatusFilter.PENDING -> allItems.count { it.status == PrintItemStatus.PENDING }
-                                StatusFilter.SENT -> allItems.count { it.status == PrintItemStatus.SENT }
-                                StatusFilter.PRINTED -> allItems.count { it.status == PrintItemStatus.PRINTED }
-                                StatusFilter.FAILED -> allItems.count {
-                                    it.status == PrintItemStatus.FAILED || it.status == PrintItemStatus.CANCELED
+                                PageStatusFilter.ALL -> allPages.size
+                                PageStatusFilter.READY -> allPages.count { it.status == PrintPageStatus.READY }
+                                PageStatusFilter.OPEN -> allPages.count { it.status == PrintPageStatus.OPEN }
+                                PageStatusFilter.PRINTED -> allPages.count { it.status == PrintPageStatus.PRINTED }
+                                PageStatusFilter.FAILED -> allPages.count {
+                                    it.status == PrintPageStatus.FAILED || it.status == PrintPageStatus.CANCELED
                                 }
                             }
                         }
@@ -298,8 +309,8 @@ fun QueueManagementScreen(
                 }
             }
 
-            // List of items
-            if (filteredItems.isEmpty()) {
+            // List of pages
+            if (filteredPages.isEmpty()) {
                 item(key = "empty_state") {
                     Box(
                         modifier = Modifier
@@ -308,45 +319,110 @@ fun QueueManagementScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "No hay elementos en la cola para este filtro",
+                            text = "No hay páginas en la cola para este filtro",
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
             } else {
-                items(filteredItems, key = { it.id }) { item ->
-                    PrintItemCard(
-                        item = item,
-                        isSelected = item.id in selectedItemIds,
-                        onToggleSelect = {
-                            selectedItemIds = if (item.id in selectedItemIds) {
-                                selectedItemIds - item.id
-                            } else {
-                                selectedItemIds + item.id
+                items(filteredPages, key = { it.id }) { page ->
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        PrintPageCard(
+                            page = page,
+                            isSelected = page.id in selectedPageIds,
+                            onToggleSelect = {
+                                if (page.status == PrintPageStatus.READY || page.status == PrintPageStatus.FAILED || page.status == PrintPageStatus.CANCELED) {
+                                    selectedPageIds = if (page.id in selectedPageIds) {
+                                        selectedPageIds - page.id
+                                    } else {
+                                        selectedPageIds + page.id
+                                    }
+                                }
+                            },
+                            onPrintPartial = {
+                                partialPrintPageConfirm = page
+                            },
+                            onDeletePage = {
+                                coroutineScope.launch {
+                                    queueManager.deletePages(listOf(page.id))
+                                    selectedPageIds = selectedPageIds - page.id
+                                    Toast.makeText(context, "Página eliminada", Toast.LENGTH_SHORT).show()
+                                }
+                            },
+                            onRetryPage = {
+                                coroutineScope.launch {
+                                    queueManager.printPages(context, listOf(page.id))
+                                }
+                            },
+                            onDeleteItem = { itemId ->
+                                coroutineScope.launch {
+                                    queueManager.deleteItem(itemId)
+                                }
                             }
-                        }
-                    )
+                        )
+
+                        HorizontalDivider(
+                            modifier = Modifier.padding(vertical = 4.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant
+                        )
+                    }
                 }
             }
         }
     }
 
-    // Confirmation dialog for deleting selected items
+    // Confirmation dialog for partial printing of OPEN page
+    partialPrintPageConfirm?.let { page ->
+        AlertDialog(
+            onDismissRequest = { partialPrintPageConfirm = null },
+            title = { Text("Imprimir página parcial") },
+            text = {
+                Text("¿Desea imprimir la Página ${page.pageNumber} con solo ${page.itemCount}/${page.slotCount} fotos?\n\nLa página se cerrará y no recibirá más fotos.")
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val pageToPrint = page
+                        partialPrintPageConfirm = null
+                        coroutineScope.launch {
+                            val success = queueManager.printPages(context, listOf(pageToPrint.id), allowPartial = true)
+                            if (success) {
+                                Toast.makeText(context, "Enviando página parcial...", Toast.LENGTH_SHORT).show()
+                            } else {
+                                Toast.makeText(context, "Error al imprimir página parcial", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
+                ) {
+                    Text("Imprimir parcial")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { partialPrintPageConfirm = null }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
+    // Confirmation dialog for deleting selected pages
     if (showDeleteConfirmDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirmDialog = false },
             title = { Text("Quitar de la cola") },
-            text = { Text("¿Desea quitar los ${selectedItemIds.size} elementos seleccionados de la cola de impresión?") },
+            text = { Text("¿Desea quitar las ${selectedPageIds.size} página(s) seleccionadas de la cola de impresión?") },
             confirmButton = {
                 TextButton(
                     onClick = {
-                        val idsToRemove = selectedItemIds.toList()
+                        val idsToRemove = selectedPageIds.toList()
                         showDeleteConfirmDialog = false
                         coroutineScope.launch {
-                            queueManager.deleteItems(idsToRemove)
-                            selectedItemIds = emptySet()
-                            Toast.makeText(context, "Elementos eliminados de la cola", Toast.LENGTH_SHORT).show()
+                            queueManager.deletePages(idsToRemove)
+                            selectedPageIds = emptySet()
+                            Toast.makeText(context, "Páginas eliminadas de la cola", Toast.LENGTH_SHORT).show()
                         }
                     }
                 ) {
@@ -366,14 +442,14 @@ fun QueueManagementScreen(
         AlertDialog(
             onDismissRequest = { showClearConfirmDialog = false },
             title = { Text("Vaciar cola de impresión") },
-            text = { Text("¿Está seguro de que desea eliminar todos los elementos de la cola?") },
+            text = { Text("¿Está seguro de que desea eliminar todas las páginas y fotos de la cola?") },
             confirmButton = {
                 TextButton(
                     onClick = {
                         showClearConfirmDialog = false
                         coroutineScope.launch {
                             queueManager.clearQueue()
-                            selectedItemIds = emptySet()
+                            selectedPageIds = emptySet()
                             Toast.makeText(context, "Cola vaciada", Toast.LENGTH_SHORT).show()
                         }
                     }
@@ -394,14 +470,14 @@ fun QueueManagementScreen(
         AlertDialog(
             onDismissRequest = { showClearPrintedConfirmDialog = false },
             title = { Text("Limpiar impresos") },
-            text = { Text("¿Desea eliminar de la cola todos los elementos ya impresos?") },
+            text = { Text("¿Desea eliminar de la cola todas las páginas ya impresas?") },
             confirmButton = {
                 TextButton(
                     onClick = {
                         showClearPrintedConfirmDialog = false
                         coroutineScope.launch {
                             queueManager.clearPrintedItems()
-                            Toast.makeText(context, "Impresos eliminados", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Páginas impresas eliminadas", Toast.LENGTH_SHORT).show()
                         }
                     }
                 ) {
@@ -418,9 +494,10 @@ fun QueueManagementScreen(
 }
 
 @Composable
-private fun TemplateInfoBanner(
-    template: PrintTemplate,
-    selectedCount: Int
+private fun QueueStatusBanner(
+    activeTemplate: PrintTemplate?,
+    allPages: List<PrintPage>,
+    selectedPageCount: Int
 ) {
     OutlinedCard(
         modifier = Modifier.fillMaxWidth()
@@ -431,26 +508,32 @@ private fun TemplateInfoBanner(
                 .fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
+            activeTemplate?.let { template ->
+                Text(
+                    text = "Plantilla Activa: ${template.description} (Id ${template.id})",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+
+            val readyCount = allPages.count { it.status == PrintPageStatus.READY }
+            val openCount = allPages.count { it.status == PrintPageStatus.OPEN }
+            val printedCount = allPages.count { it.status == PrintPageStatus.PRINTED }
+            val failedCount = allPages.count { it.status == PrintPageStatus.FAILED || it.status == PrintPageStatus.CANCELED }
+
             Text(
-                text = "Plantilla Activa: ${template.description}",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
+                text = "$readyCount listas, $openCount abiertas, $printedCount impresas, $failedCount fallidas",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
-            if (selectedCount > 0) {
-                val slotCount = template.slotCount.coerceAtLeast(1)
-                val estimatedPages = ceil(selectedCount.toFloat() / slotCount).toInt()
+            if (selectedPageCount > 0) {
                 Text(
-                    text = "Generará un PDF de $estimatedPages página(s) A4 ($slotCount foto(s) por página).",
+                    text = "$selectedPageCount página(s) seleccionadas para imprimir",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            } else {
-                Text(
-                    text = "Seleccione fotos de la cola para imprimirlas o quitarlas.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.secondary
                 )
             }
         }
@@ -458,11 +541,19 @@ private fun TemplateInfoBanner(
 }
 
 @Composable
-private fun PrintItemCard(
-    item: PrintItem,
+private fun PrintPageCard(
+    page: PrintPage,
     isSelected: Boolean,
-    onToggleSelect: () -> Unit
+    onToggleSelect: () -> Unit,
+    onPrintPartial: () -> Unit,
+    onDeletePage: () -> Unit,
+    onRetryPage: () -> Unit,
+    onDeleteItem: (Long) -> Unit
 ) {
+    val isSelectable = page.status == PrintPageStatus.READY ||
+            page.status == PrintPageStatus.FAILED ||
+            page.status == PrintPageStatus.CANCELED
+
     OutlinedCard(
         colors = CardDefaults.outlinedCardColors(
             containerColor = if (isSelected) {
@@ -479,65 +570,187 @@ private fun PrintItemCard(
         modifier = Modifier
             .fillMaxWidth()
             .combinedClickable(
+                enabled = isSelectable,
                 onClick = { onToggleSelect() },
                 onLongClick = { onToggleSelect() }
             )
     ) {
-        Row(
+        Column(
             modifier = Modifier
-                .padding(8.dp)
+                .padding(12.dp)
                 .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            AsyncImage(
-                model = item.photoUri,
-                contentDescription = "Foto ${item.sequence}",
-                modifier = Modifier
-                    .size(60.dp)
-                    .clip(RoundedCornerShape(6.dp)),
-                contentScale = ContentScale.Crop
-            )
-
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(2.dp)
+            // Header: Página {n} - Plantilla {id} - {fotos}/{slots} fotos - {estado}
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "Foto ${item.sequence}",
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = "Lote ${item.batchId}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = item.photoUri.substringAfterLast('/'),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    text = page.headerText,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
+
+                Spacer(modifier = Modifier.width(8.dp))
+                PageStatusBadge(status = page.status)
             }
 
-            StatusBadge(status = item.status)
+            page.statusMessage?.let { msg ->
+                Text(
+                    text = msg,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+
+            // Photo Slots Grid / List
+            val itemsBySlot = remember(page.items) {
+                page.items.associateBy { it.slotIndex }
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                for (slotIndex in 0 until page.slotCount) {
+                    val item = itemsBySlot[slotIndex]
+                    SlotThumbnailBox(
+                        slotIndex = slotIndex,
+                        item = item,
+                        canDelete = page.status == PrintPageStatus.OPEN || page.status == PrintPageStatus.READY,
+                        onDeleteItem = onDeleteItem,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+
+            // Page Actions Row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (page.status == PrintPageStatus.OPEN && page.itemCount < page.slotCount && page.itemCount > 0) {
+                    TextButton(onClick = onPrintPartial) {
+                        Icon(Icons.Default.Print, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Imprimir página parcial")
+                    }
+                }
+
+                if (page.status == PrintPageStatus.FAILED || page.status == PrintPageStatus.CANCELED) {
+                    TextButton(onClick = onRetryPage) {
+                        Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Reintentar página")
+                    }
+                }
+
+                IconButton(onClick = onDeletePage) {
+                    Icon(Icons.Default.Delete, contentDescription = "Quitar página", tint = MaterialTheme.colorScheme.error)
+                }
+            }
         }
     }
 }
 
 @Composable
-private fun StatusBadge(status: PrintItemStatus) {
-    val (backgroundColor, textColor, label) = when (status) {
-        PrintItemStatus.PENDING -> Triple(Color(0xFFFFF3CD), Color(0xFF856404), "Pendiente")
-        PrintItemStatus.QUEUED -> Triple(Color(0xFFE2E3E5), Color(0xFF383D41), "En cola")
-        PrintItemStatus.PRINTING -> Triple(Color(0xFFCCE5FF), Color(0xFF004085), "Imprimiendo")
-        PrintItemStatus.BLOCKED -> Triple(Color(0xFFF8D7DA), Color(0xFF721C24), "Bloqueado")
-        PrintItemStatus.SENT -> Triple(Color(0xFFD1ECF1), Color(0xFF0C5460), "Enviado")
-        PrintItemStatus.PRINTED -> Triple(Color(0xFFD4EDDA), Color(0xFF155724), "Impreso")
-        PrintItemStatus.FAILED -> Triple(Color(0xFFF8D7DA), Color(0xFF721C24), "Error")
-        PrintItemStatus.CANCELED -> Triple(Color(0xFFE2E3E5), Color(0xFF383D41), "Cancelado")
+private fun SlotThumbnailBox(
+    slotIndex: Int,
+    item: PrintItem?,
+    canDelete: Boolean,
+    onDeleteItem: (Long) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .aspectRatio(0.75f)
+            .clip(RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant),
+        contentAlignment = Alignment.Center
+    ) {
+        if (item != null) {
+            AsyncImage(
+                model = item.photoUri,
+                contentDescription = "Ranura ${slotIndex + 1}",
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+
+            // Slot badge top-left
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(4.dp)
+                    .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(4.dp))
+                    .padding(horizontal = 4.dp, vertical = 2.dp)
+            ) {
+                Text(
+                    text = "${slotIndex + 1}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            // Delete item button top-right (only for unprinted/open/ready pages)
+            if (canDelete) {
+                IconButton(
+                    onClick = { onDeleteItem(item.id) },
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .size(24.dp)
+                        .padding(2.dp)
+                        .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(12.dp))
+                ) {
+                    Icon(
+                        Icons.Default.Close,
+                        contentDescription = "Quitar foto",
+                        tint = Color.White,
+                        modifier = Modifier.size(14.dp)
+                    )
+                }
+            }
+        } else {
+            // Empty placeholder
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    Icons.Default.Add,
+                    contentDescription = "Ranura libre",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                    modifier = Modifier.size(24.dp)
+                )
+                Text(
+                    text = "${slotIndex + 1}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PageStatusBadge(status: PrintPageStatus) {
+    val (backgroundColor, textColor) = when (status) {
+        PrintPageStatus.OPEN -> Pair(Color(0xFFFFF3CD), Color(0xFF856404))
+        PrintPageStatus.READY -> Pair(Color(0xFFD4EDDA), Color(0xFF155724))
+        PrintPageStatus.SENT -> Pair(Color(0xFFD1ECF1), Color(0xFF0C5460))
+        PrintPageStatus.PRINTING -> Pair(Color(0xFFCCE5FF), Color(0xFF004085))
+        PrintPageStatus.BLOCKED -> Pair(Color(0xFFF8D7DA), Color(0xFF721C24))
+        PrintPageStatus.PRINTED -> Pair(Color(0xFFD4EDDA), Color(0xFF155724))
+        PrintPageStatus.FAILED -> Pair(Color(0xFFF8D7DA), Color(0xFF721C24))
+        PrintPageStatus.CANCELED -> Pair(Color(0xFFE2E3E5), Color(0xFF383D41))
     }
 
     Surface(
@@ -545,7 +758,7 @@ private fun StatusBadge(status: PrintItemStatus) {
         shape = RoundedCornerShape(12.dp)
     ) {
         Text(
-            text = label,
+            text = status.labelSpanish,
             color = textColor,
             style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Bold,

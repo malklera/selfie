@@ -8,6 +8,8 @@ import ar.mimbi.Selfie.printing.persistence.PrintBatchDao
 import ar.mimbi.Selfie.printing.persistence.PrintBatchEntity
 import ar.mimbi.Selfie.printing.persistence.PrintItemDao
 import ar.mimbi.Selfie.printing.persistence.PrintItemEntity
+import ar.mimbi.Selfie.printing.persistence.PrintPageDao
+import ar.mimbi.Selfie.printing.persistence.PrintPageEntity
 import ar.mimbi.Selfie.printing.persistence.PrintTemplateDao
 import ar.mimbi.Selfie.printing.persistence.PrintTemplateEntity
 import ar.mimbi.Selfie.printing.persistence.PrinterConfigDao
@@ -18,16 +20,18 @@ import ar.mimbi.Selfie.printing.persistence.PrinterConfigEntity
         ErrorLog::class,
         PrintTemplateEntity::class,
         PrintBatchEntity::class,
+        PrintPageEntity::class,
         PrintItemEntity::class,
         PrinterConfigEntity::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun errorLogDao(): ErrorLogDao
     abstract fun printTemplateDao(): PrintTemplateDao
     abstract fun printBatchDao(): PrintBatchDao
+    abstract fun printPageDao(): PrintPageDao
     abstract fun printItemDao(): PrintItemDao
     abstract fun printerConfigDao(): PrinterConfigDao
 
