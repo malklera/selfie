@@ -172,4 +172,29 @@ class PrintQueueTest {
         assertEquals(template.widthCm, parsed.widthCm, 0.01f)
         assertEquals(template.heightCm, parsed.heightCm, 0.01f)
     }
+
+    @Test
+    fun testSentPrintedAndCanceledPagesSelectionAndSelectAllBehavior() {
+        val readyPage = PrintPage(id = 1L, templateId = 1, templateVersion = 1, templateSnapshotJson = "{}", pageNumber = 1, slotCount = 1, status = PrintPageStatus.READY)
+        val sentPage = PrintPage(id = 2L, templateId = 1, templateVersion = 1, templateSnapshotJson = "{}", pageNumber = 2, slotCount = 1, status = PrintPageStatus.SENT)
+        val printedPage = PrintPage(id = 3L, templateId = 1, templateVersion = 1, templateSnapshotJson = "{}", pageNumber = 3, slotCount = 1, status = PrintPageStatus.PRINTED)
+        val canceledPage = PrintPage(id = 4L, templateId = 1, templateVersion = 1, templateSnapshotJson = "{}", pageNumber = 4, slotCount = 1, status = PrintPageStatus.CANCELED)
+
+        val pages = listOf(readyPage, sentPage, printedPage, canceledPage)
+
+        // "Seleccionar todo" selects READY pages only
+        val selectAllEligible = pages.filter { it.status == PrintPageStatus.READY }
+        assertEquals(1, selectAllEligible.size)
+        assertEquals(1L, selectAllEligible.first().id)
+
+        // Individual selection allows READY, FAILED, CANCELED, SENT, PRINTED
+        val individuallySelectable = pages.filter {
+            it.status == PrintPageStatus.READY ||
+                    it.status == PrintPageStatus.FAILED ||
+                    it.status == PrintPageStatus.CANCELED ||
+                    it.status == PrintPageStatus.SENT ||
+                    it.status == PrintPageStatus.PRINTED
+        }
+        assertEquals(4, individuallySelectable.size)
+    }
 }

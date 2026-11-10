@@ -84,14 +84,12 @@ fun QueueManagementScreen(
 
     val eligibleSelectablePages = remember(filteredPages) {
         filteredPages.filter {
-            it.status == PrintPageStatus.READY ||
-                    it.status == PrintPageStatus.FAILED ||
-                    it.status == PrintPageStatus.CANCELED
+            it.status == PrintPageStatus.READY
         }
     }
 
-    val isAllSelected = remember(eligibleSelectablePages, selectedPageIds) {
-        eligibleSelectablePages.isNotEmpty() && eligibleSelectablePages.all { it.id in selectedPageIds }
+    val hasSelectedPages = remember(selectedPageIds) {
+        selectedPageIds.isNotEmpty()
     }
 
     Scaffold(
@@ -186,15 +184,14 @@ fun QueueManagementScreen(
                 ) {
                     OutlinedButton(
                         onClick = {
-                            if (isAllSelected) {
-                                val eligibleIds = eligibleSelectablePages.map { it.id }.toSet()
-                                selectedPageIds = selectedPageIds - eligibleIds
+                            if (hasSelectedPages) {
+                                selectedPageIds = emptySet()
                             } else {
                                 val eligibleIds = eligibleSelectablePages.map { it.id }.toSet()
-                                selectedPageIds = selectedPageIds + eligibleIds
+                                selectedPageIds = eligibleIds
                             }
                         },
-                        enabled = eligibleSelectablePages.isNotEmpty(),
+                        enabled = hasSelectedPages || eligibleSelectablePages.isNotEmpty(),
                         colors = ButtonDefaults.outlinedButtonColors(
                             containerColor = Color.Transparent,
                             contentColor = MaterialTheme.colorScheme.onSurface,
@@ -203,11 +200,11 @@ fun QueueManagementScreen(
                         ),
                         border = BorderStroke(
                             1.dp,
-                            if (eligibleSelectablePages.isNotEmpty()) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.outline.copy(alpha = 0.38f)
+                            if (hasSelectedPages || eligibleSelectablePages.isNotEmpty()) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.outline.copy(alpha = 0.38f)
                         )
                     ) {
                         Text(
-                            text = if (isAllSelected) "Desmarcar todo" else "Seleccionar todo",
+                            text = if (hasSelectedPages) "Desmarcar todo" else "Seleccionar todo",
                             maxLines = 1
                         )
                     }
@@ -325,7 +322,12 @@ fun QueueManagementScreen(
                         page = page,
                         isSelected = page.id in selectedPageIds,
                         onToggleSelect = {
-                            if (page.status == PrintPageStatus.READY || page.status == PrintPageStatus.FAILED || page.status == PrintPageStatus.CANCELED) {
+                            if (page.status == PrintPageStatus.READY ||
+                                page.status == PrintPageStatus.FAILED ||
+                                page.status == PrintPageStatus.CANCELED ||
+                                page.status == PrintPageStatus.SENT ||
+                                page.status == PrintPageStatus.PRINTED
+                            ) {
                                 selectedPageIds = if (page.id in selectedPageIds) {
                                     selectedPageIds - page.id
                                 } else {
@@ -499,8 +501,15 @@ private fun PrintPageCard(
     onPrintPartial: () -> Unit,
     onRetryPage: () -> Unit
 ) {
+    val context = LocalContext.current
     val isSelectable = page.status == PrintPageStatus.READY ||
             page.status == PrintPageStatus.FAILED ||
+            page.status == PrintPageStatus.CANCELED ||
+            page.status == PrintPageStatus.SENT ||
+            page.status == PrintPageStatus.PRINTED
+
+    val requiresLongPressToSelect = page.status == PrintPageStatus.SENT ||
+            page.status == PrintPageStatus.PRINTED ||
             page.status == PrintPageStatus.CANCELED
 
     OutlinedCard(
@@ -520,7 +529,17 @@ private fun PrintPageCard(
             .fillMaxWidth()
             .combinedClickable(
                 enabled = isSelectable,
-                onClick = { onToggleSelect() },
+                onClick = {
+                    if (requiresLongPressToSelect) {
+                        Toast.makeText(
+                            context,
+                            "Mantén presionado para seleccionar esta página",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    } else {
+                        onToggleSelect()
+                    }
+                },
                 onLongClick = { onToggleSelect() }
             )
     ) {

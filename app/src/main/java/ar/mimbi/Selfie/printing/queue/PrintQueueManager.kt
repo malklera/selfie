@@ -106,7 +106,7 @@ class PrintQueueManager(
 
             for (page in pagesToProcess) {
                 val isEligible = when (page.status) {
-                    PrintPageStatus.READY, PrintPageStatus.FAILED, PrintPageStatus.CANCELED -> true
+                    PrintPageStatus.READY, PrintPageStatus.FAILED, PrintPageStatus.CANCELED, PrintPageStatus.SENT, PrintPageStatus.PRINTED -> true
                     PrintPageStatus.OPEN -> allowPartial && page.items.isNotEmpty()
                     else -> false
                 }
