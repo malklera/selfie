@@ -3,7 +3,6 @@ package ar.mimbi.Selfie.printing.ui.owner
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -13,7 +12,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Print
@@ -48,7 +46,7 @@ private enum class PageStatusFilter(val label: String) {
     FAILED("Fallidas")
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun QueueManagementScreen(
     queueManager: PrintQueueManager,
@@ -172,112 +170,108 @@ fun QueueManagementScreen(
             contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 32.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Active Template & Queue Status Banner
+            // Active Template Banner
             item(key = "queue_banner") {
                 QueueStatusBanner(
-                    activeTemplate = activeTemplate,
-                    allPages = allPages,
-                    selectedPageCount = selectedPageIds.size
+                    activeTemplate = activeTemplate
                 )
             }
 
-            // Selection Controls & Action Bar
+            // Selection Controls & Action Buttons (FlowRow without grey background card, transparent fill & grey border)
             item(key = "selection_controls") {
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                    ),
-                    modifier = Modifier.fillMaxWidth()
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .padding(12.dp)
-                            .fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    OutlinedButton(
+                        onClick = {
+                            if (isAllSelected) {
+                                val eligibleIds = eligibleSelectablePages.map { it.id }.toSet()
+                                selectedPageIds = selectedPageIds - eligibleIds
+                            } else {
+                                val eligibleIds = eligibleSelectablePages.map { it.id }.toSet()
+                                selectedPageIds = selectedPageIds + eligibleIds
+                            }
+                        },
+                        enabled = eligibleSelectablePages.isNotEmpty(),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            containerColor = Color.Transparent,
+                            contentColor = MaterialTheme.colorScheme.onSurface,
+                            disabledContainerColor = Color.Transparent,
+                            disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                        ),
+                        border = BorderStroke(
+                            1.dp,
+                            if (eligibleSelectablePages.isNotEmpty()) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.outline.copy(alpha = 0.38f)
+                        )
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.clickable(enabled = eligibleSelectablePages.isNotEmpty()) {
-                                    if (isAllSelected) {
-                                        val eligibleIds = eligibleSelectablePages.map { it.id }.toSet()
-                                        selectedPageIds = selectedPageIds - eligibleIds
-                                    } else {
-                                        val eligibleIds = eligibleSelectablePages.map { it.id }.toSet()
-                                        selectedPageIds = selectedPageIds + eligibleIds
-                                    }
-                                }
-                            ) {
-                                Text(
-                                    text = if (isAllSelected) "Desmarcar todo" else "Seleccionar todo",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (eligibleSelectablePages.isNotEmpty()) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                                )
-                            }
+                        Text(
+                            text = if (isAllSelected) "Desmarcar todo" else "Seleccionar todo",
+                            maxLines = 1
+                        )
+                    }
 
-                            Text(
-                                text = "${selectedPageIds.size} página(s) seleccionadas",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
-
-                        // Action buttons when pages are selected
-                        if (selectedPageIds.isNotEmpty()) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Button(
-                                    onClick = {
-                                        val pageIdsToPrint = selectedPageIds.toList()
-                                        UserActionTracker.trackAction("Imprimir ${pageIdsToPrint.size} páginas seleccionadas")
-                                        coroutineScope.launch {
-                                            val success = queueManager.printPages(context, pageIdsToPrint)
-                                            if (success) {
-                                                Toast.makeText(
-                                                    context,
-                                                    "Enviado al servicio de impresión de Android",
-                                                    Toast.LENGTH_SHORT
-                                                ).show()
-                                                selectedPageIds = emptySet()
-                                            } else {
-                                                Toast.makeText(
-                                                    context,
-                                                    "Error al iniciar servicio de impresión",
-                                                    Toast.LENGTH_SHORT
-                                                ).show()
-                                            }
-                                        }
-                                    },
-                                    modifier = Modifier.weight(1f)
-                                ) {
-                                    Icon(Icons.Default.Print, contentDescription = null, modifier = Modifier.size(18.dp))
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text("Imprimir (${selectedPageIds.size})", maxLines = 1)
-                                }
-
-                                OutlinedButton(
-                                    onClick = {
-                                        showDeleteConfirmDialog = true
-                                    },
-                                    colors = ButtonDefaults.outlinedButtonColors(
-                                        contentColor = MaterialTheme.colorScheme.error
-                                    ),
-                                    modifier = Modifier.weight(1f)
-                                ) {
-                                    Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text("Quitar (${selectedPageIds.size})", maxLines = 1)
+                    OutlinedButton(
+                        onClick = {
+                            val pageIdsToPrint = selectedPageIds.toList()
+                            UserActionTracker.trackAction("Imprimir ${pageIdsToPrint.size} páginas seleccionadas")
+                            coroutineScope.launch {
+                                val success = queueManager.printPages(context, pageIdsToPrint)
+                                if (success) {
+                                    Toast.makeText(
+                                        context,
+                                        "Enviado al servicio de impresión de Android",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                    selectedPageIds = emptySet()
+                                } else {
+                                    Toast.makeText(
+                                        context,
+                                        "Error al iniciar servicio de impresión",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
                                 }
                             }
-                        }
+                        },
+                        enabled = selectedPageIds.isNotEmpty(),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            containerColor = Color.Transparent,
+                            contentColor = MaterialTheme.colorScheme.onSurface,
+                            disabledContainerColor = Color.Transparent,
+                            disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                        ),
+                        border = BorderStroke(
+                            1.dp,
+                            if (selectedPageIds.isNotEmpty()) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.outline.copy(alpha = 0.38f)
+                        )
+                    ) {
+                        Text(
+                            text = "Imprimir (${selectedPageIds.size})",
+                            maxLines = 1
+                        )
+                    }
+
+                    OutlinedButton(
+                        onClick = {
+                            showDeleteConfirmDialog = true
+                        },
+                        enabled = selectedPageIds.isNotEmpty(),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            containerColor = Color.Transparent,
+                            contentColor = MaterialTheme.colorScheme.error,
+                            disabledContainerColor = Color.Transparent,
+                            disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                        ),
+                        border = BorderStroke(
+                            1.dp,
+                            if (selectedPageIds.isNotEmpty()) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.outline.copy(alpha = 0.38f)
+                        )
+                    ) {
+                        Text(
+                            text = "Quitar (${selectedPageIds.size})",
+                            maxLines = 1
+                        )
                     }
                 }
             }
@@ -309,7 +303,7 @@ fun QueueManagementScreen(
                 }
             }
 
-            // List of pages
+            // List of pages (no horizontal dividers between items)
             if (filteredPages.isEmpty()) {
                 item(key = "empty_state") {
                     Box(
@@ -327,48 +321,27 @@ fun QueueManagementScreen(
                 }
             } else {
                 items(filteredPages, key = { it.id }) { page ->
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        PrintPageCard(
-                            page = page,
-                            isSelected = page.id in selectedPageIds,
-                            onToggleSelect = {
-                                if (page.status == PrintPageStatus.READY || page.status == PrintPageStatus.FAILED || page.status == PrintPageStatus.CANCELED) {
-                                    selectedPageIds = if (page.id in selectedPageIds) {
-                                        selectedPageIds - page.id
-                                    } else {
-                                        selectedPageIds + page.id
-                                    }
-                                }
-                            },
-                            onPrintPartial = {
-                                partialPrintPageConfirm = page
-                            },
-                            onDeletePage = {
-                                coroutineScope.launch {
-                                    queueManager.deletePages(listOf(page.id))
-                                    selectedPageIds = selectedPageIds - page.id
-                                    Toast.makeText(context, "Página eliminada", Toast.LENGTH_SHORT).show()
-                                }
-                            },
-                            onRetryPage = {
-                                coroutineScope.launch {
-                                    queueManager.printPages(context, listOf(page.id))
-                                }
-                            },
-                            onDeleteItem = { itemId ->
-                                coroutineScope.launch {
-                                    queueManager.deleteItem(itemId)
+                    PrintPageCard(
+                        page = page,
+                        isSelected = page.id in selectedPageIds,
+                        onToggleSelect = {
+                            if (page.status == PrintPageStatus.READY || page.status == PrintPageStatus.FAILED || page.status == PrintPageStatus.CANCELED) {
+                                selectedPageIds = if (page.id in selectedPageIds) {
+                                    selectedPageIds - page.id
+                                } else {
+                                    selectedPageIds + page.id
                                 }
                             }
-                        )
-
-                        HorizontalDivider(
-                            modifier = Modifier.padding(vertical = 4.dp),
-                            color = MaterialTheme.colorScheme.outlineVariant
-                        )
-                    }
+                        },
+                        onPrintPartial = {
+                            partialPrintPageConfirm = page
+                        },
+                        onRetryPage = {
+                            coroutineScope.launch {
+                                queueManager.printPages(context, listOf(page.id))
+                            }
+                        }
+                    )
                 }
             }
         }
@@ -495,9 +468,7 @@ fun QueueManagementScreen(
 
 @Composable
 private fun QueueStatusBanner(
-    activeTemplate: PrintTemplate?,
-    allPages: List<PrintPage>,
-    selectedPageCount: Int
+    activeTemplate: PrintTemplate?
 ) {
     OutlinedCard(
         modifier = Modifier.fillMaxWidth()
@@ -516,26 +487,6 @@ private fun QueueStatusBanner(
                     color = MaterialTheme.colorScheme.primary
                 )
             }
-
-            val readyCount = allPages.count { it.status == PrintPageStatus.READY }
-            val openCount = allPages.count { it.status == PrintPageStatus.OPEN }
-            val printedCount = allPages.count { it.status == PrintPageStatus.PRINTED }
-            val failedCount = allPages.count { it.status == PrintPageStatus.FAILED || it.status == PrintPageStatus.CANCELED }
-
-            Text(
-                text = "$readyCount listas, $openCount abiertas, $printedCount impresas, $failedCount fallidas",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            if (selectedPageCount > 0) {
-                Text(
-                    text = "$selectedPageCount página(s) seleccionadas para imprimir",
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.secondary
-                )
-            }
         }
     }
 }
@@ -546,9 +497,7 @@ private fun PrintPageCard(
     isSelected: Boolean,
     onToggleSelect: () -> Unit,
     onPrintPartial: () -> Unit,
-    onDeletePage: () -> Unit,
-    onRetryPage: () -> Unit,
-    onDeleteItem: (Long) -> Unit
+    onRetryPage: () -> Unit
 ) {
     val isSelectable = page.status == PrintPageStatus.READY ||
             page.status == PrintPageStatus.FAILED ||
@@ -624,37 +573,49 @@ private fun PrintPageCard(
                     SlotThumbnailBox(
                         slotIndex = slotIndex,
                         item = item,
-                        canDelete = page.status == PrintPageStatus.OPEN || page.status == PrintPageStatus.READY,
-                        onDeleteItem = onDeleteItem,
                         modifier = Modifier.weight(1f)
                     )
                 }
             }
 
-            // Page Actions Row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically
+            // Page Actions Row (if partial print or retry applies)
+            if ((page.status == PrintPageStatus.OPEN && page.itemCount < page.slotCount && page.itemCount > 0) ||
+                page.status == PrintPageStatus.FAILED || page.status == PrintPageStatus.CANCELED
             ) {
-                if (page.status == PrintPageStatus.OPEN && page.itemCount < page.slotCount && page.itemCount > 0) {
-                    TextButton(onClick = onPrintPartial) {
-                        Icon(Icons.Default.Print, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Imprimir página parcial")
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (page.status == PrintPageStatus.OPEN && page.itemCount < page.slotCount && page.itemCount > 0) {
+                        OutlinedButton(
+                            onClick = onPrintPartial,
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = Color.Transparent,
+                                contentColor = MaterialTheme.colorScheme.onSurface,
+                                disabledContainerColor = Color.Transparent,
+                                disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                            ),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+                        ) {
+                            Text("Imprimir página parcial", maxLines = 1)
+                        }
                     }
-                }
 
-                if (page.status == PrintPageStatus.FAILED || page.status == PrintPageStatus.CANCELED) {
-                    TextButton(onClick = onRetryPage) {
-                        Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Reintentar página")
+                    if (page.status == PrintPageStatus.FAILED || page.status == PrintPageStatus.CANCELED) {
+                        OutlinedButton(
+                            onClick = onRetryPage,
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = Color.Transparent,
+                                contentColor = MaterialTheme.colorScheme.onSurface,
+                                disabledContainerColor = Color.Transparent,
+                                disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                            ),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+                        ) {
+                            Text("Reintentar página", maxLines = 1)
+                        }
                     }
-                }
-
-                IconButton(onClick = onDeletePage) {
-                    Icon(Icons.Default.Delete, contentDescription = "Quitar página", tint = MaterialTheme.colorScheme.error)
                 }
             }
         }
@@ -665,8 +626,6 @@ private fun PrintPageCard(
 private fun SlotThumbnailBox(
     slotIndex: Int,
     item: PrintItem?,
-    canDelete: Boolean,
-    onDeleteItem: (Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -698,25 +657,6 @@ private fun SlotThumbnailBox(
                     color = Color.White,
                     fontWeight = FontWeight.Bold
                 )
-            }
-
-            // Delete item button top-right (only for unprinted/open/ready pages)
-            if (canDelete) {
-                IconButton(
-                    onClick = { onDeleteItem(item.id) },
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .size(24.dp)
-                        .padding(2.dp)
-                        .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(12.dp))
-                ) {
-                    Icon(
-                        Icons.Default.Close,
-                        contentDescription = "Quitar foto",
-                        tint = Color.White,
-                        modifier = Modifier.size(14.dp)
-                    )
-                }
             }
         } else {
             // Empty placeholder
