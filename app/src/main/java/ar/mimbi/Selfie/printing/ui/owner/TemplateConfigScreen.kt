@@ -10,7 +10,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -230,6 +229,15 @@ private fun TemplateItemCard(
 
             Spacer(modifier = Modifier.width(16.dp))
 
+            val pageWidthMm = formatMm(template.widthCm * 10f)
+            val pageHeightMm = formatMm(template.heightCm * 10f)
+
+            val maxSlot = template.slots.maxByOrNull { it.width * it.height }
+            val maxPictureWidthMm = formatMm((maxSlot?.width ?: 0f) * template.widthCm * 10f)
+            val maxPictureHeightMm = formatMm((maxSlot?.height ?: 0f) * template.heightCm * 10f)
+
+            val photoCountText = if (template.slotCount == 1) "1 foto" else "${template.slotCount} fotos"
+
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = "Plantilla ${template.id}",
@@ -238,39 +246,34 @@ private fun TemplateItemCard(
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = template.description,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Medium
+                    text = "${template.pageType} - ${pageWidthMm}x${pageHeightMm} mm",
+                    style = MaterialTheme.typography.bodyMedium
                 )
-                Spacer(modifier = Modifier.height(6.dp))
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    SuggestionChip(
-                        onClick = { },
-                        label = { Text("${template.widthCm}×${template.heightCm} cm", style = MaterialTheme.typography.labelSmall) }
-                    )
-                    SuggestionChip(
-                        onClick = { },
-                        label = { Text(template.colorMode, style = MaterialTheme.typography.labelSmall) }
-                    )
-                    SuggestionChip(
-                        onClick = { },
-                        label = { Text(template.quality, style = MaterialTheme.typography.labelSmall) }
-                    )
-                }
-            }
-
-            if (isSelected) {
-                Icon(
-                    Icons.Default.Check,
-                    contentDescription = "Seleccionado",
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(28.dp)
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = template.colorMode,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = photoCountText,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = "Tamaño: ${maxPictureWidthMm}x${maxPictureHeightMm} mm",
+                    style = MaterialTheme.typography.bodyMedium
                 )
             }
         }
+    }
+}
+
+private fun formatMm(mm: Float): String {
+    val rounded = kotlin.math.round(mm * 10f) / 10f
+    return if (rounded % 1f == 0f) {
+        rounded.toInt().toString()
+    } else {
+        "%.1f".format(java.util.Locale.US, rounded)
     }
 }

@@ -171,6 +171,7 @@ class PrintQueueTest {
         assertEquals(template.slots.size, parsed.slots.size)
         assertEquals(template.widthCm, parsed.widthCm, 0.01f)
         assertEquals(template.heightCm, parsed.heightCm, 0.01f)
+        assertEquals(template.pageType, parsed.pageType)
     }
 
     @Test

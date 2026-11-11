@@ -82,8 +82,9 @@ State in any screen/menu gets saved temporary till the save button is pressed, d
 
 - [x] Allow to select already sended page in the print queue and reprint it, make it so i have to maintain the tap.
 
-- [ ] In the template screen, change the display of options of each template, show to the left the current preview, to the right a title "Plantilla n", bellow it put "[Type of page] - nxn mm" where type of page is A4 for the current templates, this is read from the template not hardcoded, same with the size in millimeters, below that put "Color" or "Blanco y negro" acording to the template, below that put "n fotos", below that "Tamaño: nxn mm" which will be the max size of the pictures, make each of this elements plain text, do not add decorations around, abandon the current "description" of each template
+- [x] In the template screen, change the display of options of each template, show to the left the current preview, to the right a title "Plantilla n", bellow it put "[Type of page] - nxn mm" where type of page is A4 for the current templates, this is read from the template not hardcoded, same with the size in millimeters, below that put "Color" or "Blanco y negro" acording to the template, below that put "n fotos", below that "Tamaño: nxn mm" which will be the max size of the pictures, make each of this elements plain text, do not add decorations around, abandon the current "description" of each template
 
+- [ ] In "Destino" the two buttons side to side, if there is no enough space, but the second button below, do not wrap the text inside the button
 
 ## Made for use of
 

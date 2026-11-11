@@ -13,6 +13,7 @@ object PrintTemplateSnapshot {
             append("\"heightCm\":").append(template.heightCm).append(",")
             append("\"marginMm\":").append(template.marginMm).append(",")
             append("\"isFullWidth\":").append(template.isFullWidth).append(",")
+            append("\"pageType\":\"").append(escapeJson(template.pageType)).append("\",")
             append("\"slots\":[")
             template.slots.forEachIndexed { index, slot ->
                 if (index > 0) append(",")
@@ -41,6 +42,7 @@ object PrintTemplateSnapshot {
             val heightCm = json.optDouble("heightCm", 29.7).toFloat()
             val marginMm = json.optDouble("marginMm", 0.0).toFloat()
             val isFullWidth = json.optBoolean("isFullWidth", true)
+            val pageType = json.optString("pageType", "A4")
 
             val slots = mutableListOf<PhotoSlot>()
             if (json.has("slots")) {
@@ -67,7 +69,8 @@ object PrintTemplateSnapshot {
                 widthCm = widthCm,
                 heightCm = heightCm,
                 marginMm = marginMm,
-                isFullWidth = isFullWidth
+                isFullWidth = isFullWidth,
+                pageType = pageType
             )
         } catch (t: Throwable) {
             // JVM Unit test fallback if org.json is unmocked
@@ -103,6 +106,7 @@ object PrintTemplateSnapshot {
             val heightCm = extractFloat("heightCm") ?: 29.7f
             val marginMm = extractFloat("marginMm") ?: 0.0f
             val isFullWidth = extractBoolean("isFullWidth")
+            val pageType = extractString("pageType").ifEmpty { "A4" }
 
             val slots = mutableListOf<PhotoSlot>()
             val slotMatches = Regex("\\{\"left\":([0-9.]+),\"top\":([0-9.]+),\"width\":([0-9.]+),\"height\":([0-9.]+)\\}").findAll(jsonString)
@@ -124,7 +128,8 @@ object PrintTemplateSnapshot {
                 widthCm = widthCm,
                 heightCm = heightCm,
                 marginMm = marginMm,
-                isFullWidth = isFullWidth
+                isFullWidth = isFullWidth,
+                pageType = pageType
             )
         } catch (_: Exception) {
             null
