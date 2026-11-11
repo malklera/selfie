@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import ar.mimbi.Selfie.data.AppOrientation
+import ar.mimbi.Selfie.data.ConfigSessionState
 import ar.mimbi.Selfie.printing.model.PrintTemplate
 import ar.mimbi.Selfie.printing.queue.PrintQueueManager
 import ar.mimbi.Selfie.printing.template.DefaultTemplates
@@ -37,16 +38,20 @@ import kotlin.math.min
 fun TemplateConfigScreen(
     queueManager: PrintQueueManager,
     appOrientation: AppOrientation? = null,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    session: ConfigSessionState? = null
 ) {
-    EnforceAppOrientation(appOrientation)
+    val currentOrientation = session?.appOrientation ?: appOrientation
+    EnforceAppOrientation(currentOrientation)
 
-    val activeTemplate by queueManager.activeTemplateFlow.collectAsState(initial = DefaultTemplates.TEMPLATE_FULL_WIDTH_SINGLE)
+    val activeTemplateDb by queueManager.activeTemplateFlow.collectAsState(initial = DefaultTemplates.TEMPLATE_FULL_WIDTH_SINGLE)
+    val selectedTemplateId = session?.selectedTemplateId ?: activeTemplateDb.id
+
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
 
-    val selectedIndex = remember(activeTemplate.id) {
-        DefaultTemplates.ALL_TEMPLATES.indexOfFirst { it.id == activeTemplate.id }.coerceAtLeast(0)
+    val selectedIndex = remember(selectedTemplateId) {
+        DefaultTemplates.ALL_TEMPLATES.indexOfFirst { it.id == selectedTemplateId }.coerceAtLeast(0)
     }
 
     LaunchedEffect(selectedIndex) {
@@ -87,10 +92,14 @@ fun TemplateConfigScreen(
                 items(DefaultTemplates.ALL_TEMPLATES, key = { it.id }) { template ->
                     TemplateItemCard(
                         template = template,
-                        isSelected = template.id == activeTemplate.id,
+                        isSelected = template.id == selectedTemplateId,
                         onSelect = {
-                            scope.launch {
-                                queueManager.setActiveTemplate(template.id)
+                            if (session != null) {
+                                session.selectedTemplateId = template.id
+                            } else {
+                                scope.launch {
+                                    queueManager.setActiveTemplate(template.id)
+                                }
                             }
                         }
                     )

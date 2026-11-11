@@ -57,6 +57,7 @@ import ar.mimbi.Selfie.data.AppConfig
 import ar.mimbi.Selfie.data.AppOrientation
 import ar.mimbi.Selfie.data.CameraResolution
 import ar.mimbi.Selfie.data.CameraResolutionHelper
+import ar.mimbi.Selfie.data.ConfigSessionState
 import ar.mimbi.Selfie.data.DecorationFit
 import ar.mimbi.Selfie.data.ErrorLogger
 import ar.mimbi.Selfie.data.FixedAspect
@@ -72,7 +73,6 @@ import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
 import kotlinx.coroutines.launch
 import java.util.Locale
-import kotlin.math.abs
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -81,7 +81,8 @@ fun ConfigurationScreen(
     onSave: (AppConfig) -> Unit,
     onClose: () -> Unit,
     onNavigateToErrorHistory: () -> Unit,
-    onNavigateToPrinting: () -> Unit = {}
+    onNavigateToPrinting: () -> Unit = {},
+    session: ConfigSessionState? = null
 ) {
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
@@ -104,38 +105,28 @@ fun ConfigurationScreen(
         }
     }
 
-    var portadaPath by rememberSaveable { mutableStateOf(initialConfig.portadaPath) }
-    var captureBoxPath by rememberSaveable { mutableStateOf(initialConfig.captureBoxPath) }
-    var countdownSeconds by rememberSaveable { mutableStateOf(initialConfig.countdownSeconds.toString()) }
-    var destinationPath by rememberSaveable { mutableStateOf(initialConfig.destinationPath) }
-
     val nativeSizes = remember { CameraResolutionHelper.getNativeSizes(context) }
     val defaultResKey = remember { nativeSizes.sizes.firstOrNull()?.key }
 
-    var pictureResolution by rememberSaveable {
-        mutableStateOf(initialConfig.inputResolution ?: defaultResKey)
+    val activeSession = session ?: remember(initialConfig) {
+        ConfigSessionState(initialConfig, 0, defaultResKey)
     }
-    var previewFit by rememberSaveable { mutableStateOf(initialConfig.previewFit) }
-    var fixedAspect by rememberSaveable { mutableStateOf(initialConfig.fixedAspect) }
-    var decorationFit by rememberSaveable { mutableStateOf(initialConfig.decorationFit) }
-    var appOrientation by rememberSaveable { mutableStateOf(initialConfig.appOrientation) }
-    var isSaved by remember { mutableStateOf(false) }
 
-    DisposableEffect(appOrientation) {
+    DisposableEffect(activeSession.appOrientation) {
         val activity = context.findActivity()
         if (activity != null) {
-            val targetOrientation = when (appOrientation) {
+            val targetOrientation = when (activeSession.appOrientation) {
                 AppOrientation.PORTRAIT -> ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
                 AppOrientation.LANDSCAPE -> ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
                 AppOrientation.AUTO -> ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR
             }
             if (activity.requestedOrientation != targetOrientation) {
-                Log.d("ConfigScreen", "Applying live requestedOrientation=$targetOrientation for $appOrientation")
+                Log.d("ConfigScreen", "Applying live requestedOrientation=$targetOrientation for ${activeSession.appOrientation}")
                 activity.requestedOrientation = targetOrientation
             }
         }
         onDispose {
-            if (!isSaved) {
+            if (!activeSession.isSaved) {
                 val activity = context.findActivity()
                 if (activity != null) {
                     val initialTarget = when (initialConfig.appOrientation) {
@@ -159,32 +150,28 @@ fun ConfigurationScreen(
     val screenAspect = if (screenH > 0) screenW.toFloat() / screenH.toFloat() else 1.0f
     val screenAspectFormatted = ImageGeometryHelper.formatAspectRatio(screenW, screenH)
 
-    val portadaDimensions by produceState<Pair<Int, Int>?>(initialValue = null, key1 = portadaPath) {
+    val portadaDimensions by produceState<Pair<Int, Int>?>(initialValue = null, key1 = activeSession.portadaPath) {
         value = withContext(Dispatchers.IO) {
-            getImageDimensions(context, portadaPath)
+            getImageDimensions(context, activeSession.portadaPath)
         }
     }
 
-    val captureBoxDimensions by produceState<Pair<Int, Int>?>(initialValue = null, key1 = captureBoxPath) {
+    val captureBoxDimensions by produceState<Pair<Int, Int>?>(initialValue = null, key1 = activeSession.captureBoxPath) {
         value = withContext(Dispatchers.IO) {
-            getImageDimensions(context, captureBoxPath)
+            getImageDimensions(context, activeSession.captureBoxPath)
         }
     }
 
-    val hasChanges = portadaPath != initialConfig.portadaPath ||
-            captureBoxPath != initialConfig.captureBoxPath ||
-            countdownSeconds != initialConfig.countdownSeconds.toString() ||
-            destinationPath != initialConfig.destinationPath ||
-            pictureResolution != (initialConfig.inputResolution ?: defaultResKey) ||
-            previewFit != initialConfig.previewFit ||
-            fixedAspect != initialConfig.fixedAspect ||
-            decorationFit != initialConfig.decorationFit ||
-            appOrientation != initialConfig.appOrientation
+    val hasChanges = activeSession.hasChanges()
 
-    BackHandler(enabled = hasChanges) {
+    BackHandler(enabled = true) {
         focusManager.clearFocus()
         UserActionTracker.trackAction("Cerrar configuración (atrás físico/gesto)")
-        showUnsavedDialog = true
+        if (hasChanges) {
+            showUnsavedDialog = true
+        } else {
+            onClose()
+        }
     }
 
     val imagePicker = rememberLauncherForActivityResult(
@@ -201,7 +188,7 @@ fun ConfigurationScreen(
                 ErrorLogger.log("Error al tomar permisos de imagen: ${e.message}")
                 e.printStackTrace()
             }
-            portadaPath = it.toString()
+            activeSession.portadaPath = it.toString()
         }
     }
 
@@ -219,7 +206,7 @@ fun ConfigurationScreen(
                 ErrorLogger.log("Error al tomar permisos de cuadro de captura: ${e.message}")
                 e.printStackTrace()
             }
-            captureBoxPath = it.toString()
+            activeSession.captureBoxPath = it.toString()
         }
     }
 
@@ -237,7 +224,7 @@ fun ConfigurationScreen(
                 ErrorLogger.log("Error al tomar permisos de carpeta: ${e.message}")
                 e.printStackTrace()
             }
-            destinationPath = it.toString()
+            activeSession.destinationPath = it.toString()
         }
     }
 
@@ -251,21 +238,8 @@ fun ConfigurationScreen(
                             IconButton(onClick = {
                                 focusManager.clearFocus()
                                 UserActionTracker.trackAction("Guardar configuración")
-                                isSaved = true
-                                val finalSeconds = countdownSeconds.toIntOrNull() ?: 0
-                                onSave(
-                                    AppConfig(
-                                        portadaPath = portadaPath,
-                                        captureBoxPath = captureBoxPath,
-                                        countdownSeconds = finalSeconds,
-                                        destinationPath = destinationPath,
-                                        inputResolution = pictureResolution,
-                                        previewFit = previewFit,
-                                        fixedAspect = fixedAspect,
-                                        decorationFit = decorationFit,
-                                        appOrientation = appOrientation
-                                    )
-                                )
+                                activeSession.isSaved = true
+                                onSave(activeSession.toAppConfig())
                                 Toast.makeText(context, "Configuración guardada", Toast.LENGTH_SHORT).show()
                             }) {
                                 Icon(Icons.Default.Save, contentDescription = "Guardar")
@@ -308,7 +282,7 @@ fun ConfigurationScreen(
                     Column {
                         Text("Portada", style = MaterialTheme.typography.titleLarge)
                         Spacer(modifier = Modifier.height(8.dp))
-                        portadaPath?.let { path ->
+                        activeSession.portadaPath?.let { path ->
                             SubcomposeAsyncImage(
                                 model = path,
                                 contentDescription = "Vista previa de portada",
@@ -361,7 +335,7 @@ fun ConfigurationScreen(
                     Column {
                         Text("Cuadro de captura", style = MaterialTheme.typography.titleLarge)
                         Spacer(modifier = Modifier.height(8.dp))
-                        captureBoxPath?.let { path ->
+                        activeSession.captureBoxPath?.let { path ->
                             SubcomposeAsyncImage(
                                 model = path,
                                 contentDescription = "Vista previa de cuadro de captura",
@@ -417,23 +391,23 @@ fun ConfigurationScreen(
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 RadioButton(
-                                    selected = decorationFit == DecorationFit.STRETCH,
+                                    selected = activeSession.decorationFit == DecorationFit.STRETCH,
                                     onClick = {
                                         UserActionTracker.trackAction("Ajuste del cuadro: STRETCH")
-                                        decorationFit = DecorationFit.STRETCH
+                                        activeSession.decorationFit = DecorationFit.STRETCH
                                     }
                                 )
-                                Text("STRETCH", Modifier.clickable { decorationFit = DecorationFit.STRETCH })
+                                Text("STRETCH", Modifier.clickable { activeSession.decorationFit = DecorationFit.STRETCH })
                             }
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 RadioButton(
-                                    selected = decorationFit == DecorationFit.COVER,
+                                    selected = activeSession.decorationFit == DecorationFit.COVER,
                                     onClick = {
                                         UserActionTracker.trackAction("Ajuste del cuadro: COVER")
-                                        decorationFit = DecorationFit.COVER
+                                        activeSession.decorationFit = DecorationFit.COVER
                                     }
                                 )
-                                Text("COVER", Modifier.clickable { decorationFit = DecorationFit.COVER })
+                                Text("COVER", Modifier.clickable { activeSession.decorationFit = DecorationFit.COVER })
                             }
                         }
                         Text(
@@ -459,9 +433,9 @@ fun ConfigurationScreen(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             OutlinedTextField(
-                                value = countdownSeconds,
+                                value = activeSession.countdownSeconds,
                                 onValueChange = {
-                                    if (it.all { char -> char.isDigit() }) countdownSeconds =
+                                    if (it.all { char -> char.isDigit() }) activeSession.countdownSeconds =
                                         it
                                 },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -476,8 +450,8 @@ fun ConfigurationScreen(
                                             coroutineScope.launch {
                                                 countdownFocusRequester.bringIntoView()
                                             }
-                                            if (countdownSeconds == "0") {
-                                                countdownSeconds = ""
+                                            if (activeSession.countdownSeconds == "0") {
+                                                activeSession.countdownSeconds = ""
                                             }
                                         }
                                     }
@@ -491,7 +465,7 @@ fun ConfigurationScreen(
                         Spacer(modifier = Modifier.height(16.dp))
                         Text("Destino", style = MaterialTheme.typography.titleLarge)
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text("Ruta: ${formatPathForDisplay(context, destinationPath)}")
+                        Text("Ruta: ${formatPathForDisplay(context, activeSession.destinationPath)}")
                         Spacer(modifier = Modifier.height(8.dp))
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -505,7 +479,7 @@ fun ConfigurationScreen(
                             }
                             Button(onClick = {
                                 focusManager.clearFocus()
-                                openFolder(context, destinationPath)
+                                openFolder(context, activeSession.destinationPath)
                             }) {
                                 Text("Abrir")
                             }
@@ -522,9 +496,9 @@ fun ConfigurationScreen(
                         var dropdownExpanded by remember { mutableStateOf(false) }
                         val menuScrollState = rememberScrollState()
 
-                        val currentResolutionObj = remember(pictureResolution, nativeSizes) {
-                            nativeSizes.sizes.firstOrNull { it.key == pictureResolution }
-                                ?: CameraResolutionHelper.parseResolution(pictureResolution)
+                        val currentResolutionObj = remember(activeSession.pictureResolution, nativeSizes) {
+                            nativeSizes.sizes.firstOrNull { it.key == activeSession.pictureResolution }
+                                ?: CameraResolutionHelper.parseResolution(activeSession.pictureResolution)
                                 ?: nativeSizes.sizes.firstOrNull()
                         }
 
@@ -538,7 +512,7 @@ fun ConfigurationScreen(
                         }
 
                         val displayText = currentResolutionObj?.let { getResolutionDisplayText(it) }
-                            ?: (pictureResolution ?: "Máxima calidad")
+                            ?: (activeSession.pictureResolution ?: "Máxima calidad")
 
                         ExposedDropdownMenuBox(
                             expanded = dropdownExpanded,
@@ -594,7 +568,7 @@ fun ConfigurationScreen(
                                             } else Modifier,
                                             onClick = {
                                                 UserActionTracker.trackAction("Seleccionar resolución ${res.displayText}")
-                                                pictureResolution = res.key
+                                                activeSession.pictureResolution = res.key
                                                 dropdownExpanded = false
                                             }
                                         )
@@ -611,38 +585,38 @@ fun ConfigurationScreen(
 
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             RadioButton(
-                                selected = previewFit == PreviewFit.FIT,
+                                selected = activeSession.previewFit == PreviewFit.FIT,
                                 onClick = {
                                     UserActionTracker.trackAction("Vista previa: Ajustar")
-                                    previewFit = PreviewFit.FIT
+                                    activeSession.previewFit = PreviewFit.FIT
                                 }
                             )
-                            Text("Ajustar (completa sin recortar)", Modifier.clickable { previewFit = PreviewFit.FIT })
+                            Text("Ajustar (completa sin recortar)", Modifier.clickable { activeSession.previewFit = PreviewFit.FIT })
                         }
 
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             RadioButton(
-                                selected = previewFit == PreviewFit.FILL,
+                                selected = activeSession.previewFit == PreviewFit.FILL,
                                 onClick = {
                                     UserActionTracker.trackAction("Vista previa: Rellenar")
-                                    previewFit = PreviewFit.FILL
+                                    activeSession.previewFit = PreviewFit.FILL
                                 }
                             )
-                            Text("Rellenar (pantalla completa)", Modifier.clickable { previewFit = PreviewFit.FILL })
+                            Text("Rellenar (pantalla completa)", Modifier.clickable { activeSession.previewFit = PreviewFit.FILL })
                         }
 
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             RadioButton(
-                                selected = previewFit == PreviewFit.FIXED_ASPECT,
+                                selected = activeSession.previewFit == PreviewFit.FIXED_ASPECT,
                                 onClick = {
                                     UserActionTracker.trackAction("Vista previa: Relación fija")
-                                    previewFit = PreviewFit.FIXED_ASPECT
+                                    activeSession.previewFit = PreviewFit.FIXED_ASPECT
                                 }
                             )
-                            Text("Relación fija", Modifier.clickable { previewFit = PreviewFit.FIXED_ASPECT })
+                            Text("Relación fija", Modifier.clickable { activeSession.previewFit = PreviewFit.FIXED_ASPECT })
                         }
 
-                        if (previewFit == PreviewFit.FIXED_ASPECT) {
+                        if (activeSession.previewFit == PreviewFit.FIXED_ASPECT) {
                             var aspectDropdownExpanded by remember { mutableStateOf(false) }
                             val aspectMenuScrollState = rememberScrollState()
 
@@ -661,7 +635,7 @@ fun ConfigurationScreen(
                                     .padding(start = 32.dp, top = 8.dp)
                             ) {
                                 OutlinedTextField(
-                                    value = getAspectDisplayText(fixedAspect),
+                                    value = getAspectDisplayText(activeSession.fixedAspect),
                                     onValueChange = {},
                                     readOnly = true,
                                     label = { Text("Proporción") },
@@ -678,7 +652,7 @@ fun ConfigurationScreen(
                                     modifier = Modifier.heightIn(max = 280.dp)
                                 ) {
                                     FixedAspect.entries.forEach { aspect ->
-                                        val isSelected = aspect == fixedAspect
+                                        val isSelected = aspect == activeSession.fixedAspect
                                         val itemText = getAspectDisplayText(aspect)
                                         DropdownMenuItem(
                                             text = {
@@ -704,7 +678,7 @@ fun ConfigurationScreen(
                                             } else Modifier,
                                             onClick = {
                                                 UserActionTracker.trackAction("Relación fija: $itemText")
-                                                fixedAspect = aspect
+                                                activeSession.fixedAspect = aspect
                                                 aspectDropdownExpanded = false
                                             }
                                         )
@@ -723,43 +697,43 @@ fun ConfigurationScreen(
 
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             RadioButton(
-                                selected = appOrientation == AppOrientation.PORTRAIT,
+                                selected = activeSession.appOrientation == AppOrientation.PORTRAIT,
                                 onClick = {
                                     UserActionTracker.trackAction("Orientación: Vertical")
-                                    appOrientation = AppOrientation.PORTRAIT
+                                    activeSession.appOrientation = AppOrientation.PORTRAIT
                                 }
                             )
                             Text("Vertical (Portrait)", Modifier.clickable {
                                 UserActionTracker.trackAction("Orientación: Vertical")
-                                appOrientation = AppOrientation.PORTRAIT
+                                activeSession.appOrientation = AppOrientation.PORTRAIT
                             })
                         }
 
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             RadioButton(
-                                selected = appOrientation == AppOrientation.LANDSCAPE,
+                                selected = activeSession.appOrientation == AppOrientation.LANDSCAPE,
                                 onClick = {
                                     UserActionTracker.trackAction("Orientación: Horizontal")
-                                    appOrientation = AppOrientation.LANDSCAPE
+                                    activeSession.appOrientation = AppOrientation.LANDSCAPE
                                 }
                             )
                             Text("Horizontal (Landscape)", Modifier.clickable {
                                 UserActionTracker.trackAction("Orientación: Horizontal")
-                                appOrientation = AppOrientation.LANDSCAPE
+                                activeSession.appOrientation = AppOrientation.LANDSCAPE
                             })
                         }
 
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             RadioButton(
-                                selected = appOrientation == AppOrientation.AUTO,
+                                selected = activeSession.appOrientation == AppOrientation.AUTO,
                                 onClick = {
                                     UserActionTracker.trackAction("Orientación: Automática")
-                                    appOrientation = AppOrientation.AUTO
+                                    activeSession.appOrientation = AppOrientation.AUTO
                                 }
                             )
                             Text("Automática (Auto)", Modifier.clickable {
                                 UserActionTracker.trackAction("Orientación: Automática")
-                                appOrientation = AppOrientation.AUTO
+                                activeSession.appOrientation = AppOrientation.AUTO
                             })
                         }
 
@@ -784,7 +758,7 @@ fun ConfigurationScreen(
                         val screenAspect = if (screenH > 0) screenW.toFloat() / screenH.toFloat() else 1.0f
                         val screenAspectFormatted = ImageGeometryHelper.formatAspectRatio(screenW, screenH)
 
-                        val currentRes = nativeSizes.sizes.firstOrNull { it.key == pictureResolution }
+                        val currentRes = nativeSizes.sizes.firstOrNull { it.key == activeSession.pictureResolution }
                             ?: nativeSizes.sizes.firstOrNull()
 
                         val inputW = currentRes?.width ?: 1920
@@ -797,17 +771,14 @@ fun ConfigurationScreen(
                         val outRegion = ImageGeometryHelper.calculateOutputRegion(
                             frameW = frameW,
                             frameH = frameH,
-                            previewFit = previewFit,
-                            fixedAspect = fixedAspect,
+                            previewFit = activeSession.previewFit,
+                            fixedAspect = activeSession.fixedAspect,
                             screenAspect = screenAspect
                         )
 
                         val outputW = outRegion.width
                         val outputH = outRegion.height
                         val outputAspectFormatted = ImageGeometryHelper.formatAspectRatio(outputW, outputH)
-
-                        val estimatedMb = CameraResolutionHelper.estimateFileSize(outRegion.totalPixels)
-                        val estimatedMbFormatted = String.format(Locale.US, "%.1f", estimatedMb)
 
                         val pantallaText = "Pantalla: ${screenW}x${screenH} ($screenAspectFormatted)"
                         val entradaText = "Entrada: ${inputW}x${inputH} ($inputAspectFormatted)"
@@ -955,21 +926,8 @@ fun ConfigurationScreen(
                 TextButton(onClick = {
                     focusManager.clearFocus()
                     Log.d("ConfigScreen", "Dialog Save clicked")
-                    isSaved = true
-                    val finalSeconds = countdownSeconds.toIntOrNull() ?: 0
-                    onSave(
-                        AppConfig(
-                            portadaPath = portadaPath,
-                            captureBoxPath = captureBoxPath,
-                            countdownSeconds = finalSeconds,
-                            destinationPath = destinationPath,
-                            inputResolution = pictureResolution,
-                            previewFit = previewFit,
-                            fixedAspect = fixedAspect,
-                            decorationFit = decorationFit,
-                            appOrientation = appOrientation
-                        )
-                    )
+                    activeSession.isSaved = true
+                    onSave(activeSession.toAppConfig())
                     Toast.makeText(context, "Configuración guardada", Toast.LENGTH_SHORT).show()
                     showUnsavedDialog = false
                     onClose()
@@ -1336,4 +1294,3 @@ private fun openFolder(context: Context, path: String?) {
         Toast.makeText(context, "No se encontró una app para abrir la carpeta", Toast.LENGTH_SHORT).show()
     }
 }
-

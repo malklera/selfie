@@ -68,7 +68,11 @@ On selection of multiple elements generate a pdf with multiple pages, then the r
 Only mark elements as printed if the android service returns some type of success state we can query, otherwise just use "Enviado" instead of "Pendiente", so at least
 i know what i tried to print.
 
-- [ ] Setting a config in the print screen, then saving in the main config screen resets whatever was in the print screen.
+- [x] Setting a config in the print screen, then saving in the main config screen resets whatever was in the print screen.
+
+Setting a config in the print screen, then saving in the main config screen resets whatever was in the print screen.
+Only the main config screen have a save button and a close button, all other screens/menus only allow to go back.
+State in any screen/menu gets saved temporary till the save button is pressed, discard only when explicity done.
 
 - [x] Change the queue preview column to do not show the tick selector, allow to select one by maintaining the tapped on top of one item
 
@@ -77,6 +81,8 @@ i know what i tried to print.
 - [x] The queue screen make the whole part of the scroll, not only the list of items
 
 - [x] Allow to select already sended page in the print queue and reprint it, make it so i have to maintain the tap.
+
+- [ ] In the template screen, change the display of options of each template, show to the left the current preview, to the right a title "Plantilla n", bellow it put "[Type of page] - nxn mm" where type of page is A4 for the current templates, this is read from the template not hardcoded, same with the size in millimeters, below that put "Color" or "Blanco y negro" acording to the template, below that put "n fotos", below that "Tamaño: nxn mm" which will be the max size of the pictures, make each of this elements plain text, do not add decorations around, abandon the current "description" of each template
 
 
 ## Made for use of

@@ -34,14 +34,18 @@ import android.content.ContextWrapper
 import android.content.pm.ActivityInfo
 import android.widget.Toast
 import androidx.compose.ui.platform.LocalContext
+import ar.mimbi.Selfie.data.AppConfig
 import ar.mimbi.Selfie.data.AppOrientation
+import ar.mimbi.Selfie.data.CameraResolutionHelper
 import ar.mimbi.Selfie.data.ConfigDataStore
+import ar.mimbi.Selfie.data.ConfigSessionState
 import ar.mimbi.Selfie.data.ErrorLogger
 import ar.mimbi.Selfie.data.UserActionTracker
 import ar.mimbi.Selfie.data.db.AppDatabase
 import ar.mimbi.Selfie.printing.printer.PrinterManager
 import ar.mimbi.Selfie.printing.queue.PrintQueueManager
 import ar.mimbi.Selfie.printing.queue.PrintQueueRepository
+import ar.mimbi.Selfie.printing.template.DefaultTemplates
 import ar.mimbi.Selfie.printing.ui.owner.PrinterConfigScreen
 import ar.mimbi.Selfie.printing.ui.owner.PrintingScreen
 import ar.mimbi.Selfie.printing.ui.owner.QueueManagementScreen
@@ -136,8 +140,6 @@ fun SelfieApp(configDataStore: ConfigDataStore) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
-    EnforceAppOrientation(config?.appOrientation)
-
     val printQueueManager = remember(context) {
         val database = AppDatabase.getDatabase(context)
         val repository = PrintQueueRepository(database)
@@ -145,11 +147,32 @@ fun SelfieApp(configDataStore: ConfigDataStore) {
         PrintQueueManager(repository, printerManager)
     }
 
+    val activeTemplate by printQueueManager.activeTemplateFlow.collectAsState(initial = DefaultTemplates.TEMPLATE_FULL_WIDTH_SINGLE)
+
+    val nativeSizes = remember(context) { CameraResolutionHelper.getNativeSizes(context) }
+    val defaultResKey = remember(nativeSizes) { nativeSizes.sizes.firstOrNull()?.key }
+
+    var configSession by remember { mutableStateOf<ConfigSessionState?>(null) }
+
+    fun getOrCreateSession(cfg: AppConfig, tmplId: Int): ConfigSessionState {
+        var sess = configSession
+        if (sess == null || sess.isSaved) {
+            sess = ConfigSessionState(cfg, tmplId, defaultResKey)
+            configSession = sess
+        }
+        return sess
+    }
+
+    EnforceAppOrientation(configSession?.appOrientation ?: config?.appOrientation)
+
     // Listen to navigation changes to track screen
     LaunchedEffect(navController) {
         navController.currentBackStackEntryFlow.collect { entry ->
             val route = entry.destination.route ?: "Unknown"
             UserActionTracker.updateScreen(route)
+            if (route == "main") {
+                configSession = null
+            }
         }
     }
 
@@ -166,7 +189,10 @@ fun SelfieApp(configDataStore: ConfigDataStore) {
                 composable("main") {
                     CaptureScreen(
                         config = config,
-                        onNavigateToConfig = { navController.navigate("config") },
+                        onNavigateToConfig = {
+                            configSession = ConfigSessionState(config, activeTemplate.id, defaultResKey)
+                            navController.navigate("config")
+                        },
                         onImageReady = { isMainContentReady = true },
                         onPrint = { photoUri, copies ->
                             scope.launch {
@@ -177,26 +203,39 @@ fun SelfieApp(configDataStore: ConfigDataStore) {
                     )
                 }
                 composable("config") {
+                    val session = getOrCreateSession(config, activeTemplate.id)
                     ConfigurationScreen(
                         initialConfig = config,
+                        session = session,
                         onSave = { newConfig ->
                             scope.launch {
                                 configDataStore.saveConfig(newConfig)
+                                if (session.wasResetToZero) {
+                                    printQueueManager.clearPrintedItems()
+                                }
+                                if (session.selectedTemplateId != session.initialTemplateId) {
+                                    printQueueManager.setActiveTemplate(session.selectedTemplateId)
+                                }
                             }
+                            session.isSaved = true
+                            configSession = null
+                            navController.popBackStack("main", false)
                         },
-                        onClose = { navController.popBackStack() },
+                        onClose = {
+                            session.isSaved = false
+                            configSession = null
+                            navController.popBackStack("main", false)
+                        },
                         onNavigateToErrorHistory = { navController.navigate("error_history") },
                         onNavigateToPrinting = { navController.navigate("printing") }
                     )
                 }
                 composable("printing") {
+                    val session = getOrCreateSession(config, activeTemplate.id)
                     PrintingScreen(
                         initialConfig = config,
-                        onSave = { newConfig ->
-                            scope.launch {
-                                configDataStore.saveConfig(newConfig)
-                            }
-                        },
+                        session = session,
+                        onSave = { _ -> },
                         onBack = { navController.popBackStack() },
                         onNavigateToPrinterConfig = {
                             navController.navigate("printer_config")
@@ -211,28 +250,33 @@ fun SelfieApp(configDataStore: ConfigDataStore) {
                     )
                 }
                 composable("queue_management") {
+                    val session = getOrCreateSession(config, activeTemplate.id)
                     QueueManagementScreen(
                         queueManager = printQueueManager,
-                        appOrientation = config.appOrientation,
+                        appOrientation = session.appOrientation,
                         onBack = { navController.popBackStack() }
                     )
                 }
                 composable("template_config") {
+                    val session = getOrCreateSession(config, activeTemplate.id)
                     TemplateConfigScreen(
                         queueManager = printQueueManager,
-                        appOrientation = config.appOrientation,
+                        session = session,
+                        appOrientation = session.appOrientation,
                         onBack = { navController.popBackStack() }
                     )
                 }
                 composable("printer_config") {
+                    val session = getOrCreateSession(config, activeTemplate.id)
                     PrinterConfigScreen(
-                        appOrientation = config.appOrientation,
+                        appOrientation = session.appOrientation,
                         onBack = { navController.popBackStack() }
                     )
                 }
                 composable("error_history") {
+                    val session = getOrCreateSession(config, activeTemplate.id)
                     ErrorHistoryScreen(
-                        appOrientation = config.appOrientation,
+                        appOrientation = session.appOrientation,
                         onBack = { navController.popBackStack() }
                     )
                 }

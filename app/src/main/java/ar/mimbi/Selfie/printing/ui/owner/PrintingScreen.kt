@@ -13,10 +13,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
@@ -29,6 +27,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import ar.mimbi.Selfie.data.AppConfig
+import ar.mimbi.Selfie.data.ConfigSessionState
 import ar.mimbi.Selfie.data.UserActionTracker
 import ar.mimbi.Selfie.printing.queue.PrintQueueManager
 import ar.mimbi.Selfie.ui.components.EnforceAppOrientation
@@ -43,14 +42,19 @@ fun PrintingScreen(
     onNavigateToPrinterConfig: () -> Unit,
     onNavigateToTemplateConfig: () -> Unit,
     onNavigateToQueueManagement: () -> Unit,
-    queueManager: PrintQueueManager? = null
+    queueManager: PrintQueueManager? = null,
+    session: ConfigSessionState? = null
 ) {
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
     val density = LocalDensity.current
     val coroutineScope = rememberCoroutineScope()
 
-    EnforceAppOrientation(initialConfig.appOrientation)
+    val activeSession = session ?: remember(initialConfig) {
+        ConfigSessionState(initialConfig, 0, null)
+    }
+
+    EnforceAppOrientation(activeSession.appOrientation)
 
     val isKeyboardVisible = WindowInsets.ime.getBottom(density) > 0
     LaunchedEffect(isKeyboardVisible) {
@@ -67,20 +71,10 @@ fun PrintingScreen(
         }
     }
 
-    var showPrintButton by rememberSaveable { mutableStateOf(initialConfig.showPrintButton) }
-    var maxPrintCount by rememberSaveable { mutableStateOf(initialConfig.maxPrintCount.toString()) }
-    var printCount by rememberSaveable { mutableIntStateOf(initialConfig.printCount) }
-    var wasResetToZero by rememberSaveable { mutableStateOf(false) }
-    var showUnsavedDialog by rememberSaveable { mutableStateOf(false) }
-
-    val hasChanges = showPrintButton != initialConfig.showPrintButton ||
-            maxPrintCount != initialConfig.maxPrintCount.toString() ||
-            printCount != initialConfig.printCount
-
-    BackHandler(enabled = hasChanges) {
+    BackHandler(enabled = true) {
         focusManager.clearFocus()
-        UserActionTracker.trackAction("Cerrar pantalla de impresión (atrás físico/gesto)")
-        showUnsavedDialog = true
+        UserActionTracker.trackAction("Volver desde pantalla de impresión (atrás físico/gesto)")
+        onBack()
     }
 
     Scaffold(
@@ -91,37 +85,9 @@ fun PrintingScreen(
                     IconButton(onClick = {
                         focusManager.clearFocus()
                         UserActionTracker.trackAction("Volver desde pantalla de impresión")
-                        if (hasChanges) {
-                            showUnsavedDialog = true
-                        } else {
-                            onBack()
-                        }
-                    }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = {
-                        focusManager.clearFocus()
-                        UserActionTracker.trackAction("Guardar configuración de impresión")
-                        val finalMaxPrintCount = maxPrintCount.toIntOrNull() ?: 0
-                        if (wasResetToZero) {
-                            coroutineScope.launch {
-                                queueManager?.clearPrintedItems()
-                            }
-                            wasResetToZero = false
-                        }
-                        onSave(
-                            initialConfig.copy(
-                                showPrintButton = showPrintButton,
-                                maxPrintCount = finalMaxPrintCount,
-                                printCount = printCount
-                            )
-                        )
-                        Toast.makeText(context, "Configuración guardada", Toast.LENGTH_SHORT).show()
                         onBack()
                     }) {
-                        Icon(Icons.Default.Save, contentDescription = "Guardar")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
                     }
                 }
             )
@@ -156,11 +122,11 @@ fun PrintingScreen(
                     modifier = Modifier.weight(1f)
                 )
                 Switch(
-                    checked = showPrintButton,
+                    checked = activeSession.showPrintButton,
                     onCheckedChange = {
                         focusManager.clearFocus()
                         UserActionTracker.trackAction("Cambiar mostrar botón de impresión: $it")
-                        showPrintButton = it
+                        activeSession.showPrintButton = it
                     }
                 )
             }
@@ -178,10 +144,10 @@ fun PrintingScreen(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 OutlinedTextField(
-                    value = maxPrintCount,
+                    value = activeSession.maxPrintCount,
                     onValueChange = { text ->
                         if (text.all { char -> char.isDigit() }) {
-                            maxPrintCount = text
+                            activeSession.maxPrintCount = text
                         }
                     },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -196,8 +162,8 @@ fun PrintingScreen(
                                 coroutineScope.launch {
                                     maxPrintFocusRequester.bringIntoView()
                                 }
-                                if (maxPrintCount == "0") {
-                                    maxPrintCount = ""
+                                if (activeSession.maxPrintCount == "0") {
+                                    activeSession.maxPrintCount = ""
                                 }
                             }
                         }
@@ -213,7 +179,7 @@ fun PrintingScreen(
                 Column(modifier = Modifier.weight(1f)) {
                     Text("Impresos", style = MaterialTheme.typography.bodyLarge)
                     Text(
-                        "Cantidad realizada: $printCount",
+                        "Cantidad realizada: ${activeSession.printCount}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -222,10 +188,10 @@ fun PrintingScreen(
                     onClick = {
                         focusManager.clearFocus()
                         UserActionTracker.trackAction("Reiniciar contador de impresiones a 0")
-                        printCount = 0
-                        wasResetToZero = true
+                        activeSession.printCount = 0
+                        activeSession.wasResetToZero = true
                     },
-                    enabled = printCount > 0
+                    enabled = activeSession.printCount > 0
                 ) {
                     Text("Resetear a 0")
                 }
@@ -308,54 +274,5 @@ fun PrintingScreen(
                 }
             }
         }
-    }
-
-    if (showUnsavedDialog) {
-        AlertDialog(
-            onDismissRequest = { showUnsavedDialog = false },
-            title = { Text("Cambios sin guardar") },
-            text = { Text("Tiene cambios sin guardar. ¿Qué desea hacer?") },
-            confirmButton = {
-                TextButton(onClick = {
-                    focusManager.clearFocus()
-                    val finalMaxPrintCount = maxPrintCount.toIntOrNull() ?: 0
-                    if (wasResetToZero) {
-                        coroutineScope.launch {
-                            queueManager?.clearPrintedItems()
-                        }
-                        wasResetToZero = false
-                    }
-                    onSave(
-                        initialConfig.copy(
-                            showPrintButton = showPrintButton,
-                            maxPrintCount = finalMaxPrintCount,
-                            printCount = printCount
-                        )
-                    )
-                    Toast.makeText(context, "Configuración guardada", Toast.LENGTH_SHORT).show()
-                    showUnsavedDialog = false
-                    onBack()
-                }) {
-                    Text("Guardar")
-                }
-            },
-            dismissButton = {
-                Row {
-                    TextButton(onClick = {
-                        focusManager.clearFocus()
-                        showUnsavedDialog = false
-                        onBack()
-                    }) {
-                        Text("Descartar")
-                    }
-                    TextButton(onClick = {
-                        focusManager.clearFocus()
-                        showUnsavedDialog = false
-                    }) {
-                        Text("Cancelar")
-                    }
-                }
-            }
-        )
     }
 }
