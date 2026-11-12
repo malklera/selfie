@@ -467,21 +467,29 @@ fun ConfigurationScreen(
                         Spacer(modifier = Modifier.height(8.dp))
                         Text("Ruta: ${formatPathForDisplay(context, activeSession.destinationPath)}")
                         Spacer(modifier = Modifier.height(8.dp))
-                        Row(
+                        FlowRow(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Button(onClick = {
                                 focusManager.clearFocus()
                                 directoryPicker.launch(null)
                             }) {
-                                Text("Seleccionar Carpeta")
+                                Text(
+                                    text = "Seleccionar Carpeta",
+                                    maxLines = 1,
+                                    softWrap = false
+                                )
                             }
                             Button(onClick = {
                                 focusManager.clearFocus()
                                 openFolder(context, activeSession.destinationPath)
                             }) {
-                                Text("Abrir")
+                                Text(
+                                    text = "Abrir",
+                                    maxLines = 1,
+                                    softWrap = false
+                                )
                             }
                         }
                     }

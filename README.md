@@ -86,6 +86,8 @@ State in any screen/menu gets saved temporary till the save button is pressed, d
 
 - [ ] In "Destino" the two buttons side to side, if there is no enough space, but the second button below, do not wrap the text inside the button
 
+- [ ] Why the saved as pdf "print" do not have margins, but the one sended to the printer have it?
+
 ## Made for use of
 
 [Instagram Mimbi](https://www.instagram.com/mimbi_glitterbar)
