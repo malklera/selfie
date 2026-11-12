@@ -14,7 +14,6 @@ object DefaultTemplates {
         quality = "Alta (300 DPI)",
         widthCm = 21.0f,
         heightCm = 29.7f,
-        marginMm = 0.0f,
         isFullWidth = true
     )
 
@@ -35,7 +34,6 @@ object DefaultTemplates {
         quality = "Estándar (200 DPI)",
         widthCm = 21.0f,
         heightCm = 29.7f,
-        marginMm = 10.0f,
         isFullWidth = false
     )
 
@@ -52,7 +50,6 @@ object DefaultTemplates {
         quality = "Alta (300 DPI)",
         widthCm = 21.0f,
         heightCm = 29.7f,
-        marginMm = 0.0f,
         isFullWidth = false
     )
 
@@ -72,7 +69,6 @@ object DefaultTemplates {
         quality = "Alta (300 DPI)",
         widthCm = 21.0f,
         heightCm = 29.7f,
-        marginMm = 0.0f,
         isFullWidth = false
     )
 

@@ -11,7 +11,6 @@ object PrintTemplateSnapshot {
             append("\"colorMode\":\"").append(escapeJson(template.colorMode)).append("\",")
             append("\"widthCm\":").append(template.widthCm).append(",")
             append("\"heightCm\":").append(template.heightCm).append(",")
-            append("\"marginMm\":").append(template.marginMm).append(",")
             append("\"isFullWidth\":").append(template.isFullWidth).append(",")
             append("\"pageType\":\"").append(escapeJson(template.pageType)).append("\",")
             append("\"slots\":[")
@@ -40,7 +39,6 @@ object PrintTemplateSnapshot {
             val colorMode = json.optString("colorMode", "Color")
             val widthCm = json.optDouble("widthCm", 21.0).toFloat()
             val heightCm = json.optDouble("heightCm", 29.7).toFloat()
-            val marginMm = json.optDouble("marginMm", 0.0).toFloat()
             val isFullWidth = json.optBoolean("isFullWidth", true)
             val pageType = json.optString("pageType", "A4")
 
@@ -68,7 +66,6 @@ object PrintTemplateSnapshot {
                 colorMode = colorMode,
                 widthCm = widthCm,
                 heightCm = heightCm,
-                marginMm = marginMm,
                 isFullWidth = isFullWidth,
                 pageType = pageType
             )
@@ -104,7 +101,6 @@ object PrintTemplateSnapshot {
             val colorMode = extractString("colorMode").ifEmpty { "Color" }
             val widthCm = extractFloat("widthCm") ?: 21.0f
             val heightCm = extractFloat("heightCm") ?: 29.7f
-            val marginMm = extractFloat("marginMm") ?: 0.0f
             val isFullWidth = extractBoolean("isFullWidth")
             val pageType = extractString("pageType").ifEmpty { "A4" }
 
@@ -127,7 +123,6 @@ object PrintTemplateSnapshot {
                 colorMode = colorMode,
                 widthCm = widthCm,
                 heightCm = heightCm,
-                marginMm = marginMm,
                 isFullWidth = isFullWidth,
                 pageType = pageType
             )

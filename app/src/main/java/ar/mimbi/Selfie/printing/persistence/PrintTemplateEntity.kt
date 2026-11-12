@@ -14,7 +14,6 @@ data class PrintTemplateEntity(
     val colorMode: String = "Color",
     val widthCm: Float = 21.0f,
     val heightCm: Float = 29.7f,
-    val marginMm: Float = 0.0f,
     val isFullWidth: Boolean = true,
     val pageType: String = "A4"
 )

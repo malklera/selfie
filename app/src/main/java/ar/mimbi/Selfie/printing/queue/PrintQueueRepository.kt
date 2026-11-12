@@ -46,7 +46,6 @@ open class PrintQueueRepository(private val database: AppDatabase? = null) {
                         colorMode = template.colorMode,
                         widthCm = template.widthCm,
                         heightCm = template.heightCm,
-                        marginMm = template.marginMm,
                         isFullWidth = template.isFullWidth,
                         pageType = template.pageType
                     )
@@ -363,7 +362,6 @@ open class PrintQueueRepository(private val database: AppDatabase? = null) {
             colorMode = entity.colorMode,
             widthCm = entity.widthCm,
             heightCm = entity.heightCm,
-            marginMm = entity.marginMm,
             isFullWidth = entity.isFullWidth,
             pageType = entity.pageType
         )

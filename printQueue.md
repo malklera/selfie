@@ -85,7 +85,7 @@ data class PrintPageEntity(
 
 - `id`, `description`, `version`
 - `slots` (left/top/width/height)
-- `widthCm`, `heightCm`, `marginMm`
+- `widthCm`, `heightCm`
 - `quality`, `colorMode`, `isFullWidth`
 
 Rendering must use this snapshot, not the current active template and not a later version of the template.
@@ -356,7 +356,7 @@ Build from the template:
 - Orientation from dimensions.
 - Resolution from `quality` (e.g. 300 DPI vs 200 DPI).
 - Color mode.
-- Margins from `marginMm` when applicable.
+- Margins are encoded in the template slot geometry (there is no separate margin field).
 
 ## 5. Deletion and consistency rules
 

@@ -134,7 +134,7 @@ class PrintQueueManager(
             val groupedPages = eligiblePages.groupBy { page ->
                 val template = page.getTemplateSnapshot()
                 if (template != null) {
-                    "${template.widthCm}_${template.heightCm}_${template.marginMm}_${template.quality}_${template.colorMode}_${template.isFullWidth}"
+                    "${template.widthCm}_${template.heightCm}_${template.quality}_${template.colorMode}_${template.isFullWidth}"
                 } else ""
             }
 

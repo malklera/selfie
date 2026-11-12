@@ -29,7 +29,6 @@ class TemplateTest {
         assertEquals(10.0f / 297.0f, slot.top, 0.001f)
         assertEquals(190.0f / 210.0f, slot.width, 0.001f)
         assertEquals(277.0f / 297.0f, slot.height, 0.001f)
-        assertEquals(10.0f, template.marginMm, 0.001f)
     }
 
     @Test

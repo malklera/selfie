@@ -24,7 +24,7 @@ import ar.mimbi.Selfie.printing.persistence.PrinterConfigEntity
         PrintItemEntity::class,
         PrinterConfigEntity::class
     ],
-    version = 7,
+    version = 8,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
