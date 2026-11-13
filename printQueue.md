@@ -86,7 +86,7 @@ data class PrintPageEntity(
 - `id`, `description`, `version`
 - `slots` (left/top/width/height)
 - `widthCm`, `heightCm`
-- `quality`, `colorMode`, `isFullWidth`
+- `quality`, `colorMode`
 
 Rendering must use this snapshot, not the current active template and not a later version of the template.
 

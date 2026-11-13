@@ -13,7 +13,6 @@ data class PrintTemplate(
     val colorMode: String = "Color",
     val widthCm: Float = 21.0f,
     val heightCm: Float = 29.7f,
-    val isFullWidth: Boolean = true,
     val pageType: String = "A4"
 ) {
     val slotCount: Int get() = slots.size

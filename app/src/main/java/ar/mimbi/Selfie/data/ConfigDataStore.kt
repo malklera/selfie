@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
@@ -27,6 +28,20 @@ class ConfigDataStore(private val context: Context) {
         val SHOW_PRINT_BUTTON = booleanPreferencesKey("show_print_button")
         val MAX_PRINT_COUNT = intPreferencesKey("max_print_count")
         val PRINT_COUNT = intPreferencesKey("print_count")
+        val ACTIVE_TEMPLATE_ID = intPreferencesKey("active_template_id")
+    }
+
+    val activeTemplateIdFlow: Flow<Int?> = context.dataStore.data
+        .map { preferences -> preferences[ACTIVE_TEMPLATE_ID] }
+
+    suspend fun getActiveTemplateId(): Int? {
+        return context.dataStore.data.first()[ACTIVE_TEMPLATE_ID]
+    }
+
+    suspend fun setActiveTemplateId(templateId: Int) {
+        context.dataStore.edit { preferences ->
+            preferences[ACTIVE_TEMPLATE_ID] = templateId
+        }
     }
 
     val appConfigFlow: Flow<AppConfig> = context.dataStore.data

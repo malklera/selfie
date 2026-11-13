@@ -11,7 +11,6 @@ object PrintTemplateSnapshot {
             append("\"colorMode\":\"").append(escapeJson(template.colorMode)).append("\",")
             append("\"widthCm\":").append(template.widthCm).append(",")
             append("\"heightCm\":").append(template.heightCm).append(",")
-            append("\"isFullWidth\":").append(template.isFullWidth).append(",")
             append("\"pageType\":\"").append(escapeJson(template.pageType)).append("\",")
             append("\"slots\":[")
             template.slots.forEachIndexed { index, slot ->
@@ -39,7 +38,6 @@ object PrintTemplateSnapshot {
             val colorMode = json.optString("colorMode", "Color")
             val widthCm = json.optDouble("widthCm", 21.0).toFloat()
             val heightCm = json.optDouble("heightCm", 29.7).toFloat()
-            val isFullWidth = json.optBoolean("isFullWidth", true)
             val pageType = json.optString("pageType", "A4")
 
             val slots = mutableListOf<PhotoSlot>()
@@ -66,7 +64,6 @@ object PrintTemplateSnapshot {
                 colorMode = colorMode,
                 widthCm = widthCm,
                 heightCm = heightCm,
-                isFullWidth = isFullWidth,
                 pageType = pageType
             )
         } catch (t: Throwable) {
@@ -89,11 +86,6 @@ object PrintTemplateSnapshot {
                 val match = Regex("\"$key\"\\s*:\\s*\"([^\"]*)\"").find(jsonString)
                 return match?.groupValues?.get(1) ?: ""
             }
-            fun extractBoolean(key: String): Boolean {
-                val match = Regex("\"$key\"\\s*:\\s*(true|false)").find(jsonString)
-                return match?.groupValues?.get(1)?.toBooleanStrictOrNull() ?: true
-            }
-
             val id = extractInt("id") ?: return null
             val description = extractString("description")
             val version = extractInt("version") ?: 1
@@ -101,7 +93,6 @@ object PrintTemplateSnapshot {
             val colorMode = extractString("colorMode").ifEmpty { "Color" }
             val widthCm = extractFloat("widthCm") ?: 21.0f
             val heightCm = extractFloat("heightCm") ?: 29.7f
-            val isFullWidth = extractBoolean("isFullWidth")
             val pageType = extractString("pageType").ifEmpty { "A4" }
 
             val slots = mutableListOf<PhotoSlot>()
@@ -123,7 +114,6 @@ object PrintTemplateSnapshot {
                 colorMode = colorMode,
                 widthCm = widthCm,
                 heightCm = heightCm,
-                isFullWidth = isFullWidth,
                 pageType = pageType
             )
         } catch (_: Exception) {

@@ -1,87 +1,44 @@
 package ar.mimbi.Selfie.printing.queue
 
+import ar.mimbi.Selfie.data.ConfigDataStore
 import ar.mimbi.Selfie.data.db.AppDatabase
 import ar.mimbi.Selfie.printing.model.*
 import ar.mimbi.Selfie.printing.persistence.*
 import ar.mimbi.Selfie.printing.template.DefaultTemplates
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
-import org.json.JSONArray
-import org.json.JSONObject
+import kotlinx.coroutines.withContext
 
-open class PrintQueueRepository(private val database: AppDatabase? = null) {
+open class PrintQueueRepository(
+    private val database: AppDatabase? = null,
+    private val configDataStore: ConfigDataStore? = null
+) {
 
-    private val templateDao get() = database?.printTemplateDao()
     private val batchDao get() = database?.printBatchDao()
     private val pageDao get() = database?.printPageDao()
     private val itemDao get() = database?.printItemDao()
     private val configDao get() = database?.printerConfigDao()
 
-    open suspend fun initDefaultTemplates() {
-        val dao = templateDao ?: return
-        DefaultTemplates.ALL_TEMPLATES.forEach { template ->
-            val existing = dao.getTemplateById(template.id)
-            if (existing == null) {
-                val slotsJson = JSONArray().apply {
-                    template.slots.forEach { slot ->
-                        put(JSONObject().apply {
-                            put("left", slot.left.toDouble())
-                            put("top", slot.top.toDouble())
-                            put("width", slot.width.toDouble())
-                            put("height", slot.height.toDouble())
-                        })
-                    }
-                }.toString()
-
-                val isActive = template.id == DefaultTemplates.TEMPLATE_FULL_WIDTH_SINGLE.id
-                dao.insertOrUpdate(
-                    PrintTemplateEntity(
-                        id = template.id,
-                        description = template.description,
-                        slotsJson = slotsJson,
-                        version = template.version,
-                        isActive = isActive,
-                        quality = template.quality,
-                        colorMode = template.colorMode,
-                        widthCm = template.widthCm,
-                        heightCm = template.heightCm,
-                        isFullWidth = template.isFullWidth,
-                        pageType = template.pageType
-                    )
-                )
-            }
-        }
-    }
-
-    open suspend fun getActiveTemplate(): PrintTemplate {
-        initDefaultTemplates()
-        val dao = templateDao ?: return DefaultTemplates.TEMPLATE_FULL_WIDTH_SINGLE
-        val activeEntity = dao.getActiveTemplate()
-            ?: return DefaultTemplates.TEMPLATE_FULL_WIDTH_SINGLE
-
-        return parseTemplateEntity(activeEntity)
+    open suspend fun getActiveTemplate(): PrintTemplate = withContext(Dispatchers.IO) {
+        val activeId = configDataStore?.getActiveTemplateId()
+        DefaultTemplates.getById(activeId)
     }
 
     open suspend fun setActiveTemplate(templateId: Int) {
-        templateDao?.setActiveTemplate(templateId)
+        if (DefaultTemplates.ALL_TEMPLATES.none { it.id == templateId }) return
+        configDataStore?.setActiveTemplateId(templateId)
     }
 
     open fun getActiveTemplateFlow(): Flow<PrintTemplate> {
-        val dao = templateDao ?: return flowOf(DefaultTemplates.TEMPLATE_FULL_WIDTH_SINGLE)
-        return dao.getActiveTemplateFlow().map { entity ->
-            if (entity == null) DefaultTemplates.TEMPLATE_FULL_WIDTH_SINGLE else parseTemplateEntity(entity)
-        }
+        val ids = configDataStore?.activeTemplateIdFlow ?: flowOf(null)
+        return ids.map { DefaultTemplates.getById(it) }
     }
 
-    open suspend fun getTemplateById(id: Int): PrintTemplate? {
-        val entity = templateDao?.getTemplateById(id) ?: return null
-        return parseTemplateEntity(entity)
-    }
-
-    open suspend fun enqueuePhotos(template: PrintTemplate, photoUri: String, copies: Int): List<Long> {
-        val pDao = pageDao ?: return emptyList()
-        val iDao = itemDao ?: return emptyList()
+    open suspend fun enqueuePhotos(template: PrintTemplate, photoUri: String, copies: Int): List<Long> = withContext(Dispatchers.IO) {
+        val pDao = pageDao ?: return@withContext emptyList()
+        val iDao = itemDao ?: return@withContext emptyList()
 
         val insertedItemIds = mutableListOf<Long>()
         val lastGlobalItem = iDao.getLastItem()
@@ -137,7 +94,7 @@ open class PrintQueueRepository(private val database: AppDatabase? = null) {
             }
         }
 
-        return insertedItemIds
+        insertedItemIds
     }
 
     open fun getAllPagesFlow(): Flow<List<PrintPage>> {
@@ -332,38 +289,6 @@ open class PrintQueueRepository(private val database: AppDatabase? = null) {
             lastPrintJobId = pageEntity.lastPrintJobId,
             printedAt = pageEntity.printedAt,
             items = items
-        )
-    }
-
-    private fun parseTemplateEntity(entity: PrintTemplateEntity): PrintTemplate {
-        val slots = mutableListOf<PhotoSlot>()
-        try {
-            val jsonArray = JSONArray(entity.slotsJson)
-            for (i in 0 until jsonArray.length()) {
-                val obj = jsonArray.getJSONObject(i)
-                slots.add(
-                    PhotoSlot(
-                        left = obj.getDouble("left").toFloat(),
-                        top = obj.getDouble("top").toFloat(),
-                        width = obj.getDouble("width").toFloat(),
-                        height = obj.getDouble("height").toFloat()
-                    )
-                )
-            }
-        } catch (e: Exception) {
-            return DefaultTemplates.getById(entity.id)
-        }
-        return PrintTemplate(
-            id = entity.id,
-            description = entity.description,
-            slots = slots,
-            version = entity.version,
-            quality = entity.quality,
-            colorMode = entity.colorMode,
-            widthCm = entity.widthCm,
-            heightCm = entity.heightCm,
-            isFullWidth = entity.isFullWidth,
-            pageType = entity.pageType
         )
     }
 }

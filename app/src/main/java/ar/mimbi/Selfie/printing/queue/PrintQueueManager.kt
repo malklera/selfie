@@ -47,7 +47,6 @@ class PrintQueueManager(
 
     init {
         scope.launch {
-            repository.initDefaultTemplates()
             repository.resetInFlightPagesToReadyOrOpen()
         }
     }
@@ -56,11 +55,11 @@ class PrintQueueManager(
      * Enqueues photo copies assigned to the currently selected active template.
      * Does NOT trigger automatic printing or processQueue.
      */
-    suspend fun enqueuePhoto(context: Context, photoUri: String, copies: Int): List<Long> {
+    suspend fun enqueuePhoto(context: Context, photoUri: String, copies: Int): List<Long> = withContext(Dispatchers.IO) {
         val activeTemplate = repository.getActiveTemplate()
         val insertedIds = repository.enqueuePhotos(activeTemplate, photoUri, copies)
         Log.d(TAG, "Enqueued $copies copies for $photoUri with active template ${activeTemplate.id}")
-        return insertedIds
+        insertedIds
     }
 
     suspend fun setActiveTemplate(templateId: Int) {
@@ -134,7 +133,7 @@ class PrintQueueManager(
             val groupedPages = eligiblePages.groupBy { page ->
                 val template = page.getTemplateSnapshot()
                 if (template != null) {
-                    "${template.widthCm}_${template.heightCm}_${template.quality}_${template.colorMode}_${template.isFullWidth}"
+                    "${template.widthCm}_${template.heightCm}_${template.quality}_${template.colorMode}"
                 } else ""
             }
 

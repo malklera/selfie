@@ -31,8 +31,8 @@ object ImageFit {
     }
 
     /**
-     * Calculates scaled dimensions and offsets to fit an image inside a slot
-     * without cropping or distortion, preserving aspect ratio.
+     * Calculates scaled dimensions and offsets to fit the whole image inside a slot,
+     * preserving aspect ratio and never cropping.
      * If [autoRotate] is true and the image orientation (portrait vs landscape)
      * conflicts with the slot orientation, auto-rotates 90 degrees to maximize slot usage.
      */
@@ -58,6 +58,7 @@ object ImageFit {
         val effectiveHeight = if (shouldRotate) imageWidth else imageHeight
 
         val scale = min(slotWidth.toFloat() / effectiveWidth, slotHeight.toFloat() / effectiveHeight)
+
         val scaledWidth = (effectiveWidth * scale).roundToInt()
         val scaledHeight = (effectiveHeight * scale).roundToInt()
         val offsetX = (slotWidth - scaledWidth) / 2
@@ -67,7 +68,8 @@ object ImageFit {
     }
 
     /**
-     * Draws [bitmap] centered inside the specified [slotRect] on [canvas] using an aspect-preserving FIT.
+     * Draws [bitmap] centered inside the specified [slotRect] on [canvas], preserving
+     * aspect ratio and never cropping.
      * Auto-rotates 90 degrees if photo orientation differs from slot orientation.
      */
     fun drawFittedBitmap(
@@ -76,7 +78,13 @@ object ImageFit {
         slotRect: Rect,
         paint: Paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
     ) {
-        val fit = calculateFit(bitmap.width, bitmap.height, slotRect.width(), slotRect.height(), autoRotate = true)
+        val fit = calculateFit(
+            bitmap.width,
+            bitmap.height,
+            slotRect.width(),
+            slotRect.height(),
+            autoRotate = true
+        )
 
         var bmpToDraw = bitmap
         var tempRotatedBmp: Bitmap? = null
@@ -94,8 +102,14 @@ object ImageFit {
             destLeft + fit.scaledWidth,
             destTop + fit.scaledHeight
         )
+
+        val saveCount = canvas.save()
+        canvas.clipRect(slotRect)
+
         val srcRect = Rect(0, 0, bmpToDraw.width, bmpToDraw.height)
         canvas.drawBitmap(bmpToDraw, srcRect, destRect, paint)
+
+        canvas.restoreToCount(saveCount)
 
         tempRotatedBmp?.recycle()
     }

@@ -13,8 +13,7 @@ object DefaultTemplates {
         version = 1,
         quality = "Alta (300 DPI)",
         widthCm = 21.0f,
-        heightCm = 29.7f,
-        isFullWidth = true
+        heightCm = 29.7f
     )
 
     // A4 dimensions: 210mm x 297mm. Equal 10mm margins on all 4 sides:
@@ -33,12 +32,12 @@ object DefaultTemplates {
         version = 1,
         quality = "Estándar (200 DPI)",
         widthCm = 21.0f,
-        heightCm = 29.7f,
-        isFullWidth = false
+        heightCm = 29.7f
     )
 
     // 2 landscape photos arranged one above the other with 10mm separation
     // 210mm width x 143.5mm height each (143.5mm + 10mm gap + 143.5mm = 297mm)
+    // Photos are rotated when needed and always fitted (contain), never cropped.
     val TEMPLATE_DOUBLE_STRIP = PrintTemplate(
         id = 3,
         description = "Tira Doble de Fotos (A4)",
@@ -49,8 +48,7 @@ object DefaultTemplates {
         version = 1,
         quality = "Alta (300 DPI)",
         widthCm = 21.0f,
-        heightCm = 29.7f,
-        isFullWidth = false
+        heightCm = 29.7f
     )
 
     // 4 photos with 10mm total separation between pictures (+) and 0mm outer edge margins
@@ -68,8 +66,7 @@ object DefaultTemplates {
         version = 1,
         quality = "Alta (300 DPI)",
         widthCm = 21.0f,
-        heightCm = 29.7f,
-        isFullWidth = false
+        heightCm = 29.7f
     )
 
     val ALL_TEMPLATES = listOf(

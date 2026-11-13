@@ -62,4 +62,16 @@ class ImageFitTest {
         assertTrue(fit.scaledWidth <= 800)
         assertTrue(fit.scaledHeight <= 1200)
     }
+
+    @Test
+    fun testDoubleStripOnlyFitsWithoutCropping() {
+        // Portrait 3000x4000 photo into Plantilla 3 landscape strip (2480px width x 1695px height)
+        val fit = ImageFit.calculateFit(3000, 4000, 2480, 1695, autoRotate = true)
+        assertTrue(fit.isRotated)
+        // Rotated 90 deg -> 4000x3000. Fits height 1695 completely, width stays inside the slot.
+        assertEquals(2260, fit.scaledWidth)
+        assertEquals(1695, fit.scaledHeight)
+        assertEquals(110, fit.offsetX)
+        assertEquals(0, fit.offsetY)
+    }
 }

@@ -46,7 +46,12 @@ class DefaultTemplateRenderer : TemplateRenderer {
 
             val photo = photos.getOrNull(index)
             if (photo != null && !photo.isRecycled) {
-                ImageFit.drawFittedBitmap(canvas, photo, slotRect, paint)
+                ImageFit.drawFittedBitmap(
+                    canvas = canvas,
+                    bitmap = photo,
+                    slotRect = slotRect,
+                    paint = paint
+                )
             }
             // Unused or null slots remain white (blank)
         }

@@ -15,7 +15,7 @@ interface PrinterConfigDao {
     fun getConfigFlow(id: String = "default"): Flow<PrinterConfigEntity?>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun insertOrUpdate(config: PrinterConfigEntity)
+    suspend fun insertOrUpdate(config: PrinterConfigEntity): Long
 
     @Query("DELETE FROM printer_configs WHERE id = :id")
     suspend fun deleteConfig(id: String): Int

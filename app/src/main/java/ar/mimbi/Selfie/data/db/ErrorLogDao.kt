@@ -8,11 +8,11 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface ErrorLogDao {
     @Insert
-    fun insert(errorLog: ErrorLog)
+    suspend fun insert(errorLog: ErrorLog): Long
 
     @Query("SELECT * FROM error_logs ORDER BY timestamp DESC")
     fun getAllLogs(): Flow<List<ErrorLog>>
 
     @Query("DELETE FROM error_logs")
-    fun clearAll()
+    suspend fun clearAll(): Int
 }

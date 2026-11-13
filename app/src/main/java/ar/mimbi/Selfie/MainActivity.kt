@@ -140,9 +140,9 @@ fun SelfieApp(configDataStore: ConfigDataStore) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
-    val printQueueManager = remember(context) {
+    val printQueueManager = remember(context, configDataStore) {
         val database = AppDatabase.getDatabase(context)
-        val repository = PrintQueueRepository(database)
+        val repository = PrintQueueRepository(database, configDataStore)
         val printerManager = PrinterManager()
         PrintQueueManager(repository, printerManager)
     }
