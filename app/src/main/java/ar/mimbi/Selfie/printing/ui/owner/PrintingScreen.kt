@@ -116,7 +116,7 @@ fun PrintingScreen(
                 .verticalScroll(scrollState),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            // Switch: Mostrar botón
+            // Switch: Show button
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -137,7 +137,7 @@ fun PrintingScreen(
                 )
             }
 
-            // Máximo número de impresiones
+            // Max print number
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -176,7 +176,7 @@ fun PrintingScreen(
                 )
             }
 
-            // Impresos + Botón para resetear a 0
+            // Printed + Reset button
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -205,7 +205,7 @@ fun PrintingScreen(
 
             HorizontalDivider()
 
-            // Sistema de Impresión
+            // Printer system
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
                     "Configuración del Sistema de Impresión",

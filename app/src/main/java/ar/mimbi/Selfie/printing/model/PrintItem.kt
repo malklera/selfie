@@ -4,14 +4,14 @@ package ar.mimbi.Selfie.printing.model
  * States for a print item in the queue.
  */
 enum class PrintItemStatus {
-    PENDING,   // Pendiente - Esperando impresora disponible
-    QUEUED,    // En cola de impresión
-    PRINTING,  // Imprimiendo / Enviando a la impresora
-    BLOCKED,   // Bloqueado - Verificar impresora (papel/atasco)
-    SENT,      // Enviado a servicio de impresión de Android
-    PRINTED,   // Completado exitosamente
-    FAILED,    // Error de impresión
-    CANCELED   // Cancelado por el usuario
+    PENDING,   // Pending - Waiting for available printer
+    QUEUED,    // In printing queue
+    PRINTING,  // Printing - Sent to printer
+    BLOCKED,   // Blocked - Check printer
+    SENT,      // Sent to Android print service
+    PRINTED,   // Successfully printed
+    FAILED,    // Print error
+    CANCELED   // Cancel by user
 }
 
 /**

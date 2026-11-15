@@ -549,7 +549,7 @@ private fun PrintPageCard(
                 .fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Header: Página {n} - Plantilla {id} - {fotos}/{slots} fotos - {estado}
+            // Header: Página {n} - Plantilla {id} - {pictures}/{slots} fotos - {state}
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,

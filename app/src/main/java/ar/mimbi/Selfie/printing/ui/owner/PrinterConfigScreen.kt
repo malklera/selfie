@@ -245,7 +245,7 @@ fun PrinterConfigScreen(
 
             HorizontalDivider()
 
-            // Consulta en Tiempo Real de Impresora
+            // Real time printer query
             RealtimePrinterQuerySection(printerManager = printerManager)
         }
     }
