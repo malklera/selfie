@@ -24,31 +24,6 @@ The .apk file is at
 
 ## TODO
 
-- [x] There is a time difference when the preview of the camera and the "recuadro" on top are show, there should not be.
-
-- [x] add a section to control rotatio of the app, portrait, landscape, auto, can this ignore whatever the device auto rotate toggle is at?
-
-- [x] Put a button that says "Abrir" that will open the default file manager in the selected folder in "Destino", put it besides the "Seleccionar Carpeta" button
-
-- [x] make each item in "Diagnostico de image" copy in tap, the same as in "acerca de"
-
-- [x] Refactor the whole process of taking an image, preview and saving.
-
-stretch+ajustar give me a 4:3(i think) image
-stretch+rellenar give me bars above and below in the preview
-stretch+4:3 give me a 4:3(i think) image, with black bars above and below in preview
-stretch+16:9 give me a 16:9(i think) image, with black bars above and below in preview
-the device is always use in portrait mode, so i think the aspect ratios have to be 9:16 instead, add a new option for this so i can see and compare
-
-cover+ajustar in preview show a 4:3 picture with decoration cutoff above and below, with black bars above and below, in the captured image there is a black space that was not in the preview between the end of the picture at the right and the beginning of the decoration, that should not exist
-cover+rellenar the decoration is cutoff to the sides, and the picture in the final image is cut off both above/below and on the sides
-cover+4:3 the decoration is cut off above/below, the final image has a black space to the right that was not in the preview
-cover+16:9 decoration is cut off above/below, picture is cutoff above/below and sides in the final image respect to the preview, there is a black space to the right that was not in the preview.
-
-What is show in the preview is what is saved in the end, they cannot differ, the only difference is that for display it get scaled up/down to fit the screen, the final image is not scaled, fix all of this
-
-- [x] "Relacion fija" change the display of options to a popup menu the same style as "tamaño de la imagen"
-
 - [ ] Add support for use of frontal camera.
 
 - [ ] Probably should update the color theme, think about this.
@@ -57,44 +32,7 @@ What is show in the preview is what is saved in the end, they cannot differ, the
 
 - [ ] Allow to change the number of taps to enter the config screen, minimum 1.
 
-- [x] on tap of "configuracion de impresora" open a new screen that would allow you to search and connect to a printer, use whatever android/kotlin provides for this, if there is some api of framework, no need to implement from scrach
-
-- [x] From printing branch copy the implementation for the templates. Each template is ONE future pdf page A4
-
-- [x] From printing branch, take inspiration for the queue and change the following:
-Allow to select on/multiple/all elements of the queue, on select show options to take out of the queue, and printing
-On print, generate a in memory pdf following the template then call upon the android printing service, (can you pass the printing connected information to the android side or do i have to select printing each time anyway?), what type of pre configured parametres can we pass to android so i do not have to select everything manually?
-On selection of multiple elements generate a pdf with multiple pages, then the rest the same.
-Only mark elements as printed if the android service returns some type of success state we can query, otherwise just use "Enviado" instead of "Pendiente", so at least
-i know what i tried to print.
-
-- [x] Setting a config in the print screen, then saving in the main config screen resets whatever was in the print screen.
-
-Setting a config in the print screen, then saving in the main config screen resets whatever was in the print screen.
-Only the main config screen have a save button and a close button, all other screens/menus only allow to go back.
-State in any screen/menu gets saved temporary till the save button is pressed, discard only when explicity done.
-
-- [x] Change the queue preview column to do not show the tick selector, allow to select one by maintaining the tapped on top of one item
-
-- [x] Drop the use of # to indicate number
-
-- [x] The queue screen make the whole part of the scroll, not only the list of items
-
-- [x] Allow to select already sended page in the print queue and reprint it, make it so i have to maintain the tap.
-
-- [x] In the template screen, change the display of options of each template, show to the left the current preview, to the right a title "Plantilla n", bellow it put "[Type of page] - nxn mm" where type of page is A4 for the current templates, this is read from the template not hardcoded, same with the size in millimeters, below that put "Color" or "Blanco y negro" acording to the template, below that put "n fotos", below that "Tamaño: nxn mm" which will be the max size of the pictures, make each of this elements plain text, do not add decorations around, abandon the current "description" of each template
-
-- [x] In "Destino" the two buttons side to side, if there is no enough space, but the second button below, do not wrap the text inside the button
-
-- [x] "Removed both fields from template snapshot serialization/deserialization. Old queued snapshots still load because unknown fields are ignored", unknown fields should error, not be ignored.
-
-- [ ] Update all templates to ones using standard picture sizes
-
 - [ ] The android framework preview show something, my printer printed something different, it croped the image
-
-- [ ] Why is there main_new.xml and main_v2.xml, config_new.xml and config_v2.xml?
-
-- [ ] is camera-icon.svg used for anything or is that converted as an xml and the xml is used?
 
 
 ## Made for use of

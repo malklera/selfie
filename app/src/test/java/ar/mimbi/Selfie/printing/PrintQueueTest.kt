@@ -28,7 +28,7 @@ class PrintQueueTest {
     fun testHeaderFormat() {
         val page = PrintPage(
             id = 1L,
-            templateId = 4,
+            templateId = 3,
             templateVersion = 1,
             templateSnapshotJson = "{}",
             pageNumber = 2,
@@ -40,7 +40,7 @@ class PrintQueueTest {
                 PrintItem(3, 1, 2, "uri3", 3)
             )
         )
-        assertEquals("Página 2 - Plantilla 4 - 3/4 fotos - Abierta", page.headerText)
+        assertEquals("Página 2 - Plantilla 3 - 3/4 fotos - Abierta", page.headerText)
     }
 
     @Test
