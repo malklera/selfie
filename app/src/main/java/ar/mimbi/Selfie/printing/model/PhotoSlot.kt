@@ -1,7 +1,7 @@
 package ar.mimbi.Selfie.printing.model
 
 /**
- * Represents a photo position on a print page using normalized coordinates (0.0 .. 1.0).
+ * Represents a photo position on a print page using normalized coordinates (0.0 ... 1.0).
  *
  * @param left Top-left X position (0.0 to 1.0)
  * @param top Top-left Y position (0.0 to 1.0)

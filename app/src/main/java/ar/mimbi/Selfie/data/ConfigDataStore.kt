@@ -16,7 +16,7 @@ val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "se
 
 class ConfigDataStore(private val context: Context) {
     companion object {
-        val PORTADA_PATH = stringPreferencesKey("portada_path")
+        val FRONT_PATH = stringPreferencesKey("portada_path")
         val CAPTURE_BOX_PATH = stringPreferencesKey("capture_box_path")
         val COUNTDOWN_SECONDS = intPreferencesKey("countdown_seconds")
         val DESTINATION_PATH = stringPreferencesKey("destination_path")
@@ -67,7 +67,7 @@ class ConfigDataStore(private val context: Context) {
             } ?: AppOrientation.AUTO
 
             AppConfig(
-                portadaPath = preferences[PORTADA_PATH],
+                frontPath = preferences[FRONT_PATH],
                 captureBoxPath = preferences[CAPTURE_BOX_PATH],
                 countdownSeconds = preferences[COUNTDOWN_SECONDS] ?: 3,
                 destinationPath = preferences[DESTINATION_PATH] ?: "/storage/emulated/0/Pictures/selfie",
@@ -84,10 +84,10 @@ class ConfigDataStore(private val context: Context) {
 
     suspend fun saveConfig(config: AppConfig) {
         context.dataStore.edit { preferences ->
-            if (config.portadaPath != null) {
-                preferences[PORTADA_PATH] = config.portadaPath
+            if (config.frontPath != null) {
+                preferences[FRONT_PATH] = config.frontPath
             } else {
-                preferences.remove(PORTADA_PATH)
+                preferences.remove(FRONT_PATH)
             }
             if (config.captureBoxPath != null) {
                 preferences[CAPTURE_BOX_PATH] = config.captureBoxPath

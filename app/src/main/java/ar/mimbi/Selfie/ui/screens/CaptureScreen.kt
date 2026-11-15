@@ -134,7 +134,7 @@ fun CaptureScreen(
         }
     }
 
-    // Pre-load capture box bitmap into memory
+    // Preload capture box bitmap into memory
     LaunchedEffect(config.captureBoxPath) {
         config.captureBoxPath?.let { path ->
             val bitmap = withContext(Dispatchers.IO) {
@@ -362,7 +362,7 @@ fun CaptureScreen(
             }
         }
 
-        // LAYER 2: Welcome Overlay (Portada image or default message covering camera preview)
+        // LAYER 2: Welcome Overlay (Front image or default message covering camera preview)
         if (kioskState == KioskState.WELCOME) {
             Box(
                 modifier = Modifier
@@ -373,9 +373,9 @@ fun CaptureScreen(
                         kioskState = KioskState.COUNTDOWN
                     }
             ) {
-                if (config.portadaPath != null) {
+                if (config.frontPath != null) {
                     SubcomposeAsyncImage(
-                        model = config.portadaPath,
+                        model = config.frontPath,
                         contentDescription = null,
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.FillBounds
@@ -601,7 +601,7 @@ fun CaptureScreen(
                                 horizontalArrangement = Arrangement.SpaceEvenly,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                // Button 1: OTRA FOTO
+                                // Button 1: Another picture
                                 Button(
                                     onClick = {
                                         UserActionTracker.trackAction("OTRA FOTO")
@@ -625,7 +625,7 @@ fun CaptureScreen(
                                     )
                                 }
 
-                                // Button 2: IMPRIMIR & Counter
+                                // Button 2: Print & Counter
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(6.dp)

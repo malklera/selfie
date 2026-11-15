@@ -11,7 +11,7 @@ class ConfigSessionState(
     private val defaultResKey: String?
 ) {
     // ConfigurationScreen state
-    var portadaPath by mutableStateOf(initialConfig.portadaPath)
+    var frontPath by mutableStateOf(initialConfig.frontPath)
     var captureBoxPath by mutableStateOf(initialConfig.captureBoxPath)
     var countdownSeconds by mutableStateOf(initialConfig.countdownSeconds.toString())
     var destinationPath by mutableStateOf(initialConfig.destinationPath)
@@ -37,7 +37,7 @@ class ConfigSessionState(
         val finalCountdown = countdownSeconds.toIntOrNull() ?: initialConfig.countdownSeconds
         val finalMaxPrint = maxPrintCount.toIntOrNull() ?: initialConfig.maxPrintCount
 
-        return portadaPath != initialConfig.portadaPath ||
+        return frontPath != initialConfig.frontPath ||
                 captureBoxPath != initialConfig.captureBoxPath ||
                 finalCountdown != initialConfig.countdownSeconds ||
                 countdownSeconds != initialConfig.countdownSeconds.toString() ||
@@ -58,7 +58,7 @@ class ConfigSessionState(
         val finalSeconds = countdownSeconds.toIntOrNull() ?: 3
         val finalMaxPrintCount = maxPrintCount.toIntOrNull() ?: 0
         return AppConfig(
-            portadaPath = portadaPath,
+            frontPath = frontPath,
             captureBoxPath = captureBoxPath,
             countdownSeconds = finalSeconds,
             destinationPath = destinationPath,

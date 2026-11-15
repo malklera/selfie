@@ -14,7 +14,7 @@ class AppConfigTest {
     fun testAppConfigDefaultValues() {
         val config = AppConfig()
 
-        assertNull(config.portadaPath)
+        assertNull(config.frontPath)
         assertNull(config.captureBoxPath)
         assertEquals(3, config.countdownSeconds)
         assertEquals("/storage/emulated/0/Pictures/selfie", config.destinationPath)

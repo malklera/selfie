@@ -6,7 +6,7 @@ enum class DecorationFit { STRETCH, COVER }
 enum class AppOrientation { PORTRAIT, LANDSCAPE, AUTO }
 
 data class AppConfig(
-    val portadaPath: String? = null,
+    val frontPath: String? = null,
     val captureBoxPath: String? = null,
     val countdownSeconds: Int = 3,
     val destinationPath: String = "/storage/emulated/0/Pictures/selfie",

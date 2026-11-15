@@ -4,9 +4,9 @@ App to be used with the "Selfie Mirror", it is made to be used in a tablet.
 
 Allows to take pictures with the available cameras and resolutions.
 
-Select a main screen image to be show.
+Select a main screen image to show.
 
-Select a border image to be added to the taken picture as a decoration, it do
+Select a border image to be added to the taken picture as a decoration, it does
 not have to be a border, it can be any type of image with some part that is
 transparent so the picture taken by the camera can be seen.
 
@@ -32,8 +32,7 @@ The .apk file is at
 
 - [ ] Allow to change the number of taps to enter the config screen, minimum 1.
 
-- [ ] The android framework preview show something, my printer printed something different, it croped the image
-
+- [ ] Add support for other languages, began with english and portugues
 
 ## Made for use of
 

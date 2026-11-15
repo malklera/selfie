@@ -175,7 +175,7 @@ fun QueueManagementScreen(
                 )
             }
 
-            // Selection Controls & Action Buttons (FlowRow without grey background card, transparent fill & grey border)
+            // Selection Controls & Action Buttons (FlowRow without gray background card, transparent fill & gray border)
             item(key = "selection_controls") {
                 FlowRow(
                     modifier = Modifier.fillMaxWidth(),

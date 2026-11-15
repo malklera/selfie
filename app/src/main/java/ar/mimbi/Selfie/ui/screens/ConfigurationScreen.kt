@@ -50,7 +50,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import ar.mimbi.Selfie.BuildConfig
 import ar.mimbi.Selfie.findActivity
 import ar.mimbi.Selfie.data.AppConfig
@@ -64,7 +63,6 @@ import ar.mimbi.Selfie.data.FixedAspect
 import ar.mimbi.Selfie.data.ImageGeometryHelper
 import ar.mimbi.Selfie.data.PreviewFit
 import ar.mimbi.Selfie.data.UserActionTracker
-import ar.mimbi.Selfie.ui.components.SecretSettingsButton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.math.abs
@@ -72,7 +70,6 @@ import coil.compose.AsyncImagePainter
 import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
 import kotlinx.coroutines.launch
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -150,9 +147,9 @@ fun ConfigurationScreen(
     val screenAspect = if (screenH > 0) screenW.toFloat() / screenH.toFloat() else 1.0f
     val screenAspectFormatted = ImageGeometryHelper.formatAspectRatio(screenW, screenH)
 
-    val portadaDimensions by produceState<Pair<Int, Int>?>(initialValue = null, key1 = activeSession.portadaPath) {
+    val frontDimensions by produceState<Pair<Int, Int>?>(initialValue = null, key1 = activeSession.frontPath) {
         value = withContext(Dispatchers.IO) {
-            getImageDimensions(context, activeSession.portadaPath)
+            getImageDimensions(context, activeSession.frontPath)
         }
     }
 
@@ -188,7 +185,7 @@ fun ConfigurationScreen(
                 ErrorLogger.log("Error al tomar permisos de imagen: ${e.message}")
                 e.printStackTrace()
             }
-            activeSession.portadaPath = it.toString()
+            activeSession.frontPath = it.toString()
         }
     }
 
@@ -278,11 +275,11 @@ fun ConfigurationScreen(
                 verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
                 DisableSelection {
-                    // Portada
+                    // Front
                     Column {
                         Text("Portada", style = MaterialTheme.typography.titleLarge)
                         Spacer(modifier = Modifier.height(8.dp))
-                        activeSession.portadaPath?.let { path ->
+                        activeSession.frontPath?.let { path ->
                             SubcomposeAsyncImage(
                                 model = path,
                                 contentDescription = "Vista previa de portada",
@@ -303,12 +300,12 @@ fun ConfigurationScreen(
                             }
                             Spacer(modifier = Modifier.height(8.dp))
 
-                            portadaDimensions?.let { (w, h) ->
-                                val portadaAspect = w.toFloat() / h.toFloat()
-                                val portadaAspectFormatted = ImageGeometryHelper.formatAspectRatio(w, h)
-                                if (abs(portadaAspect - screenAspect) / screenAspect > 0.02f) {
+                            frontDimensions?.let { (w, h) ->
+                                val frontAspect = w.toFloat() / h.toFloat()
+                                val frontAspectFormatted = ImageGeometryHelper.formatAspectRatio(w, h)
+                                if (abs(frontAspect - screenAspect) / screenAspect > 0.02f) {
                                     Text(
-                                        text = "⚠️ La relación de aspecto de la portada ($portadaAspectFormatted) no coincide con la de la pantalla ($screenAspectFormatted).",
+                                        text = "⚠️ La relación de aspecto de la portada ($frontAspectFormatted) no coincide con la de la pantalla ($screenAspectFormatted).",
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.error
                                     )
@@ -331,7 +328,7 @@ fun ConfigurationScreen(
                         }
                     }
 
-                    // Cuadro de captura
+                    // Capture frame
                     Column {
                         Text("Cuadro de captura", style = MaterialTheme.typography.titleLarge)
                         Spacer(modifier = Modifier.height(8.dp))
@@ -417,7 +414,7 @@ fun ConfigurationScreen(
                         )
                     }
 
-                    // Cuenta regresiva
+                    // Count down
                     Column {
                         HorizontalDivider()
                         Spacer(modifier = Modifier.height(16.dp))
@@ -459,7 +456,7 @@ fun ConfigurationScreen(
                         }
                     }
 
-                    // Destino
+                    // Destiny
                     Column {
                         HorizontalDivider()
                         Spacer(modifier = Modifier.height(16.dp))
@@ -494,7 +491,7 @@ fun ConfigurationScreen(
                         }
                     }
 
-                    // Tamaño de la imagen
+                    // Image size
                     Column {
                         HorizontalDivider()
                         Spacer(modifier = Modifier.height(16.dp))
@@ -586,7 +583,7 @@ fun ConfigurationScreen(
                         }
                     }
 
-                    // Vista previa
+                    // Preview
                     Column {
                         Text("Vista previa", style = MaterialTheme.typography.titleLarge)
                         Spacer(modifier = Modifier.height(8.dp))
@@ -696,7 +693,7 @@ fun ConfigurationScreen(
                         }
                     }
 
-                    // Orientación de la aplicación
+                    // App orientation
                     Column {
                         HorizontalDivider()
                         Spacer(modifier = Modifier.height(16.dp))
@@ -753,7 +750,7 @@ fun ConfigurationScreen(
                         )
                     }
 
-                    // Diagnóstico de imagen
+                    // Image diagnostic
                     Column {
                         HorizontalDivider()
                         Spacer(modifier = Modifier.height(16.dp))
@@ -788,17 +785,17 @@ fun ConfigurationScreen(
                         val outputH = outRegion.height
                         val outputAspectFormatted = ImageGeometryHelper.formatAspectRatio(outputW, outputH)
 
-                        val pantallaText = "Pantalla: ${screenW}x${screenH} ($screenAspectFormatted)"
+                        val screenText = "Pantalla: ${screenW}x${screenH} ($screenAspectFormatted)"
                         val entradaText = "Entrada: ${inputW}x${inputH} ($inputAspectFormatted)"
                         val salidaText = "Salida: ${outputW}x${outputH} ($outputAspectFormatted)"
 
                         Text(
-                            pantallaText,
+                            screenText,
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    copyToClipboard(context, pantallaText)
+                                    copyToClipboard(context, screenText)
                                 }
                                 .padding(vertical = 4.dp)
                         )
@@ -824,7 +821,7 @@ fun ConfigurationScreen(
                         )
                     }
 
-                    // Impresión
+                    // Printing
                     Column {
                         HorizontalDivider()
                         Spacer(modifier = Modifier.height(16.dp))
@@ -852,7 +849,7 @@ fun ConfigurationScreen(
                         }
                     }
 
-                    // Mantenimiento
+                    // Maintenance
                     Column {
                         HorizontalDivider()
                         Spacer(modifier = Modifier.height(16.dp))
@@ -870,7 +867,7 @@ fun ConfigurationScreen(
                         }
                     }
 
-                    // Acerca de
+                    // About
                     Column {
                         HorizontalDivider()
                         Spacer(modifier = Modifier.height(16.dp))
