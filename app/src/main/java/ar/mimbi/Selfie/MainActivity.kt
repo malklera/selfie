@@ -270,6 +270,7 @@ fun SelfieApp(configDataStore: ConfigDataStore) {
                     val session = getOrCreateSession(config, activeTemplate.id)
                     PrinterConfigScreen(
                         appOrientation = session.appOrientation,
+                        printerManager = printQueueManager.printerManager,
                         onBack = { navController.popBackStack() }
                     )
                 }
