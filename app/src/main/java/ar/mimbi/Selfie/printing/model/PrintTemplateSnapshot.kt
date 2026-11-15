@@ -200,8 +200,7 @@ object PrintTemplateSnapshot {
                 if (ch == '"') return sb.toString()
                 if (ch == '\\') {
                     if (pos >= json.length) return null
-                    val escaped = json[pos++]
-                    when (escaped) {
+                    when (val escaped = json[pos++]) {
                         '"' -> sb.append('"')
                         '\\' -> sb.append('\\')
                         '/' -> sb.append('/')

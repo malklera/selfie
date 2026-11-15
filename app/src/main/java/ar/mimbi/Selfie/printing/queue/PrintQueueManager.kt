@@ -162,15 +162,16 @@ class PrintQueueManager(
 
                     val sortedItems = page.items.sortedBy { it.slotIndex }
 
-                    for (item in sortedItems) {
-                        val slot = template.slots.getOrNull(item.slotIndex)
+                    for ((_, _, slotIndex, photoUri) in sortedItems) {
+                        val slot = template.slots.getOrNull(slotIndex)
                         val slotWidthPx = ((slot?.width ?: 1f) * PageSize().widthPx).roundToInt().coerceAtLeast(100)
                         val slotHeightPx = ((slot?.height ?: 1f) * PageSize().heightPx).roundToInt().coerceAtLeast(100)
 
-                        val bitmap = decodeBitmapFromUri(context, item.photoUri, slotWidthPx, slotHeightPx)
+                        val bitmap = decodeBitmapFromUri(context,
+                            photoUri, slotWidthPx, slotHeightPx)
                         if (bitmap == null) {
-                            Log.e(TAG, "Failed to decode photo ${item.photoUri} for page ${page.id}")
-                            ErrorLogger.log("Failed to decode photo ${item.photoUri} for page ${page.id}")
+                            Log.e(TAG, "Failed to decode photo $photoUri for page ${page.id}")
+                            ErrorLogger.log("Failed to decode photo $photoUri for page ${page.id}")
                             loadFailed = true
                             break
                         }

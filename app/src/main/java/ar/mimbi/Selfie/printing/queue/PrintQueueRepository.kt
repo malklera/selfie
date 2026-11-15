@@ -47,7 +47,7 @@ open class PrintQueueRepository(
         val snapshotJson = PrintTemplateSnapshot.serialize(template)
 
         repeat(copies) {
-            var openPage = pDao.getLatestOpenPage(template.id, template.version)
+            val openPage = pDao.getLatestOpenPage(template.id, template.version)
             var currentItemsInOpenPage = if (openPage != null) iDao.getItemsByPageId(openPage.id) else emptyList()
 
             val pageId: Long
@@ -221,9 +221,8 @@ open class PrintQueueRepository(
     open suspend fun resetInFlightPagesToReadyOrOpen() {
         val pDao = pageDao ?: return
         val printingPages = pDao.getPagesWithItemsByStatus(PrintPageStatus.PRINTING.name)
-        for (withItems in printingPages) {
-            val page = withItems.page
-            val itemsCount = withItems.items.size
+        for ((page, items) in printingPages) {
+            val itemsCount = items.size
             val newStatus = if (itemsCount >= page.slotCount || page.wasPartial) {
                 PrintPageStatus.READY.name
             } else {

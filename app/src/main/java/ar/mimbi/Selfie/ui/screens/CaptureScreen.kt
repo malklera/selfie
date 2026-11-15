@@ -223,7 +223,7 @@ fun CaptureScreen(
                 .setTargetRotation(rotation)
                 .setResolutionSelector(previewSelectorBuilder.build())
                 .build().also {
-                    it.setSurfaceProvider(previewView.surfaceProvider)
+                    it.surfaceProvider = previewView.surfaceProvider
                 }
 
             val cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA

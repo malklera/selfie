@@ -74,7 +74,7 @@ object PrinterInfoHelper {
             name = name.substringAfterLast("/")
         }
         name = name.trim('?', ' ', ':', '\t', '\n')
-        return if (name.isNotBlank()) name else rawId
+        return name.ifBlank { rawId }
     }
 
     fun copyToClipboard(context: Context, label: String, text: String) {
