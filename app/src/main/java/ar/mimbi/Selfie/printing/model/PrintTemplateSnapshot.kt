@@ -1,6 +1,26 @@
 package ar.mimbi.Selfie.printing.model
 
 object PrintTemplateSnapshot {
+
+    private val KNOWN_TOP_LEVEL_KEYS = setOf(
+        "id",
+        "description",
+        "version",
+        "quality",
+        "colorMode",
+        "widthCm",
+        "heightCm",
+        "pageType",
+        "slots"
+    )
+
+    private val KNOWN_SLOT_KEYS = setOf(
+        "left",
+        "top",
+        "width",
+        "height"
+    )
+
     fun serialize(template: PrintTemplate): String {
         return buildString {
             append("{")
@@ -28,81 +48,44 @@ object PrintTemplateSnapshot {
     fun deserialize(jsonString: String): PrintTemplate? {
         if (jsonString.isBlank()) return null
 
-        try {
-            // Attempt using org.json if available and mocked
-            val json = org.json.JSONObject(jsonString)
-            val id = json.getInt("id")
-            val description = json.optString("description", "")
-            val version = json.optInt("version", 1)
-            val quality = json.optString("quality", "Alta (300 DPI)")
-            val colorMode = json.optString("colorMode", "Color")
-            val widthCm = json.optDouble("widthCm", 21.0).toFloat()
-            val heightCm = json.optDouble("heightCm", 29.7).toFloat()
-            val pageType = json.optString("pageType", "A4")
+        return try {
+            val parser = SimpleJsonParser(jsonString)
+            val parsedRoot = parser.parse() as? Map<*, *> ?: return null
 
-            val slots = mutableListOf<PhotoSlot>()
-            if (json.has("slots")) {
-                val slotsArray = json.getJSONArray("slots")
-                for (i in 0 until slotsArray.length()) {
-                    val slotObj = slotsArray.getJSONObject(i)
-                    slots.add(
-                        PhotoSlot(
-                            left = slotObj.getDouble("left").toFloat(),
-                            top = slotObj.getDouble("top").toFloat(),
-                            width = slotObj.getDouble("width").toFloat(),
-                            height = slotObj.getDouble("height").toFloat()
-                        )
-                    )
+            // Validate top-level keys
+            for (key in parsedRoot.keys) {
+                if (key !is String || key !in KNOWN_TOP_LEVEL_KEYS) {
+                    return null // Unknown field at top level!
                 }
             }
-            return PrintTemplate(
-                id = id,
-                description = description,
-                slots = slots,
-                version = version,
-                quality = quality,
-                colorMode = colorMode,
-                widthCm = widthCm,
-                heightCm = heightCm,
-                pageType = pageType
-            )
-        } catch (t: Throwable) {
-            // JVM Unit test fallback if org.json is unmocked
-            return parseFallback(jsonString)
-        }
-    }
 
-    private fun parseFallback(jsonString: String): PrintTemplate? {
-        return try {
-            fun extractInt(key: String): Int? {
-                val match = Regex("\"$key\"\\s*:\\s*(\\d+)").find(jsonString)
-                return match?.groupValues?.get(1)?.toIntOrNull()
-            }
-            fun extractFloat(key: String): Float? {
-                val match = Regex("\"$key\"\\s*:\\s*([0-9.]+)").find(jsonString)
-                return match?.groupValues?.get(1)?.toFloatOrNull()
-            }
-            fun extractString(key: String): String {
-                val match = Regex("\"$key\"\\s*:\\s*\"([^\"]*)\"").find(jsonString)
-                return match?.groupValues?.get(1) ?: ""
-            }
-            val id = extractInt("id") ?: return null
-            val description = extractString("description")
-            val version = extractInt("version") ?: 1
-            val quality = extractString("quality").ifEmpty { "Alta (300 DPI)" }
-            val colorMode = extractString("colorMode").ifEmpty { "Color" }
-            val widthCm = extractFloat("widthCm") ?: 21.0f
-            val heightCm = extractFloat("heightCm") ?: 29.7f
-            val pageType = extractString("pageType").ifEmpty { "A4" }
+            val id = (parsedRoot["id"] as? Number)?.toInt() ?: return null
+            val description = (parsedRoot["description"] as? String) ?: ""
+            val version = (parsedRoot["version"] as? Number)?.toInt() ?: 1
+            val quality = (parsedRoot["quality"] as? String) ?: "Alta (300 DPI)"
+            val colorMode = (parsedRoot["colorMode"] as? String) ?: "Color"
+            val widthCm = (parsedRoot["widthCm"] as? Number)?.toFloat() ?: 21.0f
+            val heightCm = (parsedRoot["heightCm"] as? Number)?.toFloat() ?: 29.7f
+            val pageType = (parsedRoot["pageType"] as? String) ?: "A4"
 
             val slots = mutableListOf<PhotoSlot>()
-            val slotMatches = Regex("\\{\"left\":([0-9.]+),\"top\":([0-9.]+),\"width\":([0-9.]+),\"height\":([0-9.]+)\\}").findAll(jsonString)
-            for (match in slotMatches) {
-                val left = match.groupValues[1].toFloat()
-                val top = match.groupValues[2].toFloat()
-                val width = match.groupValues[3].toFloat()
-                val height = match.groupValues[4].toFloat()
-                slots.add(PhotoSlot(left, top, width, height))
+            val slotsRaw = parsedRoot["slots"]
+            if (slotsRaw != null) {
+                val slotsList = slotsRaw as? List<*> ?: return null
+                for (item in slotsList) {
+                    val slotMap = item as? Map<*, *> ?: return null
+                    // Validate slot keys
+                    for (slotKey in slotMap.keys) {
+                        if (slotKey !is String || slotKey !in KNOWN_SLOT_KEYS) {
+                            return null // Unknown field in slot!
+                        }
+                    }
+                    val left = (slotMap["left"] as? Number)?.toFloat() ?: return null
+                    val top = (slotMap["top"] as? Number)?.toFloat() ?: return null
+                    val width = (slotMap["width"] as? Number)?.toFloat() ?: return null
+                    val height = (slotMap["height"] as? Number)?.toFloat() ?: return null
+                    slots.add(PhotoSlot(left = left, top = top, width = width, height = height))
+                }
             }
 
             PrintTemplate(
@@ -124,4 +107,174 @@ object PrintTemplateSnapshot {
     private fun escapeJson(str: String): String {
         return str.replace("\\", "\\\\").replace("\"", "\\\"")
     }
+
+    private class SimpleJsonParser(private val json: String) {
+        private var pos = 0
+
+        fun parse(): Any? {
+            skipWhitespace()
+            if (pos >= json.length) return null
+            val result = parseValue()
+            skipWhitespace()
+            if (pos < json.length) return null // Trailing content
+            return result
+        }
+
+        private fun parseValue(): Any? {
+            skipWhitespace()
+            if (pos >= json.length) return null
+            return when (json[pos]) {
+                '{' -> parseObject()
+                '[' -> parseArray()
+                '"' -> parseString()
+                't', 'f' -> parseBoolean()
+                'n' -> parseNull()
+                else -> parseNumber()
+            }
+        }
+
+        private fun parseObject(): Map<String, Any?>? {
+            if (pos >= json.length || json[pos] != '{') return null
+            pos++ // skip '{'
+            val map = mutableMapOf<String, Any?>()
+            skipWhitespace()
+            if (pos < json.length && json[pos] == '}') {
+                pos++
+                return map
+            }
+            while (pos < json.length) {
+                skipWhitespace()
+                if (pos >= json.length || json[pos] != '"') return null
+                val key = parseString() ?: return null
+                skipWhitespace()
+                if (pos >= json.length || json[pos] != ':') return null
+                pos++ // skip ':'
+                val value = parseValue()
+                map[key] = value
+                skipWhitespace()
+                if (pos >= json.length) return null
+                if (json[pos] == '}') {
+                    pos++
+                    return map
+                } else if (json[pos] == ',') {
+                    pos++
+                } else {
+                    return null
+                }
+            }
+            return null
+        }
+
+        private fun parseArray(): List<Any?>? {
+            if (pos >= json.length || json[pos] != '[') return null
+            pos++ // skip '['
+            val list = mutableListOf<Any?>()
+            skipWhitespace()
+            if (pos < json.length && json[pos] == ']') {
+                pos++
+                return list
+            }
+            while (pos < json.length) {
+                val value = parseValue()
+                list.add(value)
+                skipWhitespace()
+                if (pos >= json.length) return null
+                if (json[pos] == ']') {
+                    pos++
+                    return list
+                } else if (json[pos] == ',') {
+                    pos++
+                } else {
+                    return null
+                }
+            }
+            return null
+        }
+
+        private fun parseString(): String? {
+            if (pos >= json.length || json[pos] != '"') return null
+            pos++ // skip opening '"'
+            val sb = StringBuilder()
+            while (pos < json.length) {
+                val ch = json[pos++]
+                if (ch == '"') return sb.toString()
+                if (ch == '\\') {
+                    if (pos >= json.length) return null
+                    val escaped = json[pos++]
+                    when (escaped) {
+                        '"' -> sb.append('"')
+                        '\\' -> sb.append('\\')
+                        '/' -> sb.append('/')
+                        'b' -> sb.append('\b')
+                        'f' -> sb.append('\u000C')
+                        'n' -> sb.append('\n')
+                        'r' -> sb.append('\r')
+                        't' -> sb.append('\t')
+                        'u' -> {
+                            if (pos + 4 > json.length) return null
+                            val hex = json.substring(pos, pos + 4)
+                            pos += 4
+                            sb.append(hex.toInt(16).toChar())
+                        }
+                        else -> sb.append(escaped)
+                    }
+                } else {
+                    sb.append(ch)
+                }
+            }
+            return null
+        }
+
+        private fun parseBoolean(): Boolean? {
+            if (json.startsWith("true", pos)) {
+                pos += 4
+                return true
+            } else if (json.startsWith("false", pos)) {
+                pos += 5
+                return false
+            }
+            return null
+        }
+
+        private fun parseNull(): Any? {
+            if (json.startsWith("null", pos)) {
+                pos += 4
+                return null
+            }
+            return null
+        }
+
+        private fun parseNumber(): Number? {
+            val start = pos
+            if (pos < json.length && json[pos] == '-') pos++
+            val startDigits = pos
+            while (pos < json.length && json[pos].isDigit()) pos++
+            if (pos == startDigits) return null
+            var isDouble = false
+            if (pos < json.length && json[pos] == '.') {
+                isDouble = true
+                pos++
+                val dotDigits = pos
+                while (pos < json.length && json[pos].isDigit()) pos++
+                if (pos == dotDigits) return null
+            }
+            if (pos < json.length && (json[pos] == 'e' || json[pos] == 'E')) {
+                isDouble = true
+                pos++
+                if (pos < json.length && (json[pos] == '+' || json[pos] == '-')) pos++
+                val expDigits = pos
+                while (pos < json.length && json[pos].isDigit()) pos++
+                if (pos == expDigits) return null
+            }
+            val numStr = json.substring(start, pos)
+            return if (isDouble) numStr.toDoubleOrNull() else numStr.toLongOrNull()
+        }
+
+        private fun skipWhitespace() {
+            while (pos < json.length && (json[pos] == ' ' || json[pos] == '\t' || json[pos] == '\n' || json[pos] == '\r')) {
+                pos++
+            }
+        }
+    }
 }
+

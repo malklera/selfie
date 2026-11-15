@@ -175,6 +175,43 @@ class PrintQueueTest {
     }
 
     @Test
+    fun testTemplateSnapshotFailsOnUnknownTopLevelField() {
+        val template = DefaultTemplates.TEMPLATE_4_PHOTOS
+        val validJson = PrintTemplateSnapshot.serialize(template)
+        val jsonWithUnknownField = validJson.dropLast(1) + ",\"removedField\":\"value\"}"
+
+        val parsed = PrintTemplateSnapshot.deserialize(jsonWithUnknownField)
+        assertNull(parsed)
+    }
+
+    @Test
+    fun testTemplateSnapshotFailsOnUnknownSlotField() {
+        val jsonWithUnknownSlotField = "{\"id\":1,\"description\":\"A4\",\"version\":1,\"quality\":\"Alta (300 DPI)\",\"colorMode\":\"Color\",\"widthCm\":21.0,\"heightCm\":29.7,\"pageType\":\"A4\",\"slots\":[{\"left\":0.0,\"top\":0.0,\"width\":1.0,\"height\":1.0,\"extraSlotField\":123}]}"
+
+        val parsed = PrintTemplateSnapshot.deserialize(jsonWithUnknownSlotField)
+        assertNull(parsed)
+    }
+
+    @Test
+    fun testPrintPageGetTemplateSnapshotFailsOnUnknownField() {
+        val template = DefaultTemplates.TEMPLATE_4_PHOTOS
+        val validJson = PrintTemplateSnapshot.serialize(template)
+        val jsonWithUnknownField = validJson.dropLast(1) + ",\"oldField\":42}"
+
+        val page = PrintPage(
+            id = 1L,
+            templateId = template.id,
+            templateVersion = template.version,
+            templateSnapshotJson = jsonWithUnknownField,
+            pageNumber = 1,
+            slotCount = template.slotCount,
+            status = PrintPageStatus.READY
+        )
+
+        assertNull(page.getTemplateSnapshot())
+    }
+
+    @Test
     fun testSentPrintedAndCanceledPagesSelectionAndSelectAllBehavior() {
         val readyPage = PrintPage(id = 1L, templateId = 1, templateVersion = 1, templateSnapshotJson = "{}", pageNumber = 1, slotCount = 1, status = PrintPageStatus.READY)
         val sentPage = PrintPage(id = 2L, templateId = 1, templateVersion = 1, templateSnapshotJson = "{}", pageNumber = 2, slotCount = 1, status = PrintPageStatus.SENT)

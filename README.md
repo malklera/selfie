@@ -86,7 +86,7 @@ State in any screen/menu gets saved temporary till the save button is pressed, d
 
 - [x] In "Destino" the two buttons side to side, if there is no enough space, but the second button below, do not wrap the text inside the button
 
-- [ ] "Removed both fields from template snapshot serialization/deserialization. Old queued snapshots still load because unknown fields are ignored", unknown fields should error, not be ignored.
+- [x] "Removed both fields from template snapshot serialization/deserialization. Old queued snapshots still load because unknown fields are ignored", unknown fields should error, not be ignored.
 
 - [ ] Update all templates to ones using standard picture sizes
 

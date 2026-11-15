@@ -22,7 +22,9 @@ data class PrintPage(
         get() = "Página $pageNumber - Plantilla $templateId - $itemCount/$slotCount fotos - ${status.labelSpanish}"
 
     fun getTemplateSnapshot(): PrintTemplate? {
-        val parsed = PrintTemplateSnapshot.deserialize(templateSnapshotJson)
-        return ar.mimbi.Selfie.printing.template.DefaultTemplates.getById(parsed?.id ?: templateId)
+        if (templateSnapshotJson.isBlank()) {
+            return ar.mimbi.Selfie.printing.template.DefaultTemplates.getById(templateId)
+        }
+        return PrintTemplateSnapshot.deserialize(templateSnapshotJson)
     }
 }
