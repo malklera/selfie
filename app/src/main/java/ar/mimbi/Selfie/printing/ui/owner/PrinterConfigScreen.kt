@@ -124,54 +124,46 @@ fun PrinterConfigScreen(
                     )
 
                     // Display detected printer / service status from Android Print Framework
-                    Card(
-                        // colors = CardDefaults.cardColors(
-                        //     containerColor = MaterialTheme.colorScheme.surfaceVariant
-                        // ),
-                        modifier = Modifier.fillMaxWidth()
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        Column(
-                            modifier = Modifier.padding(12.dp),
-                            verticalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            if (printerInfo.activePrinters.isNotEmpty()) {
+                        if (printerInfo.activePrinters.isNotEmpty()) {
+                            Text(
+                                text = "Impresora(s) activa(s) conectada(s):",
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.Bold,
+                            )
+                            printerInfo.activePrinters.forEach { printerName ->
                                 Text(
-                                    text = "Impresora(s) activa(s) conectada(s):",
-                                    style = MaterialTheme.typography.labelLarge,
-                                    fontWeight = FontWeight.Bold,
-                                )
-                                printerInfo.activePrinters.forEach { printerName ->
-                                    Text(
-                                        text = "• $printerName",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                                }
-                            } else if (printerInfo.enabledServices.isNotEmpty()) {
-                                Text(
-                                    text = "Servicio(s) de impresión activo(s):",
-                                    style = MaterialTheme.typography.labelLarge,
-                                    fontWeight = FontWeight.Bold,
-                                    // color = MaterialTheme.colorScheme.primary
-                                )
-                                printerInfo.enabledServices.forEach { serviceName ->
-                                    Text(
-                                        text = "• $serviceName",
-                                        style = MaterialTheme.typography.bodyMedium
-                                    )
-                                }
-                                Text(
-                                    text = "Los servicios están activados en el sistema. Al pulsar 'Imprimir Página de Prueba' o 'Abrir Ajustes', el sistema buscará las impresoras encendidas en su red Wi-Fi/Bluetooth/USB.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            } else {
-                                Text(
-                                    text = "Estado: No hay servicios de impresión activos ni impresoras conectadas en este momento.",
+                                    text = "• $printerName",
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    fontWeight = FontWeight.SemiBold
                                 )
                             }
+                        } else if (printerInfo.enabledServices.isNotEmpty()) {
+                            Text(
+                                text = "Servicio(s) de impresión activo(s):",
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.Bold,
+                            )
+                            printerInfo.enabledServices.forEach { serviceName ->
+                                Text(
+                                    text = "• $serviceName",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                            Text(
+                                text = "Los servicios están activados en el sistema. Al pulsar 'Imprimir Página de Prueba' o 'Abrir Ajustes', el sistema buscará las impresoras encendidas en su red Wi-Fi/Bluetooth/USB.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        } else {
+                            Text(
+                                text = "Estado: No hay servicios de impresión activos ni impresoras conectadas en este momento.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
                     }
 
