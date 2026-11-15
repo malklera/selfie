@@ -92,6 +92,11 @@ State in any screen/menu gets saved temporary till the save button is pressed, d
 
 - [ ] The android framework preview show something, my printer printed something different, it croped the image
 
+- [ ] Why is there main_new.xml and main_v2.xml, config_new.xml and config_v2.xml?
+
+- [ ] is camera-icon.svg used for anything or is that converted as an xml and the xml is used?
+
+
 ## Made for use of
 
 [Instagram Mimbi](https://www.instagram.com/mimbi_glitterbar)
