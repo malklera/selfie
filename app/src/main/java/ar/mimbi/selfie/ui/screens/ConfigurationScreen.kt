@@ -8,6 +8,7 @@ import java.io.File
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
+import android.os.Environment
 import android.provider.DocumentsContract
 import android.provider.MediaStore
 import android.provider.OpenableColumns
@@ -965,11 +966,13 @@ fun ConfigurationScreen(
 private fun formatPathForDisplay(context: Context, uriString: String?): String {
     if (uriString.isNullOrEmpty()) return "Ninguna"
 
+    val externalStoragePath = Environment.getExternalStorageDirectory().path
+    val externalStorageAbsPath = Environment.getExternalStorageDirectory().absolutePath
+
     val internalStorageLabels = listOf(
-        "/storage/emulated/0" to "Almacenamiento interno",
-        "/sdcard" to "Almacenamiento interno",
-        "/mnt/sdcard" to "Almacenamiento interno"
-    )
+        externalStoragePath to "Almacenamiento interno",
+        externalStorageAbsPath to "Almacenamiento interno"
+    ).distinctBy { it.first }
 
     for ((prefix, label) in internalStorageLabels) {
         if (uriString.startsWith(prefix)) {
@@ -1225,8 +1228,14 @@ private fun openFolder(context: Context, path: String?) {
             }
         }
 
-        if (path.startsWith("/storage/emulated/0") || path.startsWith("/sdcard")) {
-            val relativePath = path.removePrefix("/storage/emulated/0").removePrefix("/sdcard").removePrefix("/")
+        val externalStoragePath = Environment.getExternalStorageDirectory().path
+        val externalStorageAbsPath = Environment.getExternalStorageDirectory().absolutePath
+
+        if (path.startsWith(externalStoragePath) || path.startsWith(externalStorageAbsPath)) {
+            val relativePath = path
+                .removePrefix(externalStoragePath)
+                .removePrefix(externalStorageAbsPath)
+                .removePrefix("/")
             val docId = if (relativePath.isEmpty()) "primary:" else "primary:$relativePath"
             val docUri = DocumentsContract.buildDocumentUri("com.android.externalstorage.documents", docId)
             val treeUri = DocumentsContract.buildTreeDocumentUri("com.android.externalstorage.documents", docId)
