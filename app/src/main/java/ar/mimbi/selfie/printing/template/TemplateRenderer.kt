@@ -9,6 +9,7 @@ import ar.mimbi.selfie.printing.model.PageSize
 import ar.mimbi.selfie.printing.model.PrintTemplate
 import ar.mimbi.selfie.printing.model.PrintablePage
 import kotlin.math.roundToInt
+import androidx.core.graphics.createBitmap
 
 interface TemplateRenderer {
     fun render(
@@ -25,11 +26,7 @@ class DefaultTemplateRenderer : TemplateRenderer {
         photos: List<Bitmap?>,
         pageSize: PageSize
     ): PrintablePage {
-        val pageBitmap = Bitmap.createBitmap(
-            pageSize.widthPx,
-            pageSize.heightPx,
-            Bitmap.Config.ARGB_8888
-        )
+        val pageBitmap = createBitmap(pageSize.widthPx, pageSize.heightPx)
         val canvas = Canvas(pageBitmap)
         // Blank page background (white)
         canvas.drawColor(Color.WHITE)

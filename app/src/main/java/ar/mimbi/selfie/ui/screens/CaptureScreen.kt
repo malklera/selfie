@@ -69,6 +69,8 @@ import java.util.*
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import kotlin.time.Duration.Companion.milliseconds
+import androidx.core.net.toUri
+import androidx.core.graphics.createBitmap
 
 enum class KioskState {
     WELCOME,
@@ -123,7 +125,7 @@ fun CaptureScreen(
             if (capturedBitmap == null) {
                 val bitmap = withContext(Dispatchers.IO) {
                     try {
-                        context.contentResolver.openInputStream(Uri.parse(uriString))?.use { input ->
+                        context.contentResolver.openInputStream(uriString.toUri())?.use { input ->
                             BitmapFactory.decodeStream(input)
                         }
                     } catch (e: Exception) {
@@ -140,7 +142,7 @@ fun CaptureScreen(
         config.captureBoxPath?.let { path ->
             val bitmap = withContext(Dispatchers.IO) {
                 try {
-                    context.contentResolver.openInputStream(Uri.parse(path))?.use { input ->
+                    context.contentResolver.openInputStream(path.toUri())?.use { input ->
                         BitmapFactory.decodeStream(input)
                     }
                 } catch (e: Exception) {
@@ -796,7 +798,7 @@ private fun loadProcessAndDecorateImageProxy(
 
         Log.d("CaptureScreen", "Output region R: ${outW}x${outH} (aspect ${outputRegion.aspect})")
 
-        val resultBitmap = Bitmap.createBitmap(outW, outH, Bitmap.Config.ARGB_8888)
+        val resultBitmap = createBitmap(outW, outH)
         val canvas = Canvas(resultBitmap)
         val paint = Paint(Paint.FILTER_BITMAP_FLAG)
 
@@ -926,7 +928,7 @@ private fun saveBitmapToDestination(context: Context, bitmap: Bitmap, destinatio
     val name = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.US)
         .format(System.currentTimeMillis()) + ".jpg"
 
-    val destUri = try { Uri.parse(destinationPath) } catch (e: Exception) { null }
+    val destUri = try { destinationPath.toUri() } catch (e: Exception) { null }
 
     if (destUri?.scheme == "content") {
         val documentFile = DocumentFile.fromTreeUri(context, destUri)
@@ -963,7 +965,7 @@ private fun saveBitmapToDestination(context: Context, bitmap: Bitmap, destinatio
 
 private fun checkDestinationWritable(context: Context, path: String): String? {
     try {
-        val uri = try { Uri.parse(path) } catch (e: Exception) { null }
+        val uri = try { path.toUri() } catch (e: Exception) { null }
         if (uri?.scheme == "content") {
             val documentFile = DocumentFile.fromTreeUri(context, uri)
             if (documentFile == null || !documentFile.exists()) {

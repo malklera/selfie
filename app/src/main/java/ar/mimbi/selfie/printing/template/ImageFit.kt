@@ -7,6 +7,7 @@ import android.graphics.Paint
 import android.graphics.Rect
 import kotlin.math.min
 import kotlin.math.roundToInt
+import androidx.core.graphics.withClip
 
 data class FittedBitmapResult(
     val scaledWidth: Int,
@@ -103,13 +104,11 @@ object ImageFit {
             destTop + fit.scaledHeight
         )
 
-        val saveCount = canvas.save()
-        canvas.clipRect(slotRect)
+        canvas.withClip(slotRect) {
+            val srcRect = Rect(0, 0, bmpToDraw.width, bmpToDraw.height)
+            canvas.drawBitmap(bmpToDraw, srcRect, destRect, paint)
 
-        val srcRect = Rect(0, 0, bmpToDraw.width, bmpToDraw.height)
-        canvas.drawBitmap(bmpToDraw, srcRect, destRect, paint)
-
-        canvas.restoreToCount(saveCount)
+        }
 
         tempRotatedBmp?.recycle()
     }

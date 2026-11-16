@@ -30,6 +30,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlin.time.Duration.Companion.milliseconds
+import androidx.core.net.toUri
 
 class PrintQueueManager(
     val repository: PrintQueueRepository,
@@ -306,7 +307,7 @@ class PrintQueueManager(
 
     private fun decodeBitmapFromUri(context: Context, uriString: String, reqWidth: Int, reqHeight: Int): Bitmap? {
         return try {
-            val uri = Uri.parse(uriString)
+            val uri = uriString.toUri()
 
             val options = BitmapFactory.Options().apply {
                 inJustDecodeBounds = true

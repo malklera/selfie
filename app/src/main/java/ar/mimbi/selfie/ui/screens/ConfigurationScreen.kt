@@ -68,6 +68,7 @@ import coil.compose.AsyncImagePainter
 import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
 import kotlinx.coroutines.launch
+import androidx.core.net.toUri
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -977,7 +978,7 @@ private fun formatPathForDisplay(context: Context, uriString: String?): String {
     }
 
     try {
-        val uri = Uri.parse(uriString)
+        val uri = uriString.toUri()
         if (uri.scheme == "content") {
             var resolvedUri = uri
 
@@ -1133,7 +1134,7 @@ private fun copyToClipboard(
 private fun getImageDimensions(context: Context, pathOrUri: String?): Pair<Int, Int>? {
     if (pathOrUri.isNullOrBlank()) return null
     return try {
-        val uri = Uri.parse(pathOrUri)
+        val uri = pathOrUri.toUri()
         val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         var decoded = false
         if (uri.scheme == "content" || uri.scheme == "file") {
@@ -1169,7 +1170,7 @@ private fun openFolder(context: Context, path: String?) {
     val intentsToTry = mutableListOf<Intent>()
 
     if (path.startsWith("content://")) {
-        val uri = Uri.parse(path)
+        val uri = path.toUri()
         val isTree = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             DocumentsContract.isTreeUri(uri)
         } else {
@@ -1256,7 +1257,7 @@ private fun openFolder(context: Context, path: String?) {
             })
         }
 
-        val fileUri = Uri.parse("file://$path")
+        val fileUri = "file://$path".toUri()
         intentsToTry.add(Intent(Intent.ACTION_VIEW).apply {
             setDataAndType(fileUri, "resource/folder")
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
