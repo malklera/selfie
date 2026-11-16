@@ -170,7 +170,7 @@ fun CaptureScreen(
             resolutionSelectorBuilder.setResolutionStrategy(
                 ResolutionStrategy(sensorSize, ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER)
             )
-            val aspectStrategy = if (selectedResolution.is3_4) {
+            val aspectStrategy = if (selectedResolution.is3To4) {
                 AspectRatioStrategy.RATIO_4_3_FALLBACK_AUTO_STRATEGY
             } else {
                 AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY
@@ -211,7 +211,7 @@ fun CaptureScreen(
 
             val previewSelectorBuilder = ResolutionSelector.Builder()
             if (selectedResolution != null) {
-                val aspectStrategy = if (selectedResolution.is3_4) {
+                val aspectStrategy = if (selectedResolution.is3To4) {
                     AspectRatioStrategy.RATIO_4_3_FALLBACK_AUTO_STRATEGY
                 } else {
                     AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY

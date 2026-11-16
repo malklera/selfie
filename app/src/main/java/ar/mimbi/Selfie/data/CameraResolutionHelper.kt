@@ -20,14 +20,14 @@ data class CameraResolution(
     val totalPixels: Long
         get() = width.toLong() * height.toLong()
 
-    val is9_16: Boolean
+    val is9To16: Boolean
         get() {
             val maxDim = maxOf(width, height).toDouble()
             val minDim = minOf(width, height).toDouble()
             return if (minDim > 0) abs(maxDim / minDim - 16.0 / 9.0) < 0.05 else false
         }
 
-    val is3_4: Boolean
+    val is3To4: Boolean
         get() {
             val maxDim = maxOf(width, height).toDouble()
             val minDim = minOf(width, height).toDouble()
@@ -141,25 +141,25 @@ object CameraResolutionHelper {
                 ?: map?.getOutputSizes(SurfaceTexture::class.java)
                 ?: emptyArray()
 
-            val list9_16 = mutableListOf<CameraResolution>()
-            val list3_4 = mutableListOf<CameraResolution>()
+            val list9To16 = mutableListOf<CameraResolution>()
+            val list3To4 = mutableListOf<CameraResolution>()
 
             sizes.map { size ->
                 val portraitW = minOf(size.width, size.height)
                 val portraitH = maxOf(size.width, size.height)
                 CameraResolution(portraitW, portraitH)
             }.distinctBy { "${it.width}x${it.height}" }.forEach { res ->
-                if (res.is9_16) {
-                    list9_16.add(res)
-                } else if (res.is3_4) {
-                    list3_4.add(res)
+                if (res.is9To16) {
+                    list9To16.add(res)
+                } else if (res.is3To4) {
+                    list3To4.add(res)
                 }
             }
 
-            list9_16.sortByDescending { it.totalPixels }
-            list3_4.sortByDescending { it.totalPixels }
+            list9To16.sortByDescending { it.totalPixels }
+            list3To4.sortByDescending { it.totalPixels }
 
-            return Pair(list9_16, list3_4)
+            return Pair(list9To16, list3To4)
         } catch (e: Exception) {
             ErrorLogger.log("Error consultando resoluciones de cámara: ${e.message}")
             return Pair(emptyList(), emptyList())
@@ -167,8 +167,8 @@ object CameraResolutionHelper {
     }
 
     fun getDefaultResolution(context: Context): CameraResolution? {
-        val (list9_16, list3_4) = getSupportedResolutions(context)
-        return list9_16.firstOrNull() ?: list3_4.firstOrNull()
+        val (list9To16, list3To4) = getSupportedResolutions(context)
+        return list9To16.firstOrNull() ?: list3To4.firstOrNull()
     }
 
     fun parseResolution(str: String?): CameraResolution? {

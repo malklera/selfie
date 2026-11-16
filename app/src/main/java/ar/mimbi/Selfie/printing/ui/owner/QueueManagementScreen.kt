@@ -82,15 +82,9 @@ fun QueueManagementScreen(
         }
     }
 
-    val eligibleSelectablePages = remember(filteredPages) {
-        filteredPages.filter {
-            it.status == PrintPageStatus.READY
-        }
-    }
+    val eligibleSelectablePages: List<PrintPage>
 
-    val hasSelectedPages = remember(selectedPageIds) {
-        selectedPageIds.isNotEmpty()
-    }
+    val hasSelectedPages: Boolean
 
     Scaffold(
         topBar = {

@@ -95,52 +95,52 @@ class ImageGeometryHelperTest {
 
     @Test
     fun testCalculateOutputRegion_mode_FIXED_ASPECT() {
-        val region16_9 = ImageGeometryHelper.calculateOutputRegion(
+        val region16to9 = ImageGeometryHelper.calculateOutputRegion(
             frameW = 4032,
             frameH = 3024,
             previewFit = PreviewFit.FIXED_ASPECT,
             fixedAspect = FixedAspect.R16_9,
             screenAspect = 1.6f
         )
-        assertEquals(4032, region16_9.width)
-        assertEquals(2268, region16_9.height)
-        assertEquals(16.0f / 9.0f, region16_9.aspect, 0.001f)
+        assertEquals(4032, region16to9.width)
+        assertEquals(2268, region16to9.height)
+        assertEquals(16.0f / 9.0f, region16to9.aspect, 0.001f)
 
-        val region4_3 = ImageGeometryHelper.calculateOutputRegion(
+        val region4to3 = ImageGeometryHelper.calculateOutputRegion(
             frameW = 4032,
             frameH = 3024,
             previewFit = PreviewFit.FIXED_ASPECT,
             fixedAspect = FixedAspect.R4_3,
             screenAspect = 1.6f
         )
-        assertEquals(4032, region4_3.width)
-        assertEquals(3024, region4_3.height)
-        assertEquals(4.0f / 3.0f, region4_3.aspect, 0.001f)
+        assertEquals(4032, region4to3.width)
+        assertEquals(3024, region4to3.height)
+        assertEquals(4.0f / 3.0f, region4to3.aspect, 0.001f)
     }
 
     @Test
     fun testCalculateOutputRegion_portrait_FIXED_ASPECT() {
-        val region9_16 = ImageGeometryHelper.calculateOutputRegion(
+        val region9to16 = ImageGeometryHelper.calculateOutputRegion(
             frameW = 3024,
             frameH = 4032,
             previewFit = PreviewFit.FIXED_ASPECT,
             fixedAspect = FixedAspect.R9_16,
             screenAspect = 0.625f
         )
-        assertEquals(2268, region9_16.width)
-        assertEquals(4032, region9_16.height)
-        assertEquals(9.0f / 16.0f, region9_16.aspect, 0.001f)
+        assertEquals(2268, region9to16.width)
+        assertEquals(4032, region9to16.height)
+        assertEquals(9.0f / 16.0f, region9to16.aspect, 0.001f)
 
-        val region3_4 = ImageGeometryHelper.calculateOutputRegion(
+        val region3to4 = ImageGeometryHelper.calculateOutputRegion(
             frameW = 3024,
             frameH = 4032,
             previewFit = PreviewFit.FIXED_ASPECT,
             fixedAspect = FixedAspect.R3_4,
             screenAspect = 0.625f
         )
-        assertEquals(3024, region3_4.width)
-        assertEquals(4032, region3_4.height)
-        assertEquals(3.0f / 4.0f, region3_4.aspect, 0.001f)
+        assertEquals(3024, region3to4.width)
+        assertEquals(4032, region3to4.height)
+        assertEquals(3.0f / 4.0f, region3to4.aspect, 0.001f)
     }
 
     @Test

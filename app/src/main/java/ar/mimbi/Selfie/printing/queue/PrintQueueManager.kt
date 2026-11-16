@@ -108,7 +108,7 @@ class PrintQueueManager(
 
                 if (!isEligible) continue
 
-                if (page.status == PrintPageStatus.OPEN && allowPartial) {
+                if (page.status == PrintPageStatus.OPEN) {
                     repository.markPageWasPartial(page.id)
                 }
 

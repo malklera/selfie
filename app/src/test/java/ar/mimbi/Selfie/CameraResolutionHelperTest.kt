@@ -15,8 +15,8 @@ class CameraResolutionHelperTest {
         assertEquals(1920, res.height)
         assertEquals("1080 x 1920", res.displayText)
         assertEquals("1080x1920", res.key)
-        assertTrue(res.is9_16)
-        assertFalse(res.is3_4)
+        assertTrue(res.is9To16)
+        assertFalse(res.is3To4)
     }
 
     @Test
@@ -38,29 +38,29 @@ class CameraResolutionHelperTest {
 
     @Test
     fun testAspectRatioDetection() {
-        val res16_9_fhd = CameraResolution(1080, 1920)
-        assertTrue(res16_9_fhd.is9_16)
-        assertFalse(res16_9_fhd.is3_4)
+        val res16to9_fhd = CameraResolution(1080, 1920)
+        assertTrue(res16to9_fhd.is9To16)
+        assertFalse(res16to9_fhd.is3To4)
 
-        val res16_9_hd = CameraResolution(720, 1280)
-        assertTrue(res16_9_hd.is9_16)
-        assertFalse(res16_9_hd.is3_4)
+        val res16to9_hd = CameraResolution(720, 1280)
+        assertTrue(res16to9_hd.is9To16)
+        assertFalse(res16to9_hd.is3To4)
 
-        val res16_9_4k = CameraResolution(2160, 3840)
-        assertTrue(res16_9_4k.is9_16)
-        assertFalse(res16_9_4k.is3_4)
+        val res16to9_4k = CameraResolution(2160, 3840)
+        assertTrue(res16to9_4k.is9To16)
+        assertFalse(res16to9_4k.is3To4)
 
-        val res4_3_12mp = CameraResolution(3000, 4000)
-        assertTrue(res4_3_12mp.is3_4)
-        assertFalse(res4_3_12mp.is9_16)
+        val res4to3_12mp = CameraResolution(3000, 4000)
+        assertTrue(res4to3_12mp.is3To4)
+        assertFalse(res4to3_12mp.is9To16)
 
-        val res4_3_vga = CameraResolution(480, 640)
-        assertTrue(res4_3_vga.is3_4)
-        assertFalse(res4_3_vga.is9_16)
+        val res4to3VGA = CameraResolution(480, 640)
+        assertTrue(res4to3VGA.is3To4)
+        assertFalse(res4to3VGA.is9_16)
 
-        val res1_1 = CameraResolution(1080, 1080)
-        assertFalse(res1_1.is9_16)
-        assertFalse(res1_1.is3_4)
+        val res1to1 = CameraResolution(1080, 1080)
+        assertFalse(res1to1.is9To16)
+        assertFalse(res1to1.is3To4)
     }
 
     @Test
