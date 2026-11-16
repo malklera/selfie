@@ -37,7 +37,6 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -48,6 +47,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.core.content.ContextCompat
 import androidx.documentfile.provider.DocumentFile
 import androidx.exifinterface.media.ExifInterface
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import ar.mimbi.selfie.data.AppConfig
 import ar.mimbi.selfie.data.CameraResolutionHelper
 import ar.mimbi.selfie.data.DecorationFit
@@ -68,6 +68,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import kotlin.time.Duration.Companion.milliseconds
 
 enum class KioskState {
     WELCOME,
@@ -291,11 +292,11 @@ fun CaptureScreen(
         // Trigger countdown and photo capture when state changes to COUNTDOWN
         LaunchedEffect(kioskState, captureAttempt, isFolderCheckPassed) {
             if (kioskState == KioskState.COUNTDOWN && isFolderCheckPassed) {
-                if (captureAttempt > 0) delay(2000)
+                if (captureAttempt > 0) delay(2000.milliseconds)
 
                 countdown = config.countdownSeconds
                 while (countdown > 0) {
-                    delay(1000)
+                    delay(1000.milliseconds)
                     countdown--
                 }
 

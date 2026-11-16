@@ -29,6 +29,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlin.time.Duration.Companion.milliseconds
 
 class PrintQueueManager(
     val repository: PrintQueueRepository,
@@ -268,7 +269,7 @@ class PrintQueueManager(
                     scope.launch {
                         var waitedMs = 0
                         while (waitedMs < 300000) {
-                            delay(1000)
+                            delay(1000.milliseconds)
                             waitedMs += 1000
                             val info = printJob.info
                             val state = info.state

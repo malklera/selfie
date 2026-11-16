@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun SecretSettingsButton(
@@ -26,7 +27,7 @@ fun SecretSettingsButton(
 
     LaunchedEffect(lastFirstTapTime) {
         if (lastFirstTapTime > 0) {
-            delay(8000)
+            delay(8000.milliseconds)
             tapCount = 0
             lastFirstTapTime = 0
         }

@@ -101,7 +101,7 @@ object PrinterInfoHelper {
             val res = info.attributes.resolution?.let { "${it.horizontalDpi}x${it.verticalDpi} dpi" }
 
             PrintJobSummary(
-                jobName = info.label ?: "Trabajo de impresión",
+                jobName = info.label,
                 printerName = pName,
                 stateText = stateStr,
                 copies = info.copies,
@@ -178,7 +178,7 @@ Estado del Servicio: NO DISPONIBLE (PrintManager es nulo)
 
             DetailedJobInfo(
                 jobId = "Job#${index + 1}",
-                label = info.label ?: "Trabajo $index",
+                label = info.label,
                 stateName = mapJobStateToString(info.state),
                 stateCode = info.state,
                 printerIdRaw = pRaw,
