@@ -38,21 +38,21 @@ class CameraResolutionHelperTest {
 
     @Test
     fun testAspectRatioDetection() {
-        val res16to9_fhd = CameraResolution(1080, 1920)
-        assertTrue(res16to9_fhd.is9To16)
-        assertFalse(res16to9_fhd.is3To4)
+        val resFhd16to9 = CameraResolution(1080, 1920)
+        assertTrue(resFhd16to9.is9To16)
+        assertFalse(resFhd16to9.is3To4)
 
-        val res16to9_hd = CameraResolution(720, 1280)
-        assertTrue(res16to9_hd.is9To16)
-        assertFalse(res16to9_hd.is3To4)
+        val resHd16to9 = CameraResolution(720, 1280)
+        assertTrue(resHd16to9.is9To16)
+        assertFalse(resHd16to9.is3To4)
 
-        val res16to9_4k = CameraResolution(2160, 3840)
-        assertTrue(res16to9_4k.is9To16)
-        assertFalse(res16to9_4k.is3To4)
+        val res4k16to9 = CameraResolution(2160, 3840)
+        assertTrue(res4k16to9.is9To16)
+        assertFalse(res4k16to9.is3To4)
 
-        val res4to3_12mp = CameraResolution(3000, 4000)
-        assertTrue(res4to3_12mp.is3To4)
-        assertFalse(res4to3_12mp.is9To16)
+        val res12Mp4to3 = CameraResolution(3000, 4000)
+        assertTrue(res12Mp4to3.is3To4)
+        assertFalse(res12Mp4to3.is9To16)
 
         val res4to3VGA = CameraResolution(480, 640)
         assertTrue(res4to3VGA.is3To4)
