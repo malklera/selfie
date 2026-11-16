@@ -2,7 +2,6 @@ package ar.mimbi.Selfie.ui.screens
 
 import android.content.pm.ActivityInfo
 import android.content.ClipData
-import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import java.io.File
@@ -82,6 +81,7 @@ fun ConfigurationScreen(
     session: ConfigSessionState? = null
 ) {
     val context = LocalContext.current
+    val clipboard = androidx.compose.ui.platform.LocalClipboard.current
     val focusManager = LocalFocusManager.current
     val density = LocalDensity.current
     val coroutineScope = rememberCoroutineScope()
@@ -795,7 +795,7 @@ fun ConfigurationScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    copyToClipboard(context, screenText)
+                                    copyToClipboard(clipboard, coroutineScope, context, screenText)
                                 }
                                 .padding(vertical = 4.dp)
                         )
@@ -805,7 +805,7 @@ fun ConfigurationScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    copyToClipboard(context, entradaText)
+                                    copyToClipboard(clipboard, coroutineScope, context, entradaText)
                                 }
                                 .padding(vertical = 4.dp)
                         )
@@ -815,7 +815,7 @@ fun ConfigurationScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    copyToClipboard(context, salidaText)
+                                    copyToClipboard(clipboard, coroutineScope, context, salidaText)
                                 }
                                 .padding(vertical = 4.dp)
                         )
@@ -892,7 +892,7 @@ fun ConfigurationScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
-                                copyToClipboard(context, fullVersionStr)
+                                copyToClipboard(clipboard, coroutineScope, context, fullVersionStr)
                             }
                             .padding(vertical = 4.dp)
                     )
@@ -902,7 +902,7 @@ fun ConfigurationScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
-                                copyToClipboard(context, fullLicenseStr)
+                                copyToClipboard(clipboard, coroutineScope, context, fullLicenseStr)
                             }
                             .padding(vertical = 4.dp)
                     )
@@ -912,7 +912,7 @@ fun ConfigurationScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
-                                copyToClipboard(context, fullAuthorStr)
+                                copyToClipboard(clipboard, coroutineScope, context, fullAuthorStr)
                             }
                             .padding(vertical = 4.dp)
                     )
@@ -1044,10 +1044,10 @@ private fun formatPathForDisplay(context: Context, uriString: String?): String {
             // 3. SAF Tree/Document Manual Parsing (for File Manager picks)
             var docId: String? = null
             try {
-                if (DocumentsContract.isDocumentUri(context, uri)) {
-                    docId = DocumentsContract.getDocumentId(uri)
+                docId = if (DocumentsContract.isDocumentUri(context, uri)) {
+                    DocumentsContract.getDocumentId(uri)
                 } else {
-                    docId = try {
+                    try {
                         DocumentsContract.getTreeDocumentId(uri)
                     } catch (e: Exception) {
                         null
@@ -1115,12 +1115,19 @@ private fun formatPathForDisplay(context: Context, uriString: String?): String {
     return Uri.decode(uriString)
 }
 
-private fun copyToClipboard(context: Context, text: String, label: String = "Selfie") {
-    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-    val clip = ClipData.newPlainText(label, text)
-    clipboard.setPrimaryClip(clip)
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-        Toast.makeText(context, "Copiado al portapapeles", Toast.LENGTH_SHORT).show()
+private fun copyToClipboard(
+    clipboard: androidx.compose.ui.platform.Clipboard,
+    scope: kotlinx.coroutines.CoroutineScope,
+    context: Context,
+    text: String,
+    label: String = "Selfie"
+) {
+    scope.launch {
+        val clip = ClipData.newPlainText(label, text)
+        clipboard.setClipEntry(androidx.compose.ui.platform.ClipEntry(clip))
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            Toast.makeText(context, "Copiado al portapapeles", Toast.LENGTH_SHORT).show()
+        }
     }
 }
 

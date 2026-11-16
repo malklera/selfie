@@ -34,7 +34,6 @@ The .apk file is at
 
 - [ ] Add support for other languages, began with english and portugues
 
-- [ ] Fix problem in ErrHistoryScreen.kt, ConfigurationScreen.kt, 
 ## Made for use of
 
 [Instagram Mimbi](https://www.instagram.com/mimbi_glitterbar)

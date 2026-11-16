@@ -1,8 +1,6 @@
 package ar.mimbi.Selfie.ui.screens
 
 import android.content.ClipData
-import android.content.ClipboardManager
-import android.content.Context
 import android.os.Build
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
@@ -91,6 +89,8 @@ fun ErrorHistoryScreen(
 @Composable
 fun ErrorLogItem(log: ErrorLog) {
     val context = LocalContext.current
+    val clipboard = androidx.compose.ui.platform.LocalClipboard.current
+    val scope = rememberCoroutineScope()
     val dateFormat = remember { SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()) }
     val dateString = remember(log.timestamp) { dateFormat.format(Date(log.timestamp)) }
 
@@ -111,7 +111,13 @@ fun ErrorLogItem(log: ErrorLog) {
                 )
                 IconButton(
                     onClick = {
-                        copyToClipboard(context, formatLogForCopy(log, dateString))
+                        scope.launch {
+                            val clip = ClipData.newPlainText("Error Log", formatLogForCopy(log, dateString))
+                            clipboard.setClipEntry(androidx.compose.ui.platform.ClipEntry(clip))
+                            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+                                Toast.makeText(context, "Copiado al portapapeles", Toast.LENGTH_SHORT).show()
+                            }
+                        }
                     },
                     modifier = Modifier.size(24.dp)
                 ) {
@@ -173,11 +179,4 @@ private fun formatLogForCopy(log: ErrorLog, date: String): String {
     """.trimIndent()
 }
 
-private fun copyToClipboard(context: Context, text: String) {
-    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-    val clip = ClipData.newPlainText("Error Log", text)
-    clipboard.setPrimaryClip(clip)
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-        Toast.makeText(context, "Copiado al portapapeles", Toast.LENGTH_SHORT).show()
-    }
-}
+
