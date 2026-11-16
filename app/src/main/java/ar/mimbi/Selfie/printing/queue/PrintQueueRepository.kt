@@ -19,7 +19,6 @@ open class PrintQueueRepository(
     private val batchDao get() = database?.printBatchDao()
     private val pageDao get() = database?.printPageDao()
     private val itemDao get() = database?.printItemDao()
-    private val configDao get() = database?.printerConfigDao()
 
     open suspend fun getActiveTemplate(): PrintTemplate = withContext(Dispatchers.IO) {
         val activeId = configDataStore?.getActiveTemplateId()
@@ -104,11 +103,6 @@ open class PrintQueueRepository(
         }
     }
 
-    open suspend fun getAllPages(): List<PrintPage> {
-        val pDao = pageDao ?: return emptyList()
-        return pDao.getAllPagesWithItems().map { mapToDomainPage(it) }
-    }
-
     open suspend fun getPagesByIds(ids: List<Long>): List<PrintPage> {
         if (ids.isEmpty()) return emptyList()
         val pDao = pageDao ?: return emptyList()
@@ -165,48 +159,6 @@ open class PrintQueueRepository(
         pageDao?.deletePages(pageIds)
     }
 
-    open suspend fun deletePage(pageId: Long) {
-        itemDao?.deleteItemsByPageId(pageId)
-        pageDao?.deletePage(pageId)
-    }
-
-    open suspend fun deleteItem(itemId: Long) {
-        val iDao = itemDao ?: return
-        val pDao = pageDao ?: return
-
-        val itemEntity = iDao.getItemById(itemId) ?: return
-        val pageId = itemEntity.pageId
-        val pageEntity = pDao.getPageById(pageId) ?: run {
-            iDao.deleteItemsByIds(listOf(itemId))
-            return
-        }
-
-        val pageStatus = runCatching { PrintPageStatus.valueOf(pageEntity.status) }.getOrDefault(PrintPageStatus.OPEN)
-
-        if (pageStatus == PrintPageStatus.OPEN || pageStatus == PrintPageStatus.READY) {
-            iDao.deleteItemsByIds(listOf(itemId))
-            val remaining = iDao.getItemsByPageId(pageId)
-            if (remaining.isEmpty()) {
-                pDao.deletePage(pageId)
-            } else {
-                val reflowed = remaining.mapIndexed { index, it ->
-                    it.copy(slotIndex = index, status = PrintItemStatus.PENDING.name)
-                }
-                iDao.insertItems(reflowed)
-
-                if (pageStatus == PrintPageStatus.READY && reflowed.size < pageEntity.slotCount) {
-                    pDao.updatePage(pageEntity.copy(status = PrintPageStatus.OPEN.name, readyAt = null))
-                }
-            }
-        } else {
-            iDao.deleteItemsByIds(listOf(itemId))
-            val remaining = iDao.getItemsByPageId(pageId)
-            if (remaining.isEmpty()) {
-                pDao.deletePage(pageId)
-            }
-        }
-    }
-
     open suspend fun clearPrintedPages() {
         itemDao?.deletePrintedItems()
         pageDao?.deletePrintedPages()
@@ -231,25 +183,6 @@ open class PrintQueueRepository(
             pDao.updatePageStatus(page.id, newStatus)
             itemDao?.updateItemStatusesForPage(page.id, PrintItemStatus.PENDING.name)
         }
-    }
-
-    open suspend fun savePrinterConfig(printerType: String, printerName: String, settingsJson: String) {
-        configDao?.insertOrUpdate(
-            PrinterConfigEntity(
-                id = "default",
-                selectedPrinterId = printerName,
-                printerType = printerType,
-                settingsJson = settingsJson
-            )
-        )
-    }
-
-    open suspend fun getSavedPrinterConfig(): PrinterConfigEntity? {
-        return configDao?.getConfig("default")
-    }
-
-    open suspend fun clearPrinterConfig() {
-        configDao?.deleteConfig("default")
     }
 
     private fun mapToDomainPage(withItems: PrintPageWithItems): PrintPage {

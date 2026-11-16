@@ -25,7 +25,6 @@ data class OutputRegion(
     val width: Int get() = cropRect.width
     val height: Int get() = cropRect.height
     val aspect: Float get() = if (height > 0) width.toFloat() / height.toFloat() else 1.0f
-    val totalPixels: Long get() = width.toLong() * height.toLong()
 }
 
 object ImageGeometryHelper {

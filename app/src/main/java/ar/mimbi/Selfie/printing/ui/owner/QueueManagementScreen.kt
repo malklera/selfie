@@ -46,7 +46,7 @@ private enum class PageStatusFilter(val label: String) {
     FAILED("Fallidas")
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QueueManagementScreen(
     queueManager: PrintQueueManager,
@@ -360,10 +360,9 @@ fun QueueManagementScreen(
             confirmButton = {
                 Button(
                     onClick = {
-                        val pageToPrint = page
                         partialPrintPageConfirm = null
                         coroutineScope.launch {
-                            val success = queueManager.printPages(context, listOf(pageToPrint.id), allowPartial = true)
+                            val success = queueManager.printPages(context, listOf(page.id), allowPartial = true)
                             if (success) {
                                 Toast.makeText(context, "Enviando página parcial...", Toast.LENGTH_SHORT).show()
                             } else {

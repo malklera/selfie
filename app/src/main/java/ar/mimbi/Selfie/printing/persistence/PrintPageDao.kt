@@ -42,10 +42,6 @@ interface PrintPageDao {
     fun getAllPagesWithItemsFlow(): Flow<List<PrintPageWithItems>>
 
     @Transaction
-    @Query("SELECT * FROM print_pages ORDER BY createdAt DESC, pageNumber DESC, id DESC")
-    suspend fun getAllPagesWithItems(): List<PrintPageWithItems>
-
-    @Transaction
     @Query("SELECT * FROM print_pages WHERE id IN (:ids) ORDER BY createdAt ASC, pageNumber ASC, id ASC")
     suspend fun getPagesWithItemsByIds(ids: List<Long>): List<PrintPageWithItems>
 
@@ -56,9 +52,6 @@ interface PrintPageDao {
     @Transaction
     @Query("SELECT * FROM print_pages WHERE status = 'FAILED' OR status = 'CANCELED' ORDER BY createdAt ASC, pageNumber ASC, id ASC")
     suspend fun getFailedOrCanceledPagesWithItems(): List<PrintPageWithItems>
-
-    @Query("DELETE FROM print_pages WHERE id = :pageId")
-    suspend fun deletePage(pageId: Long): Int
 
     @Query("DELETE FROM print_pages WHERE id IN (:pageIds)")
     suspend fun deletePages(pageIds: List<Long>): Int

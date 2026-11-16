@@ -68,8 +68,7 @@ class PrintQueueManager(
 
     suspend fun printReadyPages(context: Context): Boolean {
         val readyPages = repository.getAllReadyPages()
-        if (readyPages.isEmpty()) return false
-        return printPages(context, readyPages.map { it.id })
+        return readyPages.isNotEmpty() && printPages(context, readyPages.map { it.id })
     }
 
     suspend fun retryFailedPages(context: Context): Boolean {
@@ -86,8 +85,7 @@ class PrintQueueManager(
         }
 
         val pagesToPrint = repository.getAllReadyPages()
-        if (pagesToPrint.isEmpty()) return true
-        return printPages(context, pagesToPrint.map { it.id })
+        return pagesToPrint.isEmpty() || printPages(context, pagesToPrint.map { it.id })
     }
 
     suspend fun printPages(
@@ -95,9 +93,7 @@ class PrintQueueManager(
         pageIds: List<Long>,
         allowPartial: Boolean = false
     ): Boolean {
-        if (pageIds.isEmpty()) return false
-
-        return mutex.withLock {
+        return pageIds.isNotEmpty() && mutex.withLock {
             val pagesToProcess = repository.getPagesByIds(pageIds)
             if (pagesToProcess.isEmpty()) return@withLock false
 
@@ -301,10 +297,6 @@ class PrintQueueManager(
 
     suspend fun deletePages(pageIds: List<Long>) {
         repository.deletePages(pageIds)
-    }
-
-    suspend fun deleteItem(itemId: Long) {
-        repository.deleteItem(itemId)
     }
 
     suspend fun clearQueue() {

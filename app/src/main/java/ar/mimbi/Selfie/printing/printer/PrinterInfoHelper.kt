@@ -1,9 +1,6 @@
 package ar.mimbi.Selfie.printing.printer
 
-import android.content.ClipData
 import android.content.Context
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
@@ -76,18 +73,6 @@ object PrinterInfoHelper {
         }
         name = name.trim('?', ' ', ':', '\t', '\n')
         return name.ifBlank { rawId }
-    }
-
-    fun copyToClipboard(
-        clipboard: androidx.compose.ui.platform.Clipboard,
-        scope: CoroutineScope,
-        label: String,
-        text: String
-    ) {
-        scope.launch {
-            val clip = ClipData.newPlainText(label, text)
-            clipboard.setClipEntry(androidx.compose.ui.platform.ClipEntry(clip))
-        }
     }
 
     fun queryPrinterDetails(context: Context): ConnectedPrinterDetails {

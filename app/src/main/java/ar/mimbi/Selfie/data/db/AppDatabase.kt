@@ -12,7 +12,6 @@ import ar.mimbi.Selfie.printing.persistence.PrintItemDao
 import ar.mimbi.Selfie.printing.persistence.PrintItemEntity
 import ar.mimbi.Selfie.printing.persistence.PrintPageDao
 import ar.mimbi.Selfie.printing.persistence.PrintPageEntity
-import ar.mimbi.Selfie.printing.persistence.PrinterConfigDao
 import ar.mimbi.Selfie.printing.persistence.PrinterConfigEntity
 
 @Database(
@@ -31,7 +30,6 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun printBatchDao(): PrintBatchDao
     abstract fun printPageDao(): PrintPageDao
     abstract fun printItemDao(): PrintItemDao
-    abstract fun printerConfigDao(): PrinterConfigDao
 
     companion object {
         @Volatile
