@@ -730,7 +730,6 @@ private fun KioskDefaultMessage() {
 }
 
 private fun loadProcessAndDecorateImageProxy(
-    context: Context,
     imageProxy: ImageProxy,
     outputRegion: OutputRegion,
     decorationFit: DecorationFit,
@@ -857,7 +856,6 @@ private fun takePhoto(
                 try {
                     Log.d("CaptureScreen", "Paso 2: Foto capturada en RAM. Procesando, recortando y decorando...")
                     val processedBitmap = loadProcessAndDecorateImageProxy(
-                        context = context,
                         imageProxy = image,
                         outputRegion = outputRegion,
                         decorationFit = decorationFit,

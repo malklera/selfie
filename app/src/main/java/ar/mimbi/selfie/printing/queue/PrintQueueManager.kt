@@ -56,7 +56,7 @@ class PrintQueueManager(
      * Enqueues photo copies assigned to the currently selected active template.
      * Does NOT trigger automatic printing or processQueue.
      */
-    suspend fun enqueuePhoto(context: Context, photoUri: String, copies: Int): List<Long> = withContext(Dispatchers.IO) {
+    suspend fun enqueuePhoto(photoUri: String, copies: Int): List<Long> = withContext(Dispatchers.IO) {
         val activeTemplate = repository.getActiveTemplate()
         val insertedIds = repository.enqueuePhotos(activeTemplate, photoUri, copies)
         Log.d(TAG, "Enqueued $copies copies for $photoUri with active template ${activeTemplate.id}")

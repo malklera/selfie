@@ -26,7 +26,6 @@ import androidx.compose.ui.unit.dp
 import ar.mimbi.selfie.data.AppConfig
 import ar.mimbi.selfie.data.ConfigSessionState
 import ar.mimbi.selfie.data.UserActionTracker
-import ar.mimbi.selfie.printing.queue.PrintQueueManager
 import ar.mimbi.selfie.ui.components.EnforceAppOrientation
 import kotlinx.coroutines.launch
 
@@ -34,12 +33,10 @@ import kotlinx.coroutines.launch
 @Composable
 fun PrintingScreen(
     initialConfig: AppConfig,
-    onSave: (AppConfig) -> Unit,
     onBack: () -> Unit,
     onNavigateToPrinterConfig: () -> Unit,
     onNavigateToTemplateConfig: () -> Unit,
     onNavigateToQueueManagement: () -> Unit,
-    queueManager: PrintQueueManager? = null,
     session: ConfigSessionState? = null
 ) {
     val focusManager = LocalFocusManager.current

@@ -191,7 +191,7 @@ fun SelfieApp(configDataStore: ConfigDataStore) {
                         onImageReady = { isMainContentReady = true },
                         onPrint = { photoUri, copies ->
                             scope.launch {
-                                printQueueManager.enqueuePhoto(context, photoUri, copies)
+                                printQueueManager.enqueuePhoto(photoUri, copies)
                                 configDataStore.incrementPrintCount(copies)
                             }
                         }
@@ -230,7 +230,6 @@ fun SelfieApp(configDataStore: ConfigDataStore) {
                     PrintingScreen(
                         initialConfig = config,
                         session = session,
-                        onSave = { _ -> },
                         onBack = { navController.popBackStack() },
                         onNavigateToPrinterConfig = {
                             navController.navigate("printer_config")
@@ -240,8 +239,7 @@ fun SelfieApp(configDataStore: ConfigDataStore) {
                         },
                         onNavigateToQueueManagement = {
                             navController.navigate("queue_management")
-                        },
-                        queueManager = printQueueManager
+                        }
                     )
                 }
                 composable("queue_management") {
