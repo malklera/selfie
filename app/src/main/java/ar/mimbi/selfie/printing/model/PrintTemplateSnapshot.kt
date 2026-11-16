@@ -128,7 +128,10 @@ object PrintTemplateSnapshot {
                 '[' -> parseArray()
                 '"' -> parseString()
                 't', 'f' -> parseBoolean()
-                'n' -> parseNull()
+                'n' -> {
+                    parseNull()
+                    null
+                }
                 else -> parseNumber()
             }
         }
@@ -235,12 +238,10 @@ object PrintTemplateSnapshot {
             return null
         }
 
-        private fun parseNull(): Any? {
+        private fun parseNull() {
             if (json.startsWith("null", pos)) {
                 pos += 4
-                return null
             }
-            return null
         }
 
         private fun parseNumber(): Number? {
