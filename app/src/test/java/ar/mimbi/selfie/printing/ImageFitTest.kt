@@ -1,0 +1,77 @@
+package ar.mimbi.selfie.printing
+
+import ar.mimbi.selfie.printing.template.ImageFit
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class ImageFitTest {
+
+    @Test
+    fun testSameAspectRatioFit() {
+        // Square image 1000x1000 into square slot 500x500
+        val fit = ImageFit.calculateFit(1000, 1000, 500, 500)
+        assertEquals(500, fit.scaledWidth)
+        assertEquals(500, fit.scaledHeight)
+        assertEquals(0, fit.offsetX)
+        assertEquals(0, fit.offsetY)
+    }
+
+    @Test
+    fun testLandscapeInPortraitSlot() {
+        // Landscape image 1200x800 into portrait slot 600x1000
+        val fit = ImageFit.calculateFit(1200, 800, 600, 1000)
+        assertEquals(600, fit.scaledWidth)
+        assertEquals(400, fit.scaledHeight) // 600 * (800/1200) = 400
+        assertEquals(0, fit.offsetX)
+        assertEquals(300, fit.offsetY) // (1000 - 400) / 2 = 300
+    }
+
+    @Test
+    fun testPortraitInLandscapeSlot() {
+        // Portrait image 800x1200 into landscape slot 1000x600
+        val fit = ImageFit.calculateFit(800, 1200, 1000, 600)
+        assertEquals(400, fit.scaledWidth) // 600 * (800/1200) = 400
+        assertEquals(600, fit.scaledHeight)
+        assertEquals(300, fit.offsetX) // (1000 - 400) / 2 = 300
+        assertEquals(0, fit.offsetY)
+    }
+
+    @Test
+    fun testAutoRotatePortraitInLandscapeSlot() {
+        // Portrait image 3000x4000 into landscape slot 2100x1435 with autoRotate = true
+        val fit = ImageFit.calculateFit(3000, 4000, 2100, 1435, autoRotate = true)
+        assertTrue(fit.isRotated)
+        // Rotated 90 deg -> 4000x3000. Fits height 1435 -> width 1435 * (4/3) = 1913
+        assertEquals(1913, fit.scaledWidth)
+        assertEquals(1435, fit.scaledHeight)
+        assertEquals(93, fit.offsetX)
+        assertEquals(0, fit.offsetY)
+    }
+
+    @Test
+    fun testAspectPreservationNoDistortion() {
+        val imgWidth = 4000
+        val imgHeight = 3000
+        val fit = ImageFit.calculateFit(imgWidth, imgHeight, 800, 1200)
+
+        val originalRatio = imgWidth.toFloat() / imgHeight.toFloat()
+        val fitRatio = fit.scaledWidth.toFloat() / fit.scaledHeight.toFloat()
+
+        assertEquals(originalRatio, fitRatio, 0.01f)
+        assertTrue(fit.scaledWidth <= 800)
+        assertTrue(fit.scaledHeight <= 1200)
+    }
+
+    @Test
+    fun testDoubleStripOnlyFitsWithoutCropping() {
+        // Portrait 3000x4000 photo into template 2 landscape strip (2480px width x 1695px height)
+        val fit = ImageFit.calculateFit(3000, 4000, 2480, 1695, autoRotate = true)
+        assertTrue(fit.isRotated)
+        // Rotated 90 deg -> 4000x3000. Fits height 1695 completely, width stays inside the slot.
+        assertEquals(2260, fit.scaledWidth)
+        assertEquals(1695, fit.scaledHeight)
+        assertEquals(110, fit.offsetX)
+        assertEquals(0, fit.offsetY)
+    }
+}

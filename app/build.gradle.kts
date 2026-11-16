@@ -15,11 +15,11 @@ if (localPropertiesFile.exists()) {
 }
 
 android {
-    namespace = "ar.mimbi.Selfie"
+    namespace = "ar.mimbi.selfie"
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "ar.mimbi.Selfie"
+        applicationId = "ar.mimbi.selfie"
         minSdk = 23
         targetSdk = 37
         versionCode = 1
