@@ -91,11 +91,11 @@ fun CaptureScreen(
 
     var kioskState by rememberSaveable { mutableStateOf(KioskState.WELCOME) }
     Log.d("CaptureScreen", "CaptureScreen composed (kioskState = $kioskState)")
-    var countdown by rememberSaveable { mutableStateOf(config.countdownSeconds) }
+    var countdown by rememberSaveable { mutableIntStateOf(config.countdownSeconds) }
     var capturedUriString by rememberSaveable { mutableStateOf<String?>(null) }
     var capturedBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var captureBoxBitmap by remember { mutableStateOf<Bitmap?>(null) }
-    var captureAttempt by remember { mutableStateOf(0) }
+    var captureAttempt by remember { mutableIntStateOf(0) }
     var isFolderCheckPassed by remember { mutableStateOf(false) }
     var folderErrorMessage by remember { mutableStateOf<String?>(null) }
 

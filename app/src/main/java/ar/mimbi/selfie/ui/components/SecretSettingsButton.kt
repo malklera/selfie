@@ -8,6 +8,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -22,8 +23,8 @@ fun SecretSettingsButton(
     onNavigateToConfig: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var tapCount by remember { mutableStateOf(0) }
-    var lastFirstTapTime by remember { mutableStateOf(0L) }
+    var tapCount by remember { androidx.compose.runtime.mutableIntStateOf(0) }
+    var lastFirstTapTime by remember { mutableLongStateOf(0L) }
 
     LaunchedEffect(lastFirstTapTime) {
         if (lastFirstTapTime > 0) {
