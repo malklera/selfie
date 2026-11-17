@@ -98,9 +98,11 @@ class MainActivity : ComponentActivity() {
         ) { _ -> }
 
         val permissionsToRequest = mutableListOf(Manifest.permission.CAMERA)
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+            permissionsToRequest.add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        }
         if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.TIRAMISU) {
             permissionsToRequest.add(Manifest.permission.READ_EXTERNAL_STORAGE)
-            permissionsToRequest.add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             permissionsToRequest.add(Manifest.permission.READ_MEDIA_IMAGES)
