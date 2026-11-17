@@ -45,6 +45,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -142,9 +143,9 @@ fun ConfigurationScreen(
 
     var showUnsavedDialog by rememberSaveable { mutableStateOf(false) }
 
-    val displayMetrics = context.resources.displayMetrics
-    val screenW = displayMetrics.widthPixels
-    val screenH = displayMetrics.heightPixels
+    val containerSize = LocalWindowInfo.current.containerSize
+    val screenW = containerSize.width
+    val screenH = containerSize.height
     val screenAspect = if (screenH > 0) screenW.toFloat() / screenH.toFloat() else 1.0f
     val screenAspectFormatted = ImageGeometryHelper.formatAspectRatio(screenW, screenH)
 
@@ -758,9 +759,9 @@ fun ConfigurationScreen(
                         Text("Diagnóstico de imagen", style = MaterialTheme.typography.titleLarge)
                         Spacer(modifier = Modifier.height(8.dp))
 
-                        val displayMetrics = context.resources.displayMetrics
-                        val screenW = displayMetrics.widthPixels
-                        val screenH = displayMetrics.heightPixels
+                        val containerSize = LocalWindowInfo.current.containerSize
+                        val screenW = containerSize.width
+                        val screenH = containerSize.height
                         val screenAspect = if (screenH > 0) screenW.toFloat() / screenH.toFloat() else 1.0f
                         val screenAspectFormatted = ImageGeometryHelper.formatAspectRatio(screenW, screenH)
 
