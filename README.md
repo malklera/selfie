@@ -32,6 +32,8 @@ The .apk file is at
 
 - [ ] Allow to change the number of taps to enter the config screen, minimum 1.
 
+- [ ] Refactor to allow the use of different languages, move all user facing text to use this system.
+
 - [ ] Add support for other languages, began with english and portugues
 
 ## Made for use of
