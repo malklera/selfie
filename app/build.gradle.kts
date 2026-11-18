@@ -60,7 +60,8 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             val releaseSigning = signingConfigs.getByName("release")
             signingConfig = if (releaseSigning.storeFile?.exists() == true) {
@@ -68,6 +69,9 @@ android {
             } else {
                 signingConfigs.getByName("debug")
             }
+        }
+        debug {
+            isMinifyEnabled = false
         }
     }
 

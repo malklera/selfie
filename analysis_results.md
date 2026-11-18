@@ -4,26 +4,6 @@ This document contains the findings from a comprehensive search across the proje
 
 ---
 
-## 1. Empty Files & Directories
-
-### Empty Files
-1. **`app/src/main/res/values/colors.xml`**
-   - **Path**: `app/src/main/res/values/colors.xml`
-   - **Details**: Contains only an empty `<resources />` root tag with no color definitions.
-2. **`app/src/main/keepRules/rules.keep`**
-   - **Path**: `app/src/main/keepRules/rules.keep`
-   - **Details**: Contains only commented-out header text. Minification is disabled in `app/build.gradle.kts` (`isMinifyEnabled = false`), making this file unused.
-
-### Empty Directories
-1. `app/src/androidTest/java/ar/mimbi/selfie/`
-2. `app/src/main/res/mipmap-hdpi/`
-3. `app/src/main/res/mipmap-mdpi/`
-4. `app/src/main/res/mipmap-xhdpi/`
-5. `app/src/main/res/mipmap-xxhdpi/`
-6. `app/src/main/res/mipmap-xxxhdpi/`
-
----
-
 ## 2. Unused Elements ("Unused Things")
 
 ### Unused Database Entities & DAOs
