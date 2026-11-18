@@ -26,15 +26,6 @@ class AppConfigTest {
     }
 
     @Test
-    fun testPictureResolutionBackwardsCompatibilityAlias() {
-        val config = AppConfig(inputResolution = "4032x3024")
-
-        @Suppress("DEPRECATION")
-        assertEquals("4032x3024", config.pictureResolution)
-        assertEquals("4032x3024", config.inputResolution)
-    }
-
-    @Test
     fun testEnumValues() {
         assertEquals("FIT", PreviewFit.FIT.name)
         assertEquals("FILL", PreviewFit.FILL.name)

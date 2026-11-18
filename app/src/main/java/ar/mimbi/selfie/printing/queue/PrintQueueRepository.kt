@@ -16,7 +16,6 @@ open class PrintQueueRepository(
     private val configDataStore: ConfigDataStore? = null
 ) {
 
-    private val batchDao get() = database?.printBatchDao()
     private val pageDao get() = database?.printPageDao()
     private val itemDao get() = database?.printItemDao()
 
@@ -167,7 +166,6 @@ open class PrintQueueRepository(
     open suspend fun clearQueue() {
         itemDao?.deleteAllItems()
         pageDao?.deleteAllPages()
-        batchDao?.deleteAllBatches()
     }
 
     open suspend fun resetInFlightPagesToReadyOrOpen() {

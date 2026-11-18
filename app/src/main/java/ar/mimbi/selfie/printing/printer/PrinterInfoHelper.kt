@@ -119,8 +119,7 @@ object PrinterInfoHelper {
     }
 
     fun queryFullPrinterDetails(
-        context: Context,
-        printerManager: PrinterManager? = null
+        context: Context
     ): FullPrinterQueryResult {
         val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
         val timestamp = dateFormat.format(Date())
@@ -195,11 +194,8 @@ Estado del Servicio: NO DISPONIBLE (PrintManager es nulo)
         }
 
         val activePrinters = detailedJobs.map { it.printerNameFormatted }.distinct()
-        val appPrinterStatus = printerManager?.statusFlow?.value?.let { st ->
-            st.javaClass.simpleName ?: st.toString()
-        } ?: "Desconectada / No configurada"
-
-        val appPrinterName = printerManager?.currentPrinterName?.value ?: printerManager?.getActivePrinter()?.let { "Impresora Activa" }
+        val appPrinterStatus = "Desconectada / No configurada"
+        val appPrinterName: String? = null
 
         val sb = StringBuilder()
         sb.appendLine("Fecha y Hora: $timestamp")
@@ -263,7 +259,7 @@ Estado del Servicio: NO DISPONIBLE (PrintManager es nulo)
   "totalJobsInQueue": ${printJobs.size},
   "jobs": $jobsJson,
   "appPrinter": {
-    "name": ${appPrinterName?.let { "\"$it\"" } ?: "null"},
+    "name": null,
     "status": "$appPrinterStatus"
   }
 }

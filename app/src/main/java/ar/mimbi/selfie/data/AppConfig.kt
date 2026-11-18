@@ -18,8 +18,4 @@ data class AppConfig(
     val showPrintButton: Boolean = false,
     val maxPrintCount: Int = 0,
     val printCount: Int = 0
-) {
-    @Deprecated("Use inputResolution instead", ReplaceWith("inputResolution"))
-    val pictureResolution: String?
-        get() = inputResolution
-}
+)

@@ -18,7 +18,6 @@ import android.print.PrintManager
 import android.util.Log
 import ar.mimbi.selfie.data.ErrorLogger
 import ar.mimbi.selfie.printing.model.*
-import ar.mimbi.selfie.printing.printer.PrinterManager
 import ar.mimbi.selfie.printing.template.DefaultTemplateRenderer
 import ar.mimbi.selfie.printing.template.DefaultTemplates
 import ar.mimbi.selfie.printing.template.TemplateRenderer
@@ -33,7 +32,6 @@ import androidx.core.net.toUri
 
 class PrintQueueManager(
     val repository: PrintQueueRepository,
-    val printerManager: PrinterManager,
     val renderer: TemplateRenderer = DefaultTemplateRenderer(),
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
 ) {

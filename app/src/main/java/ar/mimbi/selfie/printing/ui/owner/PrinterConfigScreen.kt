@@ -33,7 +33,6 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import ar.mimbi.selfie.data.AppOrientation
 import ar.mimbi.selfie.data.UserActionTracker
 import ar.mimbi.selfie.printing.printer.PrinterInfoHelper
-import ar.mimbi.selfie.printing.printer.PrinterManager
 import ar.mimbi.selfie.ui.components.EnforceAppOrientation
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
@@ -44,7 +43,6 @@ import java.util.Locale
 @Composable
 fun PrinterConfigScreen(
     appOrientation: AppOrientation? = null,
-    printerManager: PrinterManager? = null,
     onBack: () -> Unit
 ) {
     EnforceAppOrientation(appOrientation)
@@ -238,24 +236,24 @@ fun PrinterConfigScreen(
             HorizontalDivider()
 
             // Real time printer query
-            RealtimePrinterQuerySection(printerManager = printerManager)
+            RealtimePrinterQuerySection()
         }
     }
 }
 
 @Composable
-fun RealtimePrinterQuerySection(printerManager: PrinterManager? = null) {
+fun RealtimePrinterQuerySection() {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
     var queryResult by remember {
-        mutableStateOf(PrinterInfoHelper.queryFullPrinterDetails(context, printerManager))
+        mutableStateOf(PrinterInfoHelper.queryFullPrinterDetails(context))
     }
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                queryResult = PrinterInfoHelper.queryFullPrinterDetails(context, printerManager)
+                queryResult = PrinterInfoHelper.queryFullPrinterDetails(context)
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)

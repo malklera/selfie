@@ -6,8 +6,6 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
-import ar.mimbi.selfie.printing.persistence.PrintBatchDao
-import ar.mimbi.selfie.printing.persistence.PrintBatchEntity
 import ar.mimbi.selfie.printing.persistence.PrintItemDao
 import ar.mimbi.selfie.printing.persistence.PrintItemEntity
 import ar.mimbi.selfie.printing.persistence.PrintPageDao
@@ -17,7 +15,6 @@ import ar.mimbi.selfie.printing.persistence.PrinterConfigEntity
 @Database(
     entities = [
         ErrorLog::class,
-        PrintBatchEntity::class,
         PrintPageEntity::class,
         PrintItemEntity::class,
         PrinterConfigEntity::class
@@ -27,7 +24,6 @@ import ar.mimbi.selfie.printing.persistence.PrinterConfigEntity
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun errorLogDao(): ErrorLogDao
-    abstract fun printBatchDao(): PrintBatchDao
     abstract fun printPageDao(): PrintPageDao
     abstract fun printItemDao(): PrintItemDao
 

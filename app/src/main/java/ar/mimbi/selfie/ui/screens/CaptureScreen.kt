@@ -128,7 +128,7 @@ fun CaptureScreen(
                         context.contentResolver.openInputStream(uriString.toUri())?.use { input ->
                             BitmapFactory.decodeStream(input)
                         }
-                    } catch (e: Exception) {
+                    } catch (_: Exception) {
                         null
                     }
                 }

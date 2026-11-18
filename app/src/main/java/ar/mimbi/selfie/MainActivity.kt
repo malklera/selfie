@@ -37,7 +37,6 @@ import ar.mimbi.selfie.data.ConfigSessionState
 import ar.mimbi.selfie.data.ErrorLogger
 import ar.mimbi.selfie.data.UserActionTracker
 import ar.mimbi.selfie.data.db.AppDatabase
-import ar.mimbi.selfie.printing.printer.PrinterManager
 import ar.mimbi.selfie.printing.queue.PrintQueueManager
 import ar.mimbi.selfie.printing.queue.PrintQueueRepository
 import ar.mimbi.selfie.printing.template.DefaultTemplates
@@ -140,8 +139,7 @@ fun SelfieApp(configDataStore: ConfigDataStore) {
     val printQueueManager = remember(context, configDataStore) {
         val database = AppDatabase.getDatabase(context)
         val repository = PrintQueueRepository(database, configDataStore)
-        val printerManager = PrinterManager()
-        PrintQueueManager(repository, printerManager)
+        PrintQueueManager(repository)
     }
 
     val activeTemplate by printQueueManager.activeTemplateFlow.collectAsState(initial = DefaultTemplates.TEMPLATE_FULL_WIDTH_SINGLE)
@@ -265,7 +263,6 @@ fun SelfieApp(configDataStore: ConfigDataStore) {
                     val session = getOrCreateSession(config, activeTemplate.id)
                     PrinterConfigScreen(
                         appOrientation = session.appOrientation,
-                        printerManager = printQueueManager.printerManager,
                         onBack = { navController.popBackStack() }
                     )
                 }

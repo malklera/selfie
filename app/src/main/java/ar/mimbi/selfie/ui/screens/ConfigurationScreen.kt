@@ -1042,7 +1042,7 @@ private fun formatPathForDisplay(context: Context, uriString: String?): String {
                         }
                     }
                 }
-            } catch (e: Exception) { /* Ignore */
+            } catch (_: Exception) { /* Ignore */
             }
 
             // 3. SAF Tree/Document Manual Parsing (for File Manager picks)
@@ -1053,11 +1053,11 @@ private fun formatPathForDisplay(context: Context, uriString: String?): String {
                 } else {
                     try {
                         DocumentsContract.getTreeDocumentId(uri)
-                    } catch (e: Exception) {
+                    } catch (_: Exception) {
                         null
                     }
                 }
-            } catch (e: Exception) { /* Ignore */
+            } catch (_: Exception) { /* Ignore */
             }
 
             if (docId == null) {
