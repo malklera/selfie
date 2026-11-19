@@ -17,27 +17,46 @@ interface TemplateRenderer {
         photos: List<Bitmap?>,
         pageSize: PageSize = PageSize()
     ): PrintablePage
+
+    fun renderToCanvas(
+        canvas: Canvas,
+        template: PrintTemplate,
+        photos: List<Bitmap?>,
+        widthPx: Int,
+        heightPx: Int
+    ) {
+        val printable = render(template, photos, PageSize(widthPx, heightPx))
+        printable.bitmap?.let { bmp ->
+            if (!bmp.isRecycled) {
+                val srcRect = Rect(0, 0, bmp.width, bmp.height)
+                val dstRect = Rect(0, 0, widthPx, heightPx)
+                val paint = Paint(Paint.FILTER_BITMAP_FLAG)
+                canvas.drawBitmap(bmp, srcRect, dstRect, paint)
+                bmp.recycle()
+            }
+        }
+    }
 }
 
 class DefaultTemplateRenderer : TemplateRenderer {
 
-    override fun render(
+    override fun renderToCanvas(
+        canvas: Canvas,
         template: PrintTemplate,
         photos: List<Bitmap?>,
-        pageSize: PageSize
-    ): PrintablePage {
-        val pageBitmap = createBitmap(pageSize.widthPx, pageSize.heightPx)
-        val canvas = Canvas(pageBitmap)
+        widthPx: Int,
+        heightPx: Int
+    ) {
         // Blank page background (white)
         canvas.drawColor(Color.WHITE)
 
         val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
 
         template.slots.forEachIndexed { index, slot ->
-            val slotLeft = (slot.left * pageSize.widthPx).roundToInt()
-            val slotTop = (slot.top * pageSize.heightPx).roundToInt()
-            val slotWidth = (slot.width * pageSize.widthPx).roundToInt()
-            val slotHeight = (slot.height * pageSize.heightPx).roundToInt()
+            val slotLeft = (slot.left * widthPx).roundToInt()
+            val slotTop = (slot.top * heightPx).roundToInt()
+            val slotWidth = (slot.width * widthPx).roundToInt()
+            val slotHeight = (slot.height * heightPx).roundToInt()
 
             val slotRect = Rect(slotLeft, slotTop, slotLeft + slotWidth, slotTop + slotHeight)
 
@@ -52,7 +71,16 @@ class DefaultTemplateRenderer : TemplateRenderer {
             }
             // Unused or null slots remain white (blank)
         }
+    }
 
+    override fun render(
+        template: PrintTemplate,
+        photos: List<Bitmap?>,
+        pageSize: PageSize
+    ): PrintablePage {
+        val pageBitmap = createBitmap(pageSize.widthPx, pageSize.heightPx)
+        val canvas = Canvas(pageBitmap)
+        renderToCanvas(canvas, template, photos, pageSize.widthPx, pageSize.heightPx)
         return PrintablePage(pageBitmap, pageSize)
     }
 }
