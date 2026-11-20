@@ -88,8 +88,10 @@ fun QueueManagementScreen(
 
     val filteredPages = displayedPages
 
-    val eligibleSelectablePages = remember(displayedPages) {
-        displayedPages.filter { it.status == PrintPageStatus.READY }
+    val (eligibleSelectablePages, eligibleSelectableIds) = remember(displayedPages) {
+        val eligible = displayedPages.filter { it.status == PrintPageStatus.READY }
+        val ids = eligible.mapTo(HashSet(eligible.size)) { it.id }
+        eligible to ids
     }
 
     val hasSelectedPages = selectedPageIds.isNotEmpty()
@@ -189,8 +191,7 @@ fun QueueManagementScreen(
                             if (hasSelectedPages) {
                                 selectedPageIds = emptySet()
                             } else {
-                                val eligibleIds = eligibleSelectablePages.map { it.id }.toSet()
-                                selectedPageIds = eligibleIds
+                                selectedPageIds = eligibleSelectableIds
                             }
                         },
                         enabled = hasSelectedPages || eligibleSelectablePages.isNotEmpty(),
@@ -281,7 +282,7 @@ fun QueueManagementScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(PageStatusFilter.entries.toTypedArray(), key = { it.name }) { filter ->
+                    items(PageStatusFilter.entries, key = { it.name }) { filter ->
                         val count = when (filter) {
                             PageStatusFilter.ALL -> queueCounts.total
                             PageStatusFilter.READY -> queueCounts.ready
