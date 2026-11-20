@@ -10,12 +10,15 @@ This document contains the findings from a comprehensive search across the proje
 - **File**: `app/src/main/java/ar/mimbi/selfie/printing/queue/PrintQueueManager.kt`
 - **Issue**: In `printPages()`, all photos across all pages in a batch are decoded at full scale into RAM simultaneously (`loadedBitmaps`). For queue items containing multiple pages with multi-slot templates (e.g. 4 photos per page across 20 pages = 80 full-resolution bitmaps in RAM), memory usage can easily exceed the Android app heap limit, leading to `OutOfMemoryError` (OOM).
 - **Recommendation**: Process and recycle bitmaps per page rather than holding all batch bitmaps in memory simultaneously, or bound max batch page size.
-Done
+
+**Done**
 
 ### 2. Room Transaction Flow Re-emitting Full Queue History
 - **File**: `app/src/main/java/ar/mimbi/selfie/printing/persistence/PrintPageDao.kt`
 - **Issue**: `getAllPagesWithItemsFlow()` uses a `@Transaction` query that selects ALL pages and items sorted by `createdAt DESC`. Whenever any page or item status is updated, Room re-runs the full query and emits the complete history of all pages and items.
 - **Impact**: As the historical queue grows, UI screens observing `allPagesFlow` (such as `QueueManagementScreen`) suffer increased recomposition latencies and higher CPU usage.
+
+**Done**
 
 ### 3. Collection Allocation Churn in Camera & Printer Helpers
 - **Files**:

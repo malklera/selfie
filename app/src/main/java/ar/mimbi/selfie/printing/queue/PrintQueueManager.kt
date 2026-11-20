@@ -41,11 +41,16 @@ class PrintQueueManager(
     }
 
     val allPagesFlow: Flow<List<PrintPage>> = repository.getAllPagesFlow()
+    val queueCountsFlow: Flow<QueueCounts> = repository.getQueueCountsFlow()
     val activeTemplateFlow: Flow<PrintTemplate> = repository.getActiveTemplateFlow()
+
+    fun getPagesByFilterFlow(filterStatus: String?, limit: Int = 100): Flow<List<PrintPage>> {
+        return repository.getPagesByFilterFlow(filterStatus, limit)
+    }
 
     init {
         scope.launch {
-            repository.resetInFlightPagesToReadyOrOpen()
+            repository.resetInFlightPagesToReadyOrIncomplete()
         }
     }
 
@@ -77,7 +82,7 @@ class PrintQueueManager(
             val targetStatus = if (page.itemCount >= page.slotCount || page.wasPartial) {
                 PrintPageStatus.READY
             } else {
-                PrintPageStatus.OPEN
+                PrintPageStatus.INCOMPLETE
             }
             repository.updatePageStatuses(listOf(page.id), targetStatus)
         }
@@ -100,13 +105,13 @@ class PrintQueueManager(
             for (page in pagesToProcess) {
                 val isEligible = when (page.status) {
                     PrintPageStatus.READY, PrintPageStatus.FAILED, PrintPageStatus.CANCELED, PrintPageStatus.SENT, PrintPageStatus.PRINTED -> true
-                    PrintPageStatus.OPEN -> allowPartial && page.items.isNotEmpty()
+                    PrintPageStatus.INCOMPLETE -> allowPartial && page.items.isNotEmpty()
                     else -> false
                 }
 
                 if (!isEligible) continue
 
-                if (page.status == PrintPageStatus.OPEN) {
+                if (page.status == PrintPageStatus.INCOMPLETE) {
                     repository.markPageWasPartial(page.id)
                 }
 

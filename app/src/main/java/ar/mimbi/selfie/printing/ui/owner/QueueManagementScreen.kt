@@ -33,6 +33,7 @@ import ar.mimbi.selfie.printing.model.PrintItem
 import ar.mimbi.selfie.printing.model.PrintPage
 import ar.mimbi.selfie.printing.model.PrintPageStatus
 import ar.mimbi.selfie.printing.model.PrintTemplate
+import ar.mimbi.selfie.printing.model.QueueCounts
 import ar.mimbi.selfie.printing.queue.PrintQueueManager
 import ar.mimbi.selfie.ui.components.EnforceAppOrientation
 import coil.compose.AsyncImage
@@ -41,7 +42,7 @@ import kotlinx.coroutines.launch
 private enum class PageStatusFilter(val label: String) {
     ALL("Todas"),
     READY("Listas"),
-    OPEN("Abiertas"),
+    INCOMPLETE("Incompletas"),
     PRINTED("Impresas"),
     FAILED("Fallidas")
 }
@@ -58,11 +59,26 @@ fun QueueManagementScreen(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
-    val allPages by queueManager.allPagesFlow.collectAsState(initial = emptyList())
+    var currentFilter by remember { mutableStateOf(PageStatusFilter.ALL) }
+
+    val filterStatusParam = remember(currentFilter) {
+        when (currentFilter) {
+            PageStatusFilter.ALL -> null
+            PageStatusFilter.READY -> "READY"
+            PageStatusFilter.INCOMPLETE -> "INCOMPLETE"
+            PageStatusFilter.PRINTED -> "PRINTED"
+            PageStatusFilter.FAILED -> "FAILED"
+        }
+    }
+
+    val displayedPages by remember(filterStatusParam) {
+        queueManager.getPagesByFilterFlow(filterStatusParam)
+    }.collectAsState(initial = emptyList())
+
+    val queueCounts by queueManager.queueCountsFlow.collectAsState(initial = QueueCounts())
     val activeTemplate by queueManager.activeTemplateFlow.collectAsState(initial = null)
 
     var selectedPageIds by remember { mutableStateOf(setOf<Long>()) }
-    var currentFilter by remember { mutableStateOf(PageStatusFilter.ALL) }
     var showMenu by remember { mutableStateOf(false) }
 
     var partialPrintPageConfirm by remember { mutableStateOf<PrintPage?>(null) }
@@ -70,20 +86,10 @@ fun QueueManagementScreen(
     var showClearConfirmDialog by remember { mutableStateOf(false) }
     var showClearPrintedConfirmDialog by remember { mutableStateOf(false) }
 
-    val filteredPages = remember(allPages, currentFilter) {
-        when (currentFilter) {
-            PageStatusFilter.ALL -> allPages
-            PageStatusFilter.READY -> allPages.filter { it.status == PrintPageStatus.READY }
-            PageStatusFilter.OPEN -> allPages.filter { it.status == PrintPageStatus.OPEN }
-            PageStatusFilter.PRINTED -> allPages.filter { it.status == PrintPageStatus.PRINTED }
-            PageStatusFilter.FAILED -> allPages.filter {
-                it.status == PrintPageStatus.FAILED || it.status == PrintPageStatus.CANCELED
-            }
-        }
-    }
+    val filteredPages = displayedPages
 
-    val eligibleSelectablePages = remember(allPages) {
-        allPages.filter { it.status == PrintPageStatus.READY }
+    val eligibleSelectablePages = remember(displayedPages) {
+        displayedPages.filter { it.status == PrintPageStatus.READY }
     }
 
     val hasSelectedPages = selectedPageIds.isNotEmpty()
@@ -276,16 +282,12 @@ fun QueueManagementScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(PageStatusFilter.entries.toTypedArray(), key = { it.name }) { filter ->
-                        val count = remember(allPages, filter) {
-                            when (filter) {
-                                PageStatusFilter.ALL -> allPages.size
-                                PageStatusFilter.READY -> allPages.count { it.status == PrintPageStatus.READY }
-                                PageStatusFilter.OPEN -> allPages.count { it.status == PrintPageStatus.OPEN }
-                                PageStatusFilter.PRINTED -> allPages.count { it.status == PrintPageStatus.PRINTED }
-                                PageStatusFilter.FAILED -> allPages.count {
-                                    it.status == PrintPageStatus.FAILED || it.status == PrintPageStatus.CANCELED
-                                }
-                            }
+                        val count = when (filter) {
+                            PageStatusFilter.ALL -> queueCounts.total
+                            PageStatusFilter.READY -> queueCounts.ready
+                            PageStatusFilter.INCOMPLETE -> queueCounts.incomplete
+                            PageStatusFilter.PRINTED -> queueCounts.printed
+                            PageStatusFilter.FAILED -> queueCounts.failed
                         }
                         FilterChip(
                             selected = currentFilter == filter,
@@ -345,7 +347,7 @@ fun QueueManagementScreen(
         }
     }
 
-    // Confirmation dialog for partial printing of OPEN page
+    // Confirmation dialog for partial printing of INCOMPLETE page
     partialPrintPageConfirm?.let { page ->
         AlertDialog(
             onDismissRequest = { partialPrintPageConfirm = null },
@@ -593,7 +595,7 @@ private fun PrintPageCard(
             }
 
             // Page Actions Row (if partial print or retry applies)
-            if ((page.status == PrintPageStatus.OPEN && page.itemCount < page.slotCount && page.itemCount > 0) ||
+            if ((page.status == PrintPageStatus.INCOMPLETE && page.itemCount < page.slotCount && page.itemCount > 0) ||
                 page.status == PrintPageStatus.FAILED || page.status == PrintPageStatus.CANCELED
             ) {
                 Row(
@@ -601,7 +603,7 @@ private fun PrintPageCard(
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    if (page.status == PrintPageStatus.OPEN && page.itemCount < page.slotCount && page.itemCount > 0) {
+                    if (page.status == PrintPageStatus.INCOMPLETE && page.itemCount < page.slotCount && page.itemCount > 0) {
                         OutlinedButton(
                             onClick = onPrintPartial,
                             colors = ButtonDefaults.outlinedButtonColors(
@@ -697,7 +699,7 @@ private fun SlotThumbnailBox(
 @Composable
 private fun PageStatusBadge(status: PrintPageStatus) {
     val (backgroundColor, textColor) = when (status) {
-        PrintPageStatus.OPEN -> Pair(Color(0xFFFFF3CD), Color(0xFF856404))
+        PrintPageStatus.INCOMPLETE -> Pair(Color(0xFFFFF3CD), Color(0xFF856404))
         PrintPageStatus.READY -> Pair(Color(0xFFD4EDDA), Color(0xFF155724))
         PrintPageStatus.SENT -> Pair(Color(0xFFD1ECF1), Color(0xFF0C5460))
         PrintPageStatus.PRINTING -> Pair(Color(0xFFCCE5FF), Color(0xFF004085))

@@ -31,15 +31,38 @@ interface PrintPageDao {
     @Query("SELECT * FROM print_pages WHERE id = :id")
     suspend fun getPageById(id: Long): PrintPageEntity?
 
-    @Query("SELECT * FROM print_pages WHERE templateId = :templateId AND templateVersion = :templateVersion AND status = 'OPEN' ORDER BY id DESC LIMIT 1")
-    suspend fun getLatestOpenPage(templateId: Int, templateVersion: Int): PrintPageEntity?
+    @Query("SELECT * FROM print_pages WHERE templateId = :templateId AND templateVersion = :templateVersion AND status = 'INCOMPLETE' ORDER BY id DESC LIMIT 1")
+    suspend fun getLatestIncompletePage(templateId: Int, templateVersion: Int): PrintPageEntity?
 
     @Query("SELECT MAX(pageNumber) FROM print_pages WHERE templateId = :templateId AND templateVersion = :templateVersion")
     suspend fun getMaxPageNumber(templateId: Int, templateVersion: Int): Int?
 
+    @Query("SELECT COUNT(*) FROM print_pages")
+    fun getTotalCountFlow(): Flow<Int>
+
+    @Query("SELECT COUNT(*) FROM print_pages WHERE status = 'READY'")
+    fun getReadyCountFlow(): Flow<Int>
+
+    @Query("SELECT COUNT(*) FROM print_pages WHERE status = 'INCOMPLETE'")
+    fun getIncompleteCountFlow(): Flow<Int>
+
+    @Query("SELECT COUNT(*) FROM print_pages WHERE status = 'PRINTED'")
+    fun getPrintedCountFlow(): Flow<Int>
+
+    @Query("SELECT COUNT(*) FROM print_pages WHERE status = 'FAILED' OR status = 'CANCELED'")
+    fun getFailedOrCanceledCountFlow(): Flow<Int>
+
     @Transaction
-    @Query("SELECT * FROM print_pages ORDER BY createdAt DESC, pageNumber DESC, id DESC")
-    fun getAllPagesWithItemsFlow(): Flow<List<PrintPageWithItems>>
+    @Query("SELECT * FROM print_pages ORDER BY createdAt DESC, pageNumber DESC, id DESC LIMIT :limit")
+    fun getAllPagesWithItemsFlow(limit: Int = 100): Flow<List<PrintPageWithItems>>
+
+    @Transaction
+    @Query("SELECT * FROM print_pages WHERE status = :status ORDER BY createdAt DESC, pageNumber DESC, id DESC LIMIT :limit")
+    fun getPagesWithItemsByStatusFlow(status: String, limit: Int = 100): Flow<List<PrintPageWithItems>>
+
+    @Transaction
+    @Query("SELECT * FROM print_pages WHERE status = 'FAILED' OR status = 'CANCELED' ORDER BY createdAt DESC, pageNumber DESC, id DESC LIMIT :limit")
+    fun getFailedOrCanceledPagesWithItemsFlow(limit: Int = 100): Flow<List<PrintPageWithItems>>
 
     @Transaction
     @Query("SELECT * FROM print_pages WHERE id IN (:ids) ORDER BY createdAt ASC, pageNumber ASC, id ASC")

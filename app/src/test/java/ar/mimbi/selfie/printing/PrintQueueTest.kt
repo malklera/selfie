@@ -14,7 +14,7 @@ class PrintQueueTest {
     @Test
     fun testPrintPageStatusEnumValues() {
         val statuses = PrintPageStatus.entries.map { it.name }
-        assertTrue(statuses.contains("OPEN"))
+        assertTrue(statuses.contains("INCOMPLETE"))
         assertTrue(statuses.contains("READY"))
         assertTrue(statuses.contains("SENT"))
         assertTrue(statuses.contains("PRINTING"))
@@ -33,14 +33,14 @@ class PrintQueueTest {
             templateSnapshotJson = "{}",
             pageNumber = 2,
             slotCount = 4,
-            status = PrintPageStatus.OPEN,
+            status = PrintPageStatus.INCOMPLETE,
             items = listOf(
                 PrintItem(1, 1, 0, "uri1", 1),
                 PrintItem(2, 1, 1, "uri2", 2),
                 PrintItem(3, 1, 2, "uri3", 3)
             )
         )
-        assertEquals("Página 2 - Plantilla 3 - 3/4 fotos - Abierta", page.headerText)
+        assertEquals("Página 2 - Plantilla 3 - 3/4 fotos - Incompleta", page.headerText)
     }
 
     @Test
@@ -50,7 +50,7 @@ class PrintQueueTest {
 
         assertEquals(1, pages.size)
         val page = pages.first()
-        assertEquals(PrintPageStatus.OPEN, page.status)
+        assertEquals(PrintPageStatus.INCOMPLETE, page.status)
         assertEquals(1, page.itemCount)
         assertEquals(4, page.slotCount)
         assertEquals(1, page.pageNumber)
@@ -80,7 +80,7 @@ class PrintQueueTest {
         assertEquals(4, pages[0].itemCount)
         assertEquals(1, pages[0].pageNumber)
 
-        assertEquals(PrintPageStatus.OPEN, pages[1].status)
+        assertEquals(PrintPageStatus.INCOMPLETE, pages[1].status)
         assertEquals(1, pages[1].itemCount)
         assertEquals(2, pages[1].pageNumber)
 
@@ -88,20 +88,20 @@ class PrintQueueTest {
     }
 
     @Test
-    fun testSwitchingTemplatesPreservesOpenPages() {
+    fun testSwitchingTemplatesPreservesIncompletePages() {
         val t4 = DefaultTemplates.TEMPLATE_4_PHOTOS
         val t1 = DefaultTemplates.TEMPLATE_FULL_WIDTH_SINGLE
 
-        // Enqueue 1 photo to 4-photo template -> Page 1 (t4) OPEN 1/4
+        // Enqueue 1 photo to 4-photo template -> Page 1 (t4) INCOMPLETE 1/4
         val (pages1, _) = PagePlanner.enqueue(emptyList(), t4, "file:///p1.jpg", 1)
         assertEquals(1, pages1.size)
         assertEquals(t4.id, pages1[0].templateId)
-        assertEquals(PrintPageStatus.OPEN, pages1[0].status)
+        assertEquals(PrintPageStatus.INCOMPLETE, pages1[0].status)
 
         // Switch to single-photo template and enqueue 1 photo -> Page 1 (t1) READY 1/1
         val (pages2, _) = PagePlanner.enqueue(pages1, t1, "file:///p2.jpg", 1)
         assertEquals(2, pages2.size)
-        assertEquals(PrintPageStatus.OPEN, pages2[0].status) // t4 still OPEN
+        assertEquals(PrintPageStatus.INCOMPLETE, pages2[0].status) // t4 still INCOMPLETE
         assertEquals(t1.id, pages2[1].templateId)
         assertEquals(PrintPageStatus.READY, pages2[1].status) // t1 is READY
 
@@ -111,7 +111,7 @@ class PrintQueueTest {
         val t4Page = pages3.find { it.templateId == t4.id }
         assertNotNull(t4Page)
         assertEquals(3, t4Page!!.itemCount)
-        assertEquals(PrintPageStatus.OPEN, t4Page.status)
+        assertEquals(PrintPageStatus.INCOMPLETE, t4Page.status)
     }
 
     @Test
@@ -129,7 +129,7 @@ class PrintQueueTest {
     }
 
     @Test
-    fun testDeletingItemReflowsSlotsAndResetsReadyToOpen() {
+    fun testDeletingItemReflowsSlotsAndResetsReadyToIncomplete() {
         val template = DefaultTemplates.TEMPLATE_4_PHOTOS
         val (pages, _) = PagePlanner.enqueue(emptyList(), template, "file:///p.jpg", 4)
         val readyPage = pages.first()
@@ -141,7 +141,7 @@ class PrintQueueTest {
         val updatedPage = PagePlanner.reflowItemsAfterRemoval(readyPage, removedItemId)
 
         assertNotNull(updatedPage)
-        assertEquals(PrintPageStatus.OPEN, updatedPage!!.status)
+        assertEquals(PrintPageStatus.INCOMPLETE, updatedPage!!.status)
         assertEquals(3, updatedPage.items.size)
         // Verify slots are contiguous: 0, 1, 2
         assertEquals(0, updatedPage.items[0].slotIndex)

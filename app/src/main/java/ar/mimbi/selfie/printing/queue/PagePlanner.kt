@@ -25,18 +25,18 @@ object PagePlanner {
         val createdItems = mutableListOf<PrintItem>()
 
         repeat(copies) {
-            val openPageIndex = mutablePages.indexOfLast {
+            val incompletePageIndex = mutablePages.indexOfLast {
                 it.templateId == template.id &&
                         it.templateVersion == template.version &&
-                        it.status == PrintPageStatus.OPEN
+                        it.status == PrintPageStatus.INCOMPLETE
             }
 
             val targetPage: PrintPage
             val targetIndex: Int
 
-            if (openPageIndex >= 0) {
-                targetPage = mutablePages[openPageIndex]
-                targetIndex = openPageIndex
+            if (incompletePageIndex >= 0) {
+                targetPage = mutablePages[incompletePageIndex]
+                targetIndex = incompletePageIndex
             } else {
                 val maxPageNum = mutablePages
                     .filter { it.templateId == template.id && it.templateVersion == template.version }
@@ -50,7 +50,7 @@ object PagePlanner {
                     pageNumber = maxPageNum + 1,
                     slotCount = template.slotCount,
                     createdAt = currentTimeMillis,
-                    status = PrintPageStatus.OPEN,
+                    status = PrintPageStatus.INCOMPLETE,
                     items = emptyList()
                 )
                 mutablePages.add(newPage)
@@ -76,7 +76,7 @@ object PagePlanner {
 
             val updatedPage = targetPage.copy(
                 items = updatedItems,
-                status = if (isNowFull) PrintPageStatus.READY else PrintPageStatus.OPEN,
+                status = if (isNowFull) PrintPageStatus.READY else PrintPageStatus.INCOMPLETE,
                 readyAt = if (isNowFull) currentTimeMillis else targetPage.readyAt
             )
 
@@ -104,7 +104,7 @@ object PagePlanner {
 
         val isFull = reflowedItems.size >= page.slotCount
         val newStatus = if (page.status == PrintPageStatus.READY && !isFull) {
-            PrintPageStatus.OPEN
+            PrintPageStatus.INCOMPLETE
         } else {
             page.status
         }
@@ -112,7 +112,7 @@ object PagePlanner {
         return page.copy(
             items = reflowedItems,
             status = newStatus,
-            readyAt = if (newStatus == PrintPageStatus.OPEN) null else page.readyAt
+            readyAt = if (newStatus == PrintPageStatus.INCOMPLETE) null else page.readyAt
         )
     }
 }

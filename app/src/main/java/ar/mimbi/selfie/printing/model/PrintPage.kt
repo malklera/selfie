@@ -9,7 +9,7 @@ data class PrintPage(
     val slotCount: Int,
     val createdAt: Long = System.currentTimeMillis(),
     val readyAt: Long? = null,
-    val status: PrintPageStatus = PrintPageStatus.OPEN,
+    val status: PrintPageStatus = PrintPageStatus.INCOMPLETE,
     val wasPartial: Boolean = false,
     val statusMessage: String? = null,
     val lastPrintJobId: String? = null,
