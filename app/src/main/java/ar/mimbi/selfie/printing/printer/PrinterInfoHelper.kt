@@ -89,9 +89,9 @@ object PrinterInfoHelper {
                     state == PrintJobInfo.STATE_BLOCKED
         }
 
-        val activePrinters = activeJobs.mapNotNull { job ->
+        val activePrinters = activeJobs.asSequence().mapNotNull { job ->
             job.info.printerId?.localId?.takeIf { it.isNotBlank() }?.let { formatPrinterName(it) }
-        }.distinct()
+        }.distinct().toList()
 
         val jobSummaries = activeJobs.map { job ->
             val info = job.info
@@ -193,7 +193,7 @@ Estado del Servicio: NO DISPONIBLE (PrintManager es nulo)
             )
         }
 
-        val activePrinters = detailedJobs.map { it.printerNameFormatted }.distinct()
+        val activePrinters = detailedJobs.asSequence().map { it.printerNameFormatted }.distinct().toList()
         val appPrinterStatus = "Desconectada / No configurada"
         val appPrinterName: String? = null
 

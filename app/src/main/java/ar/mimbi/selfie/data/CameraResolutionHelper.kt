@@ -50,10 +50,10 @@ object CameraResolutionHelper {
 
         val nativeAspect = maxSize.height.toFloat() / maxSize.width.toFloat()
 
-        val filtered = resolutions.filter { res ->
+        val filtered = resolutions.asSequence().filter { res ->
             val resAspect = res.height.toFloat() / res.width.toFloat()
             abs(resAspect - nativeAspect) / nativeAspect <= 0.02f
-        }.sortedByDescending { it.totalPixels }
+        }.sortedByDescending { it.totalPixels }.toList()
 
         return NativeSizes(aspect = nativeAspect, sizes = filtered)
     }
@@ -88,11 +88,11 @@ object CameraResolutionHelper {
                 ?: map?.getOutputSizes(SurfaceTexture::class.java)
                 ?: emptyArray()
 
-            val cameraResolutions = sizes.map { size ->
+            val cameraResolutions = sizes.asSequence().map { size ->
                 val portraitW = minOf(size.width, size.height)
                 val portraitH = maxOf(size.width, size.height)
                 CameraResolution(portraitW, portraitH)
-            }.distinctBy { "${it.width}x${it.height}" }
+            }.distinctBy { "${it.width}x${it.height}" }.toList()
 
             return filterNativeSizes(cameraResolutions)
         } catch (e: Exception) {
@@ -144,7 +144,7 @@ object CameraResolutionHelper {
             val list9To16 = mutableListOf<CameraResolution>()
             val list3To4 = mutableListOf<CameraResolution>()
 
-            sizes.map { size ->
+            sizes.asSequence().map { size ->
                 val portraitW = minOf(size.width, size.height)
                 val portraitH = maxOf(size.width, size.height)
                 CameraResolution(portraitW, portraitH)
