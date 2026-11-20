@@ -1,17 +1,22 @@
 package ar.mimbi.selfie.data
 
+import java.util.concurrent.atomic.AtomicReference
+
 object UserActionTracker {
-    var currentScreen: String = "Unknown"
-        private set
-    
-    var lastAction: String = "None"
-        private set
+    private val _currentScreen = AtomicReference("Unknown")
+    val currentScreen: String
+        get() = _currentScreen.get()
+
+    private val _lastAction = AtomicReference("None")
+    val lastAction: String
+        get() = _lastAction.get()
 
     fun updateScreen(screenName: String) {
-        currentScreen = screenName
+        _currentScreen.set(screenName)
     }
 
     fun trackAction(action: String) {
-        lastAction = action
+        _lastAction.set(action)
     }
 }
+
