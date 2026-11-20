@@ -6,7 +6,9 @@ import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Matrix
 import android.graphics.Paint
+import android.graphics.RectF
 import android.graphics.Rect as AndroidRect
+import kotlin.math.roundToInt
 import android.net.Uri
 import android.util.Log
 import android.util.Size
@@ -752,61 +754,62 @@ private fun loadProcessAndDecorateImageProxy(
 
         Log.d("CaptureScreen", "In-Memory EXIF Orientation: $orientation, Raw Size: ${bitmap.width}x${bitmap.height}")
 
-        val matrix = Matrix()
+        val orientMatrix = Matrix()
         when (orientation) {
-            ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> matrix.postScale(-1f, 1f)
-            ExifInterface.ORIENTATION_ROTATE_180 -> matrix.postRotate(180f)
+            ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> orientMatrix.postScale(-1f, 1f)
+            ExifInterface.ORIENTATION_ROTATE_180 -> orientMatrix.postRotate(180f)
             ExifInterface.ORIENTATION_FLIP_VERTICAL -> {
-                matrix.postRotate(180f)
-                matrix.postScale(-1f, 1f)
+                orientMatrix.postRotate(180f)
+                orientMatrix.postScale(-1f, 1f)
             }
             ExifInterface.ORIENTATION_TRANSPOSE -> {
-                matrix.postRotate(90f)
-                matrix.postScale(-1f, 1f)
+                orientMatrix.postRotate(90f)
+                orientMatrix.postScale(-1f, 1f)
             }
-            ExifInterface.ORIENTATION_ROTATE_90 -> matrix.postRotate(90f)
+            ExifInterface.ORIENTATION_ROTATE_90 -> orientMatrix.postRotate(90f)
             ExifInterface.ORIENTATION_TRANSVERSE -> {
-                matrix.postRotate(270f)
-                matrix.postScale(-1f, 1f)
+                orientMatrix.postRotate(270f)
+                orientMatrix.postScale(-1f, 1f)
             }
-            ExifInterface.ORIENTATION_ROTATE_270 -> matrix.postRotate(270f)
+            ExifInterface.ORIENTATION_ROTATE_270 -> orientMatrix.postRotate(270f)
         }
 
-        val orientedBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
-        if (orientedBitmap != bitmap) {
-            bitmap.recycle()
-        }
+        val rawRect = RectF(0f, 0f, bitmap.width.toFloat(), bitmap.height.toFloat())
+        val orientedBounds = RectF()
+        orientMatrix.mapRect(orientedBounds, rawRect)
+        orientMatrix.postTranslate(-orientedBounds.left, -orientedBounds.top)
+
+        val orientedWidth = orientedBounds.width().roundToInt()
+        val orientedHeight = orientedBounds.height().roundToInt()
 
         // Front camera mirroring around center
-        val mirrorMatrix = Matrix().apply {
-            postScale(-1f, 1f, orientedBitmap.width / 2f, orientedBitmap.height / 2f)
-        }
-        val mirroredBitmap = Bitmap.createBitmap(orientedBitmap, 0, 0, orientedBitmap.width, orientedBitmap.height, mirrorMatrix, true)
-        if (mirroredBitmap != orientedBitmap) {
-            orientedBitmap.recycle()
-        }
+        val totalTransform = Matrix(orientMatrix)
+        totalTransform.postScale(-1f, 1f, orientedWidth / 2f, orientedHeight / 2f)
 
         val outW = outputRegion.width
         val outH = outputRegion.height
         val srcCropRect = outputRegion.cropRect.toAndroidRect()
 
-        // Clamp crop rect to mirroredBitmap bounds
-        srcCropRect.left = srcCropRect.left.coerceIn(0, mirroredBitmap.width)
-        srcCropRect.top = srcCropRect.top.coerceIn(0, mirroredBitmap.height)
-        srcCropRect.right = srcCropRect.right.coerceIn(srcCropRect.left, mirroredBitmap.width)
-        srcCropRect.bottom = srcCropRect.bottom.coerceIn(srcCropRect.top, mirroredBitmap.height)
+        // Clamp crop rect to oriented bounds
+        srcCropRect.left = srcCropRect.left.coerceIn(0, orientedWidth)
+        srcCropRect.top = srcCropRect.top.coerceIn(0, orientedHeight)
+        srcCropRect.right = srcCropRect.right.coerceIn(srcCropRect.left, orientedWidth)
+        srcCropRect.bottom = srcCropRect.bottom.coerceIn(srcCropRect.top, orientedHeight)
 
         Log.d("CaptureScreen", "Output region R: ${outW}x${outH} (aspect ${outputRegion.aspect})")
+
+        // Translate transform matrix so crop origin aligns with (0,0) of result bitmap
+        totalTransform.postTranslate(-srcCropRect.left.toFloat(), -srcCropRect.top.toFloat())
 
         val resultBitmap = createBitmap(outW, outH)
         val canvas = Canvas(resultBitmap)
         val paint = Paint(Paint.FILTER_BITMAP_FLAG)
 
-        val dstRect = AndroidRect(0, 0, outW, outH)
-        canvas.drawBitmap(mirroredBitmap, srcCropRect, dstRect, paint)
-        mirroredBitmap.recycle()
+        canvas.drawBitmap(bitmap, totalTransform, paint)
+        bitmap.recycle()
 
         if (overlay != null) {
+            val dstRect = AndroidRect(0, 0, outW, outH)
             when (decorationFit) {
                 DecorationFit.STRETCH -> {
                     val overlaySrc = AndroidRect(0, 0, overlay.width, overlay.height)

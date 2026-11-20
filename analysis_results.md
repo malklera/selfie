@@ -27,10 +27,34 @@ This document contains the findings from a comprehensive search across the proje
 - **Issue**: Expressions like `resolutions.filter { ... }.sortedByDescending { ... }` and `activeJobs.mapNotNull { ... }.distinct()` create multiple intermediate list instances.
 - **Recommendation**: Use Kotlin `Sequence` (`asSequence()`) to avoid intermediate collection allocations.
 
+**Done**
+
 ### 4. Excessive Intermediate Bitmap Allocations in Capture Workflow
 - **File**: `app/src/main/java/ar/mimbi/selfie/ui/screens/CaptureScreen.kt` (`loadProcessAndDecorateImageProxy`)
 - **Issue**: Image capture creates and recycles multiple intermediate Bitmaps (`bitmap`, `orientedBitmap`, `mirroredBitmap`, `resultBitmap`) sequentially for orientation and mirroring operations.
 - **Impact**: High-resolution camera frames trigger large contiguous memory allocations in quick succession, driving garbage collection (GC) pauses during photo capture.
+
+Approach 1: Single-Pass Combined Matrix Transformation (Recommended Quick Win)
+Instead of creating intermediate bitmaps for orientation and mirroring,
+combine all transformations into a single Matrix and render the initial raw
+bitmap directly onto the target resultBitmap Canvas.
+
+How it works
+
+1. Decode raw byte array into initial bitmap.
+2. Construct a single combined Matrix that handles EXIF orientation + horizontal mirroring + crop/scaling mapping.
+3. Allocate only resultBitmap (outW x outH).
+4. Draw bitmap directly onto resultBitmap using canvas.drawBitmap(bitmap, combinedMatrix, paint) and apply the overlay.
+5. Immediately recycle bitmap.
+
+Pros
+
+- 60–75% Reduction in Allocations: Eliminates orientedBitmap and mirroredBitmap entirely (reduces allocations from 4 bitmaps down to 2).
+- Lower GC Pressure: Eliminates multiple ~48MB contiguous heap allocations during capture.
+- High Fidelity: Retains full sensor pixel density prior to final crop/scale pass.
+- Low Risk: Standard Android 2D Canvas math; no architectural restructuring required.
+Cons
+- Still decodes full-resolution initial bitmap before downscaling into resultBitmap.
 
 ### 5. Thread Safety / Visibility in `UserActionTracker`
 - **File**: `app/src/main/java/ar/mimbi/selfie/data/UserActionTracker.kt`
