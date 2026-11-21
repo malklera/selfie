@@ -1,13 +1,11 @@
 package ar.mimbi.selfie
 
-import android.Manifest
 import android.os.Bundle
 import androidx.core.view.ViewCompat
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -91,20 +89,6 @@ class MainActivity : ComponentActivity() {
                 windowInsets
             }
         }
-
-        val requestPermissionLauncher = registerForActivityResult(
-            ActivityResultContracts.RequestMultiplePermissions()
-        ) { _ -> }
-
-        val permissionsToRequest = mutableListOf(Manifest.permission.CAMERA)
-        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
-            permissionsToRequest.add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-        }
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-            permissionsToRequest.add(Manifest.permission.READ_EXTERNAL_STORAGE)
-        }
-
-        requestPermissionLauncher.launch(permissionsToRequest.toTypedArray())
 
         setContent {
             SelfieTheme(darkTheme = true) {

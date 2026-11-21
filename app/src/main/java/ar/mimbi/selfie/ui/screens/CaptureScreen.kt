@@ -1,6 +1,9 @@
 package ar.mimbi.selfie.ui.screens
 
+import android.Manifest
 import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
@@ -10,10 +13,13 @@ import android.graphics.RectF
 import android.graphics.Rect as AndroidRect
 import kotlin.math.roundToInt
 import android.net.Uri
+import android.provider.Settings
 import android.util.Log
 import android.util.Size
 import android.view.Surface
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.*
 import androidx.camera.core.resolutionselector.AspectRatioStrategy
 import androidx.camera.core.resolutionselector.ResolutionSelector
@@ -49,6 +55,8 @@ import androidx.compose.ui.window.Dialog
 import androidx.core.content.ContextCompat
 import androidx.documentfile.provider.DocumentFile
 import androidx.exifinterface.media.ExifInterface
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import ar.mimbi.selfie.data.AppConfig
 import ar.mimbi.selfie.data.CameraResolutionHelper
@@ -90,6 +98,39 @@ fun CaptureScreen(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val scope = rememberCoroutineScope()
+
+    var cameraGranted by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) ==
+                PackageManager.PERMISSION_GRANTED
+        )
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        cameraGranted = isGranted
+    }
+
+    LaunchedEffect(Unit) {
+        if (!cameraGranted) {
+            permissionLauncher.launch(Manifest.permission.CAMERA)
+        }
+    }
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                cameraGranted = ContextCompat.checkSelfPermission(
+                    context, Manifest.permission.CAMERA
+                ) == PackageManager.PERMISSION_GRANTED
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     var kioskState by rememberSaveable { mutableStateOf(KioskState.WELCOME) }
     Log.d("CaptureScreen", "CaptureScreen composed (kioskState = $kioskState)")
@@ -207,7 +248,9 @@ fun CaptureScreen(
     }
 
     // Bind CameraX Use Cases (runs upon composition, streams in background behind Welcome screen)
-    LaunchedEffect(selectedResolution, lifecycleOwner) {
+    LaunchedEffect(cameraGranted, selectedResolution, lifecycleOwner) {
+        if (!cameraGranted) return@LaunchedEffect
+
         val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
         cameraProviderFuture.addListener({
             val cameraProvider = cameraProviderFuture.get()
@@ -294,8 +337,8 @@ fun CaptureScreen(
         val fittedHeightDp = with(density) { fittedSize.height.toDp() }
 
         // Trigger countdown and photo capture when state changes to COUNTDOWN
-        LaunchedEffect(kioskState, captureAttempt, isFolderCheckPassed) {
-            if (kioskState == KioskState.COUNTDOWN && isFolderCheckPassed) {
+        LaunchedEffect(kioskState, captureAttempt, isFolderCheckPassed, cameraGranted) {
+            if (kioskState == KioskState.COUNTDOWN && isFolderCheckPassed && cameraGranted) {
                 if (captureAttempt > 0) delay(2000.milliseconds)
 
                 countdown = config.countdownSeconds
@@ -709,8 +752,80 @@ fun CaptureScreen(
             }
         }
 
-        // Settings button on top (available on Welcome and Captured screens)
-        if (kioskState == KioskState.WELCOME || kioskState == KioskState.CAPTURED) {
+        // LAYER 5: Permission Denied Overlay
+        if (!cameraGranted) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black)
+                    .padding(32.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = "📷",
+                        fontSize = 64.sp
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "Permiso de cámara requerido",
+                        color = Color.White,
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = "La aplicación necesita acceso a la cámara para tomar fotos.",
+                        color = Color.LightGray,
+                        fontSize = 16.sp,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(28.dp))
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Button(
+                            onClick = {
+                                permissionLauncher.launch(Manifest.permission.CAMERA)
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary
+                            )
+                        ) {
+                            Text(
+                                text = "Conceder permiso",
+                                maxLines = 1,
+                                softWrap = false
+                            )
+                        }
+                        OutlinedButton(
+                            onClick = {
+                                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                    data = Uri.fromParts("package", context.packageName, null)
+                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                }
+                                context.startActivity(intent)
+                            }
+                        ) {
+                            Text(
+                                text = "Abrir ajustes",
+                                color = Color.White,
+                                maxLines = 1,
+                                softWrap = false
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // Settings button on top (available on Welcome, Captured, or Permission screens)
+        if (kioskState == KioskState.WELCOME || kioskState == KioskState.CAPTURED || !cameraGranted) {
             SecretSettingsButton(
                 onNavigateToConfig = onNavigateToConfig,
                 modifier = Modifier
