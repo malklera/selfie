@@ -1,5 +1,7 @@
 package ar.mimbi.selfie.data
 
+import android.os.Environment
+
 enum class PreviewFit { FIT, FILL, FIXED_ASPECT }
 enum class FixedAspect { R4_3, R16_9, R3_4, R9_16 }
 enum class DecorationFit { STRETCH, COVER }
@@ -9,7 +11,7 @@ data class AppConfig(
     val frontPath: String? = null,
     val captureBoxPath: String? = null,
     val countdownSeconds: Int = 3,
-    val destinationPath: String = "/storage/emulated/0/Pictures/selfie",
+    val destinationPath: String = Environment.DIRECTORY_PICTURES + "/selfie",
     val inputResolution: String? = null,
     val previewFit: PreviewFit = PreviewFit.FIT,
     val fixedAspect: FixedAspect = FixedAspect.R9_16,

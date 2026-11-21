@@ -1,5 +1,6 @@
 package ar.mimbi.selfie
 
+import android.os.Environment
 import ar.mimbi.selfie.data.AppConfig
 import ar.mimbi.selfie.data.AppOrientation
 import ar.mimbi.selfie.data.DecorationFit
@@ -17,7 +18,7 @@ class AppConfigTest {
         assertNull(config.frontPath)
         assertNull(config.captureBoxPath)
         assertEquals(3, config.countdownSeconds)
-        assertEquals("/storage/emulated/0/Pictures/selfie", config.destinationPath)
+        assertEquals(Environment.DIRECTORY_PICTURES + "/selfie", config.destinationPath)
         assertNull(config.inputResolution)
         assertEquals(PreviewFit.FIT, config.previewFit)
         assertEquals(FixedAspect.R9_16, config.fixedAspect)

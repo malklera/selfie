@@ -1,6 +1,7 @@
 package ar.mimbi.selfie.ui.screens
 
 import android.Manifest
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -13,6 +14,9 @@ import android.graphics.RectF
 import android.graphics.Rect as AndroidRect
 import kotlin.math.roundToInt
 import android.net.Uri
+import android.os.Build
+import android.os.Environment
+import android.provider.MediaStore
 import android.provider.Settings
 import android.util.Log
 import android.util.Size
@@ -137,6 +141,8 @@ fun CaptureScreen(
     var countdown by rememberSaveable { mutableIntStateOf(config.countdownSeconds) }
     var capturedUriString by rememberSaveable { mutableStateOf<String?>(null) }
     var capturedBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    var isSaveFailed by remember { mutableStateOf(false) }
+    var saveErrorMessage by remember { mutableStateOf<String?>(null) }
     var captureBoxBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var captureAttempt by remember { mutableIntStateOf(0) }
     var isFolderCheckPassed by remember { mutableStateOf(false) }
@@ -359,12 +365,24 @@ fun CaptureScreen(
                     onPhotoProcessed = { bitmap ->
                         ContextCompat.getMainExecutor(context).execute {
                             capturedBitmap = bitmap
+                            isSaveFailed = false
+                            saveErrorMessage = null
+                            capturedUriString = null
                             kioskState = KioskState.CAPTURED
                         }
                     },
                     onPhotoSaved = { uri ->
-                        if (capturedUriString != uri.toString()) {
+                        ContextCompat.getMainExecutor(context).execute {
                             capturedUriString = uri.toString()
+                            isSaveFailed = false
+                            saveErrorMessage = null
+                        }
+                    },
+                    onSaveFailed = { error ->
+                        ContextCompat.getMainExecutor(context).execute {
+                            isSaveFailed = true
+                            saveErrorMessage = error
+                            showRedToast(context, error)
                         }
                     },
                     onError = { error ->
@@ -486,6 +504,31 @@ fun CaptureScreen(
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth()
                     )
+
+                    if (isSaveFailed) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Surface(
+                            color = Color(0xFFD32F2F),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Text(
+                                    text = "⚠️ NO SE PUDO GUARDAR LA FOTO EN EL ALMACENAMIENTO\n(La impresión está deshabilitada)",
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        }
+                    }
 
                     Spacer(modifier = Modifier.height(32.dp))
 
@@ -655,6 +698,8 @@ fun CaptureScreen(
                                         UserActionTracker.trackAction("OTRA FOTO")
                                         capturedBitmap = null
                                         capturedUriString = null
+                                        isSaveFailed = false
+                                        saveErrorMessage = null
                                         kioskState = KioskState.WELCOME
                                     },
                                     colors = ButtonDefaults.buttonColors(
@@ -674,6 +719,7 @@ fun CaptureScreen(
                                 }
 
                                 // Button 2: Print & Counter
+                                val isPrintEnabled = !isSaveFailed && capturedUriString != null
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -683,17 +729,20 @@ fun CaptureScreen(
                                             UserActionTracker.trackAction("Tocar botón de imprimir")
                                             showCopiesMenu = true
                                         },
+                                        enabled = isPrintEnabled,
                                         colors = ButtonDefaults.buttonColors(
                                             containerColor = Color.Transparent,
-                                            contentColor = Color.White
+                                            contentColor = Color.White,
+                                            disabledContainerColor = Color.Transparent,
+                                            disabledContentColor = Color.Gray
                                         ),
-                                        border = BorderStroke(1.5.dp, Color.Gray),
+                                        border = BorderStroke(1.5.dp, if (isPrintEnabled) Color.Gray else Color.DarkGray),
                                         shape = RoundedCornerShape(24.dp),
                                         modifier = Modifier.height(48.dp)
                                     ) {
                                         Text(
                                             text = if (showIconOnly) "🖨️" else "🖨️ IMPRIMIR",
-                                            color = Color.White,
+                                            color = if (isPrintEnabled) Color.White else Color.Gray,
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 18.sp
                                         )
@@ -731,6 +780,8 @@ fun CaptureScreen(
                                 UserActionTracker.trackAction("OTRA FOTO")
                                 capturedBitmap = null
                                 capturedUriString = null
+                                isSaveFailed = false
+                                saveErrorMessage = null
                                 kioskState = KioskState.WELCOME
                             },
                             colors = ButtonDefaults.buttonColors(
@@ -950,6 +1001,29 @@ private fun loadProcessAndDecorateImageProxy(
     }
 }
 
+@Suppress("DEPRECATION")
+private fun showRedToast(context: Context, message: String) {
+    ContextCompat.getMainExecutor(context).execute {
+        try {
+            val textView = android.widget.TextView(context).apply {
+                text = message
+                setTextColor(android.graphics.Color.WHITE)
+                setBackgroundColor(0xFFD32F2F.toInt())
+                setPadding(32, 24, 32, 24)
+                textSize = 16f
+                typeface = android.graphics.Typeface.DEFAULT_BOLD
+            }
+            val toast = Toast(context.applicationContext).apply {
+                duration = Toast.LENGTH_LONG
+                view = textView
+            }
+            toast.show()
+        } catch (_: Exception) {
+            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+        }
+    }
+}
+
 private fun takePhoto(
     context: Context,
     imageCapture: ImageCapture,
@@ -961,6 +1035,7 @@ private fun takePhoto(
     scope: kotlinx.coroutines.CoroutineScope,
     onPhotoProcessed: (Bitmap) -> Unit,
     onPhotoSaved: (Uri) -> Unit,
+    onSaveFailed: (String) -> Unit,
     onError: (String) -> Unit
 ) {
     Log.d("CaptureScreen", "Paso 1: Iniciando captura en memoria (RAM)")
@@ -989,7 +1064,7 @@ private fun takePhoto(
                         return
                     }
 
-                    // Tweak 1: Show result screen immediately!
+                    // Show result screen immediately!
                     onPhotoProcessed(processedBitmap)
 
                     // Save to disk asynchronously in background without blocking UI
@@ -1003,14 +1078,14 @@ private fun takePhoto(
                             onPhotoSaved(finalUri)
                         } else {
                             ErrorLogger.log("Paso 3: Falló la creación del archivo final")
-                            onError("Paso 3: Falló la creación del archivo final")
+                            onSaveFailed("Paso 3: Falló la creación del archivo final")
                         }
                     }
                 } catch (e: Exception) {
                     image.close()
                     ErrorLogger.log("Paso 3: Error de sistema al procesar/guardar (${e.localizedMessage})")
                     Log.e("CaptureScreen", "Error saving file from RAM", e)
-                    onError("Paso 3: Error de sistema al procesar/guardar (${e.localizedMessage})")
+                    onSaveFailed("Paso 3: Error de sistema al procesar/guardar (${e.localizedMessage})")
                 }
             }
 
@@ -1037,7 +1112,7 @@ private fun getSavedFileSize(context: Context, uri: Uri): Long {
         } else {
             File(uri.path ?: "").length()
         }
-    } catch (e: Exception) {
+    } catch (_: Exception) {
         0L
     }
 }
@@ -1067,17 +1142,67 @@ private fun saveBitmapToDestination(context: Context, bitmap: Bitmap, destinatio
         }
         return newFile.uri
     } else {
-        val dir = File(destinationPath)
-        if (!dir.exists() && !dir.mkdirs()) {
-            Log.e("CaptureScreen", "Paso 3: File - No se pudo crear carpeta")
-            return null
-        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val relativePath = if (destinationPath.contains("Pictures/")) {
+                val sub = destinationPath.substringAfter("Pictures/").trim('/')
+                if (sub.isNotEmpty()) "${Environment.DIRECTORY_PICTURES}/$sub" else Environment.DIRECTORY_PICTURES
+            } else if (destinationPath.startsWith(Environment.DIRECTORY_PICTURES)) {
+                destinationPath
+            } else {
+                "${Environment.DIRECTORY_PICTURES}/selfie"
+            }
 
-        val targetFile = File(dir, name)
-        targetFile.outputStream().use { output ->
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, output)
+            val values = ContentValues().apply {
+                put(MediaStore.Images.Media.DISPLAY_NAME, name)
+                put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+                put(MediaStore.Images.Media.RELATIVE_PATH, relativePath)
+                put(MediaStore.Images.Media.IS_PENDING, 1)
+                put(MediaStore.Images.Media.DATE_ADDED, System.currentTimeMillis() / 1000)
+                put(MediaStore.Images.Media.DATE_TAKEN, System.currentTimeMillis())
+            }
+
+            val imageUri = context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+                ?: run {
+                    ErrorLogger.log("Paso 3: MediaStore - Falló inserción")
+                    Log.e("CaptureScreen", "Paso 3: MediaStore - Falló inserción")
+                    return null
+                }
+
+            try {
+                context.contentResolver.openOutputStream(imageUri)?.use { output ->
+                    if (!bitmap.compress(Bitmap.CompressFormat.JPEG, 100, output)) {
+                        ErrorLogger.log("Paso 3: MediaStore - Falló compresión de bitmap")
+                        return null
+                    }
+                }
+                values.clear()
+                values.put(MediaStore.Images.Media.IS_PENDING, 0)
+                context.contentResolver.update(imageUri, values, null, null)
+                return imageUri
+            } catch (e: Exception) {
+                ErrorLogger.log("Paso 3: MediaStore - Error al escribir archivo: ${e.message}")
+                Log.e("CaptureScreen", "Paso 3: MediaStore - Error al escribir archivo", e)
+                try { context.contentResolver.delete(imageUri, null, null) } catch (_: Exception) {}
+                return null
+            }
+        } else {
+            val fullPath = if (!destinationPath.startsWith("/")) {
+                "${Environment.getExternalStorageDirectory().path}/$destinationPath"
+            } else {
+                destinationPath
+            }
+            val dir = File(fullPath)
+            if (!dir.exists() && !dir.mkdirs()) {
+                Log.e("CaptureScreen", "Paso 3: File - No se pudo crear carpeta")
+                return null
+            }
+
+            val targetFile = File(dir, name)
+            targetFile.outputStream().use { output ->
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, output)
+            }
+            return Uri.fromFile(targetFile)
         }
-        return Uri.fromFile(targetFile)
     }
 }
 
@@ -1093,12 +1218,21 @@ private fun checkDestinationWritable(context: Context, path: String): String? {
                 return "Configuración: No tiene permiso para escribir en esa carpeta"
             }
         } else {
-            val dir = File(path)
-            if (!dir.exists() && !dir.mkdirs()) {
-                return "Configuración: No se puede crear la carpeta en $path"
-            }
-            if (!dir.canWrite()) {
-                return "Configuración: Sin permiso de escritura en $path"
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                return null
+            } else {
+                val fullPath = if (!path.startsWith("/")) {
+                    "${Environment.getExternalStorageDirectory().path}/$path"
+                } else {
+                    path
+                }
+                val dir = File(fullPath)
+                if (!dir.exists() && !dir.mkdirs()) {
+                    return "Configuración: No se puede crear la carpeta en $fullPath"
+                }
+                if (!dir.canWrite()) {
+                    return "Configuración: Sin permiso de escritura en $fullPath"
+                }
             }
         }
     } catch (e: Exception) {

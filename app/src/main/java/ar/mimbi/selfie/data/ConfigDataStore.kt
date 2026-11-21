@@ -1,6 +1,7 @@
 package ar.mimbi.selfie.data
 
 import android.content.Context
+import android.os.Environment
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
@@ -70,7 +71,7 @@ class ConfigDataStore(private val context: Context) {
                 frontPath = preferences[FRONT_PATH],
                 captureBoxPath = preferences[CAPTURE_BOX_PATH],
                 countdownSeconds = preferences[COUNTDOWN_SECONDS] ?: 3,
-                destinationPath = preferences[DESTINATION_PATH] ?: "/storage/emulated/0/Pictures/selfie",
+                destinationPath = preferences[DESTINATION_PATH] ?: (Environment.DIRECTORY_PICTURES + "/selfie"),
                 inputResolution = preferences[PICTURE_RESOLUTION],
                 previewFit = previewFit,
                 fixedAspect = fixedAspect,

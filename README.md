@@ -36,6 +36,8 @@ The .apk file is at
 
 - [ ] Add support for other languages, began with english and portugues
 
+- [ ] Add option to go back to welcome screen automatically, allow to set the time.
+
 ## Made for use of
 
 [Instagram Mimbi](https://www.instagram.com/mimbi_glitterbar)
